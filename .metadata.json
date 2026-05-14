@@ -30,8 +30,12 @@
       }
     },
     "frontend/design/ui-ux-pro-max": {
-      "source": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
-      "repo_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git"
+      "source": "https://github.com/Yeachan-Heo/oh-my-claudecode",
+      "repo_url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
+    },
+    "oh-my-claudecod": {
+      "source": "https://github.com/Yeachan-Heo/oh-my-claudecode.git",
+      "repo_url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
     },
     "skillshare": {
       "source": "github.com/runkids/skillshare/skills/skillshare",

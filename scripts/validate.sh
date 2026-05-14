@@ -91,7 +91,7 @@ if command -v skillshare >/dev/null; then
   else
     err "skillshare sync --dry-run failed — run 'skillshare sync --dry-run' to inspect"
   fi
-  if skillshare audit >/dev/null 2>&1; then
+  if skillshare audit --yes --no-tui --quiet >/dev/null 2>&1; then
     pass "skillshare audit found no blocking issues"
   else
     err "skillshare audit reported issues — run 'skillshare audit' to inspect"

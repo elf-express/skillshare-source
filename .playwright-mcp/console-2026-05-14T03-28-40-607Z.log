@@ -12,3 +12,29 @@
 [ 2418800ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:19420/api/install:0
 [ 2441984ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:19420/api/install:0
 [ 2479441ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:19420/api/push:0
+[ 2490678ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:19420/api/push:0
+[ 2758404ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/targets:0
+[ 2758420ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/diff:0
+[ 2859016ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/extras:0
+[ 2859076ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/sync-matrix:0
+[ 2859232ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/resources:0
+[ 2964680ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/update:0
+[ 2964691ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/targets:0
+[ 2964726ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/diff:0
+[ 2964728ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:19420/api/resources/oh-my-claudecod/content?kind=skill:0
+[ 2964770ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/resources/oh-my-claudecod:0
+[ 2981498ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/version:0
+[ 2981512ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/targets:0
+[ 2981513ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/overview:0
+[ 2981513ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/config/available-targets:0
+[ 2981513ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/sync-matrix:0
+[ 2984538ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/version:0
+[ 2984553ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/targets:0
+[ 2984553ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/overview:0
+[ 2984554ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/config/available-targets:0
+[ 2984554ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/api/sync-matrix:0
+[ 2984818ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:19420/assets/ResourcesPage-BzgjQ7ky.js:0
+[ 2984825ms] [ERROR] TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:19420/assets/ResourcesPage-BzgjQ7ky.js @ http://127.0.0.1:19420/assets/vendor-react-FFrd4RqC.js:7
+[ 3671857ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/collect/scan:0
+[ 3671917ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/log?type=audit&limit=100:0
+[ 3671944ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:19420/api/log/stats?type=ops:0
