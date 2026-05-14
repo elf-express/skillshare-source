@@ -3,8 +3,35 @@
   "entries": {
     "_elf-dev": {
       "source": "https://github.com/elf-express/org-skills.git",
-      "tracked": true,
-      "branch": "dev"
+      "type": "github",
+      "installed_at": "2026-05-14T11:40:38.7983686+08:00",
+      "repo_url": "https://github.com/elf-express/org-skills.git",
+      "version": "86186ca",
+      "file_hashes": {
+        ".gitignore": "sha256:cb4aed798b689853bcc2f337e6cb1e499091b3ffe4dbcda338191c1770d4ad6e",
+        ".skillignore": "sha256:21813efbe30c94890da21fa15b314183831cc2dce8eb23b51c3a4eb6a7eb8f06",
+        "LICENSE": "sha256:36a7d839c982b3b3bd10deaada3cd4c69023dc895c443b0731546025a315634c",
+        "README.md": "sha256:decb40eabafe33a7fba892585c3dd1a105e98e544b9fc12594ba795af54d8c9b",
+        "agents/.gitkeep": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "docs/superpower/README.md": "sha256:900f5d8fbb572b63c2d4d414e0431c320ccc302da69dea77574bcbbc6efb1011",
+        "docs/superpower/plan/2026-05-14-initial-setup.md": "sha256:fba0077573f467e9ff21404f42c76c12b0de220a608742d11d70b9cd47548b85",
+        "docs/superpower/spec/2026-05-14-initial-setup-design.md": "sha256:5166f1589b72b4d2fa1234956973d5ce3a4d5007426cfebe9614c2e6f1de0ff0",
+        "skills/backend/api-design/SKILL.md": "sha256:f059e79126778f7c282dab586a12b4716ad66409b4fe24be7f15488483a7a939",
+        "skills/backend/domain-modeling/SKILL.md": "sha256:75fcb8a6489e2732a043935343d606bab55343d04c6b30ad7cefb3bd4fa36268",
+        "skills/backend/dotnet/SKILL.md": "sha256:cef0baede7c4b068cf09f9907a2ae06c2c9aedb1a919dfb060705f7ee9ac3809",
+        "skills/backend/sqlsugar/SKILL.md": "sha256:ffaf2b648128ab04a4411029c70a4696087dabfc8b5561f814cda19bdc3f28cd",
+        "skills/frontend/i18n/SKILL.md": "sha256:42207cd23ac9fc143bd8ceb9d34980db1899910c99fdf7c5c9f4cfa1b8f0cfb8",
+        "skills/frontend/ui-pattern/SKILL.md": "sha256:22540b06309a97906923d4db74e83af3ca74690dc70029e84686033549a29a89",
+        "skills/frontend/vue/SKILL.md": "sha256:6f4b33eb461b0d193086f855f0195cf6f09cb0fa5182a713dea3979e9afd4678",
+        "skills/testing/allure-report/SKILL.md": "sha256:2265f4516f0abbfeb1ca81870252a0954a57cc48962027a20e25d8d70fc92e14",
+        "skills/testing/e2e/SKILL.md": "sha256:8ab4054441440868d79a8d1801319b07a55172bd9c970a8a26864aa2ddb71da0",
+        "skills/testing/integration/SKILL.md": "sha256:fb80407b433fc271b057e33f543b0105508bb3653b7313555cb18866d899988f",
+        "skills/testing/unit/SKILL.md": "sha256:e997e72a5ec8a20facb2d4c3b98dc90606c6169c577a093b1ee3276c6e62cc49"
+      }
+    },
+    "frontend/design/ui-ux-pro-max": {
+      "source": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "repo_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git"
     },
     "skillshare": {
       "source": "github.com/runkids/skillshare/skills/skillshare",

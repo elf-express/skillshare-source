@@ -1,0 +1,13 @@
+[     934ms] [ERROR] Access to fetch at 'https://discord.gg/x7SwTSf3wc?_rsc=3lb4g' (redirected from 'https://claudekit.cc/discord?_rsc=3lb4g') from origin 'https://claudekit.cc' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request. @ https://claudekit.cc/:0
+[     935ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://discord.gg/x7SwTSf3wc?_rsc=3lb4g:0
+[     935ms] [ERROR] Failed to fetch RSC payload for https://claudekit.cc/discord. Falling back to browser navigation. TypeError: Failed to fetch
+    at y (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:114883)
+    at _ (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:113753)
+    at https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:47872
+    at Object.o [as task] (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:139945)
+    at c.s (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:140650)
+    at c.enqueue (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:140075)
+    at s (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:47835)
+    at i (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:47351)
+    at l (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:159453)
+    at Object.prefetch (https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:1:2935) @ https://claudekit.cc/_next/static/chunks/1290-0096da79d5c7e7ae.js:0

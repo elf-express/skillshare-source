@@ -1,0 +1,3 @@
+[     412ms] [LOG] [OMX] Initializing... @ https://oh-my-codex.dev/js/main.js:25
+[     414ms] [LOG] [OMX] Initialization complete @ https://oh-my-codex.dev/js/main.js:39
+[     580ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://oh-my-codex.dev/favicon.ico:0

@@ -1,0 +1,2 @@
+[  126893ms] [WARNING] A matching frame for #user-profile-frame was missing from the response, transforming into full-page Visit. @ https://github.githubassets.com/assets/26533-318ac47648fb7752.js:15
+[  305423ms] [ERROR] A bad HTTP response code (404) was received when fetching the script. @ :0

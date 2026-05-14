@@ -1,0 +1,104 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - heading "skillshare" [level=1] [ref=e6]
+      - paragraph [ref=e8]: 網頁儀表板
+    - navigation [ref=e9]:
+      - link "儀表板" [ref=e11] [cursor=pointer]:
+        - /url: /
+        - img [ref=e12]
+        - text: 儀表板
+      - generic [ref=e17]:
+        - generic [ref=e18]: 管理
+        - link "資源" [ref=e19] [cursor=pointer]:
+          - /url: /resources
+          - img [ref=e20]
+          - text: 資源
+        - link "附加目錄" [ref=e24] [cursor=pointer]:
+          - /url: /extras
+          - img [ref=e25]
+          - text: 附加目錄
+        - link "目標" [ref=e27] [cursor=pointer]:
+          - /url: /targets
+          - img [ref=e28]
+          - text: 目標
+        - link "搜尋" [ref=e32] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e33]
+          - text: 搜尋
+      - generic [ref=e36]:
+        - generic [ref=e37]: 操作
+        - link "同步" [ref=e38] [cursor=pointer]:
+          - /url: /sync
+          - img [ref=e39]
+          - text: 同步
+        - link "收集" [ref=e44] [cursor=pointer]:
+          - /url: /collect
+          - img [ref=e45]
+          - text: 收集
+        - link "安裝" [ref=e47] [cursor=pointer]:
+          - /url: /install
+          - img [ref=e48]
+          - text: 安裝
+        - link "更新" [ref=e51] [cursor=pointer]:
+          - /url: /update
+          - img [ref=e52]
+          - text: 更新
+        - link "解除安裝" [ref=e55] [cursor=pointer]:
+          - /url: /uninstall
+          - img [ref=e56]
+          - text: 解除安裝
+      - generic [ref=e59]:
+        - generic [ref=e60]: 安全與維護
+        - link "稽核" [ref=e61] [cursor=pointer]:
+          - /url: /audit
+          - img [ref=e62]
+          - text: 稽核
+        - link "分析" [ref=e65] [cursor=pointer]:
+          - /url: /analyze
+          - img [ref=e66]
+          - text: 分析
+        - link "Git 同步" [ref=e68] [cursor=pointer]:
+          - /url: /git
+          - img [ref=e69]
+          - text: Git 同步
+        - link "備份" [ref=e73] [cursor=pointer]:
+          - /url: /backup
+          - img [ref=e74]
+          - text: 備份
+        - link "垃圾桶" [ref=e77] [cursor=pointer]:
+          - /url: /trash
+          - img [ref=e78]
+          - text: 垃圾桶
+      - generic [ref=e81]:
+        - generic [ref=e82]: 系統
+        - link "紀錄" [ref=e83] [cursor=pointer]:
+          - /url: /log
+          - img [ref=e84]
+          - text: 紀錄
+        - link "設定檔" [ref=e87] [cursor=pointer]:
+          - /url: /config
+          - img [ref=e88]
+          - text: 設定檔
+        - link "狀態檢查" [ref=e91] [cursor=pointer]:
+          - /url: /doctor
+          - img [ref=e92]
+          - text: 狀態檢查
+    - generic [ref=e96]:
+      - button "收合工具" [expanded] [ref=e97] [cursor=pointer]:
+        - text: 工具
+        - img [ref=e98]
+      - generic [ref=e100]:
+        - button "主題" [ref=e102] [cursor=pointer]:
+          - img [ref=e103]
+          - text: 主題
+        - button "語言" [ref=e110] [cursor=pointer]:
+          - img [ref=e111]
+          - text: 語言
+        - button "快速導覽" [ref=e115] [cursor=pointer]:
+          - img [ref=e116]
+          - text: 快速導覽
+        - button "鍵盤快捷鍵" [ref=e119] [cursor=pointer]:
+          - img [ref=e120]
+          - text: 快捷鍵
+  - main [ref=e122]
