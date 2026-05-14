@@ -1,6 +1,11 @@
 {
   "version": 1,
   "entries": {
+    "_elf-dev": {
+      "source": "https://github.com/elf-express/org-skills.git",
+      "tracked": true,
+      "branch": "dev"
+    },
     "skillshare": {
       "source": "github.com/runkids/skillshare/skills/skillshare",
       "type": "github-subdir",
