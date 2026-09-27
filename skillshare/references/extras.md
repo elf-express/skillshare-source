@@ -12,8 +12,8 @@ Manage non-skill resources (rules, commands, prompts) that sync to arbitrary dir
 | `diff` | Includes extras diff automatically | ✓ (auto) | ✓ |
 
 **Source directories:**
-- Global: `~/.config/skillshare/extras/<name>/`
-- Project: `.skillshare/extras/<name>/`
+- Global: `~/.config/skillshare/extras/<name>/`; `extras_source` and per-extra `source` can override it.
+- Project: `.skillshare/extras/<name>/`; per-extra `source` is ignored. Use top-level `sources.extras` to move all project extras.
 
 ## extras init
 
@@ -30,6 +30,7 @@ skillshare extras init rules --no-tui ... # Skip wizard
 | Flag | Description |
 |------|-------------|
 | `--target <path>` | Target directory (repeatable, at least one required) |
+| `--source <path>` | Custom source directory for this extra (global mode only) |
 | `--mode <mode>` | Sync mode: `merge` (default), `copy`, `symlink` |
 | `--no-tui` | Skip interactive wizard |
 | `-p` / `-g` | Force project / global mode |
@@ -44,7 +45,7 @@ skillshare extras list --json
 skillshare extras list -p
 ```
 
-Statuses: `synced`, `drift`, `not synced`, `no source`.
+Statuses: `synced`, `drift`, `modified` (a single-file symlink or merge target replaced by a different real file), `not synced`, `no source`.
 
 JSON output returns an array of:
 ```json
@@ -72,21 +73,23 @@ skillshare extras remove prompts -p
 | `--force` / `-f` | Skip y/N confirmation prompt |
 | `-p` / `-g` | Force project / global mode |
 
-After removal, run `sync extras` to clean up orphaned links.
+After removal, run `sync extras` to clean up orphaned links. A single-file extra (below) needs no cleanup: remove restores each target file.
 
 ## extras collect
 
-Collect local (non-symlinked) files from a target back into the extras source directory.
+Collect local (non-symlinked) files from a target back into the extras source directory. Merge-mode targets get symlinks in place of collected files; copy-mode targets keep their files. Files already in source are skipped unless `--force`.
 
 ```bash
 skillshare extras collect rules
 skillshare extras collect rules --from ~/.claude/rules --dry-run
+skillshare extras collect rules --force   # overwrite source with target edits
 skillshare extras collect prompts -p
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--from <path>` | Target to collect from (required if multiple targets) |
+| `--force` / `-f` | Overwrite files that already exist in source |
 | `--dry-run` | Preview without changes |
 | `-p` / `-g` | Force project / global mode |
 
@@ -99,7 +102,7 @@ skillshare sync extras              # Sync all extras
 skillshare sync extras --dry-run    # Preview
 skillshare sync extras --force      # Overwrite conflicts
 skillshare sync extras --json       # JSON output
-skillshare sync --all               # Skills + extras together
+skillshare sync --all               # Skills + agents + extras + MCP
 ```
 
 Sync modes (per-target):
@@ -125,11 +128,48 @@ extras:
       - path: ~/.claude/rules
       - path: ~/.cursor/rules
         mode: copy
+  - name: agents
+    targets:
+      - path: .claude/agents
+      - path: .codex/agents
+        flatten: true
+        extension: codex-agents   # transform + rename via .skillshare/extensions/codex-agents/
   - name: commands
     targets:
       - path: ~/.claude/commands
         mode: symlink
 ```
+
+A single-file extra syncs one file instead of the directory. `as` renames it per
+target; `import` mode (single-file only) keeps an `@<source file>` line in a
+managed block of the target file instead of replacing it:
+
+```yaml
+extras:
+  - name: personal
+    file: AGENTS.md          # extras/personal/AGENTS.md
+    targets:
+      - path: ~/.codex       # ~/.codex/AGENTS.md -> symlink
+      - path: ~/.claude
+        as: CLAUDE.md
+        mode: import         # CLAUDE.md keeps its content, imports the file
+```
+
+The first sync records the target's attach-time state as its restore point
+(a file, a symlink, or no file), then replaces it. `extras remove` and
+`extras <name> --remove-target <path> --prune` put that state back; in `import`
+mode they only drop the managed line when the file has other content. Later edits
+that sync, reapply, or restore replace are kept as drift backups in
+`~/.local/state/skillshare/extras/backups/<id>/drift/` and are never restored.
+`--remove-target` without `--prune` leaves the file and forgets the restore point.
+`flatten` and `extension` are rejected on a single-file extra; `extras collect`
+does not apply. The web dashboard (Extras -> AGENTS.md) manages these as shared
+AGENTS.md files; its rename conversion (project mode) is blocked while the file
+uses a shared AGENTS.md.
+
+The `extension:` field names an extension directory under `.skillshare/extensions/` (project) or `~/.config/skillshare/extensions/` (global). It transforms each source file during sync and implies `copy` mode.
+
+For project agents, prefer native target `agents:` config; it also accepts `extension:` (e.g. `agents: { extension: opencode-agents }`, implies `copy`). Use `extras: agents` only when you need extras-only behavior like `flatten`.
 
 ## Typical workflow
 
@@ -145,9 +185,57 @@ skillshare sync extras
 
 # 4. Verify
 skillshare extras list
-skillshare diff --extras
+skillshare diff --no-tui
 
 # 5. Or collect existing local files first
 skillshare extras collect rules --from ~/.claude/rules
 skillshare sync extras
 ```
+
+## Extensions
+
+An extension transforms each source file before writing it to a target. Set `extension: <name>` on any extras target; implies `copy` mode.
+
+### Directory layout
+
+```
+.skillshare/extensions/<name>/
+├── extension.yaml   ← required
+├── convert.js       ← transformer (or convert.py, etc.)
+└── helper.js        ← optional shared utilities
+```
+
+### extension.yaml
+
+```yaml
+run: ["node", "convert.js"]   # command array — run from extension directory
+output_ext: toml              # renames output file (e.g. rule.md → rule.toml)
+description: "MD → Codex TOML"
+```
+
+- `output_ext` is the only way to change the output file extension
+- Omit to keep the source extension
+- Global extensions: `~/.config/skillshare/extensions/<name>/`
+
+### I/O contract
+
+- Input: raw source file piped to `stdin`
+- Output: transformed content on `stdout`; non-zero exit skips the file with a warning
+- `SS_REL_PATH` env var: source file path relative to extras root
+
+### Official extensions
+
+Ready-to-copy reference implementations at `https://github.com/runkids/skillshare/tree/main/extensions`:
+
+| Extension | Converts | Output |
+|-----------|----------|--------|
+| `codex-agents` | Claude agent MD (frontmatter + body) | Codex TOML (`name`, `description`, `developer_instructions`) |
+| `gemini-commands` | Markdown command docs | Gemini CLI TOML commands |
+
+The `codex-agents` extension requires `name` and `description` frontmatter — files missing either field are skipped with an error. Non-agent files (e.g. prompts, changelogs) should be excluded from the extras source using the applicable extras filters; a filename prefix alone is not an ignore rule.
+
+### Caveats
+
+- Native agents targets (`agents: { path: ... }`) do **not** support `extension:` — extras only
+- If a Node.js extension fails because inherited `NODE_OPTIONS` references an unavailable
+  preload module, clear that variable for the extension process: `run: ["env", "-u", "NODE_OPTIONS", "node", "convert.js"]`

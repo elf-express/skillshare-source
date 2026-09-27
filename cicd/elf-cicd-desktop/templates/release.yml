@@ -1,0 +1,245 @@
+name: Release
+
+# Produces the artefacts a tag implies: desktop installers for the three
+# platforms (and, when the project has a web deployment, container images —
+# see elf-cicd-docker). Tagging alone only records a version — without this, a
+# release has nothing to download.
+#
+# Placeholders to replace: <AppName>. Also requires .github/release-body.md
+# (from elf-cicd-desktop/templates/release-body.md).
+
+on:
+  # Covers a tag pushed by a person.
+  push:
+    tags: ['v*']
+
+  # Lets an existing tag be built by hand.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build (e.g. v0.0.1)'
+        required: true
+        type: string
+
+  # How version.yml (elf-cicd-versioning) reaches this workflow. A tag pushed
+  # with GITHUB_TOKEN does not trigger anything — GitHub suppresses it to avoid
+  # recursive runs — so the auto-version job has to call this directly instead
+  # of relying on `push`. The caller MUST pass `secrets: inherit`.
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+jobs:
+  desktop:
+    name: desktop (${{ matrix.platform }})
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      # The three jobs write the same `latest.json` asset on one release, and
+      # tauri-action builds it by reading the existing asset, merging its own
+      # platform in, then deleting and re-uploading — with no lock. In parallel
+      # the last writer wins and the other platforms' entries vanish from the
+      # manifest while every job still reports success.
+      max-parallel: 1
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+          - platform: macos-latest
+            # One bundle covering both Apple Silicon and Intel.
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-latest
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      # Must come BEFORE setup-node: `cache: pnpm` needs the pnpm binary to
+      # locate the store. No `version:` here — the action reads the exact
+      # version from `packageManager` in the root package.json, so CI and
+      # local installs can never disagree.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          # Single source of the Node version (24.18) — see elf-cicd-frontend.
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      # Speeds up the slowest part of the job by a large margin.
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - run: pnpm install --frozen-lockfile
+
+      # Fails loudly and immediately when the key did not reach this workflow.
+      # It arrives empty unless the caller passes `secrets: inherit`, and a
+      # build that gets an empty key spends ten minutes compiling before
+      # reporting something that reads like a malformed key rather than a
+      # missing one ("Missing comment in secret key").
+      - name: Require the signing key
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. A called workflow only receives secrets when the caller passes 'secrets: inherit'."
+            exit 1
+          fi
+          echo "Signing key present."
+
+      # Notarisation submits to Apple and waits, so a missing credential is
+      # worth catching before the build rather than after it. Signing without
+      # notarising produces a bundle macOS still refuses to open, which looks
+      # like a successful release until someone downloads it.
+      - name: Check the Apple credentials
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          CERT: ${{ secrets.APPLE_CERTIFICATE }}
+          IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=""
+          [ -z "$CERT" ] && missing="$missing APPLE_CERTIFICATE"
+          [ -z "$IDENTITY" ] && missing="$missing APPLE_SIGNING_IDENTITY"
+          [ -z "$APPLE_ID" ] && missing="$missing APPLE_ID"
+          [ -z "$APPLE_PASSWORD" ] && missing="$missing APPLE_PASSWORD"
+          [ -z "$TEAM_ID" ] && missing="$missing APPLE_TEAM_ID"
+
+          if [ -n "$missing" ]; then
+            # Not fatal: an unsigned macOS build is still a usable release for
+            # everyone who is willing to right-click → Open.
+            echo "::warning::Unsigned macOS build — missing:$missing"
+          else
+            echo "Signing and notarisation credentials present."
+          fi
+
+      # The release notes live in ONE place: .github/release-body.md (copied from
+      # elf-cicd-desktop/templates/release-body.md). Never paste a second copy
+      # into this workflow — the two drift and the wrong one gets published.
+      - name: Read the release notes
+        id: notes
+        shell: bash
+        run: |
+          {
+            echo 'body<<ELF_RELEASE_BODY_EOF'
+            cat .github/release-body.md
+            echo
+            echo 'ELF_RELEASE_BODY_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      # Runs `tauri build` (detected as pnpm from pnpm-lock.yaml), which
+      # triggers beforeBuildCommand (`pnpm build`) and uploads the bundles to a
+      # draft release.
+      #
+      # The private key signs every bundle and its `.sig`; `createUpdaterArtifacts`
+      # in tauri.conf.json makes the build fail outright when it is missing, so
+      # an unsigned release cannot slip out by accident. Losing that key means
+      # installed apps can never be updated again (see elf-tauri →
+      # docs/signing-and-keys.md).
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          # The desktop bundle is built by beforeBuildCommand, not web.Dockerfile,
+          # so the production flags must be set here (elf-tauri rule 13b).
+          # VITE_* values are baked in at build time — a release built without
+          # these ships the mock fixtures and a relative /api that has no server.
+          VITE_USE_MOCK: 'false'
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # macOS only; the other platforms ignore these. Code signing lets
+          # Gatekeeper open the app at all, which is separate from the updater
+          # signature above — that one only proves an update came from us.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: '<AppName> ${{ inputs.tag || github.ref_name }}'
+          # Written for someone arriving from a search result, not for us. The
+          # assets list is eight files with names like `universal.dmg` and
+          # `app.tar.gz.sig`, and nothing on the page says which one to press.
+          # Single source: .github/release-body.md (read by the step above).
+          releaseBody: ${{ steps.notes.outputs.body }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+          # The asset upload inside the updater-JSON merge has no backoff of its
+          # own, so a stale asset id surfaces as a 404 on the first try.
+          retryAttempts: 3
+          # Windows bundles both an .msi (WiX) and a setup.exe (NSIS); this picks
+          # which one the `windows-x86_64` entry in latest.json points at. Users
+          # install the `-setup.exe`, so the updater must use NSIS too — updating
+          # an NSIS install with the .msi leaves two installations side by side.
+          # Left explicit because the action's default may flip for tauri@v2 apps.
+          updaterJsonPreferNsis: true
+          # The macOS job builds one universal bundle, which the action expands
+          # into darwin-aarch64 and darwin-x86_64 entries. Keeping the universal
+          # key as well would leave a third path nothing is tested against.
+          updaterJsonKeepUniversal: false
+
+  # The manifest is merged by read-modify-write across the three jobs above, so
+  # a lost platform entry leaves every job green while half the installs stop
+  # seeing updates. Assert the keys rather than trusting the colours.
+  updater-manifest:
+    name: verify updater manifest
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      # write, not read: the release is still a draft at this point, and a
+      # read-only token cannot see drafts at all — the download fails with
+      # "release not found" while every asset is sitting there.
+      contents: write
+    steps:
+      # gh needs no checkout: the asset is fetched from the release by tag.
+      # node is preinstalled on ubuntu-latest, so no setup-node here.
+      - name: Every platform is listed in latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release download "$TAG" -p latest.json -D /tmp
+          node -e '
+            const have = Object.keys(require("/tmp/latest.json").platforms ?? {});
+            // The macOS job builds universal, which the action expands to both
+            // Apple Silicon and Intel.
+            const want = ["windows-x86_64", "darwin-aarch64", "darwin-x86_64", "linux-x86_64"];
+            const missing = want.filter((k) => !have.includes(k));
+            console.log("latest.json platforms:\n" + have.join("\n"));
+            if (missing.length) {
+              console.error("missing from latest.json: " + missing.join(", "));
+              process.exit(1);
+            }
+          '
+
+  # Web deployment images, when the project has one: paste the `docker` job
+  # from elf-cicd-docker/templates/release-docker.yml here. Keep it in THIS
+  # file so version.yml only ever calls one workflow.

@@ -1,0 +1,84 @@
+name: Release
+
+# Container images for the web deployment.
+#
+# - Project WITH a desktop app: copy only `jobs.docker` below into the existing
+#   release.yml from elf-cicd-desktop, so version.yml calls a single workflow.
+# - Web-only project: use this whole file as .github/workflows/release.yml.
+#
+# Images: ghcr.io/<owner>/<repo>/api and ghcr.io/<owner>/<repo>/web,
+# each tagged with the release tag and `latest`.
+# When the project also ships a desktop app, keep the GHCR line at the end of
+# .github/release-body.md (elf-cicd-desktop) so the release page links the images.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build (e.g. v0.0.1)'
+        required: true
+        type: string
+  # A tag pushed with GITHUB_TOKEN triggers nothing, so version.yml calls this
+  # directly (elf-cicd-versioning). The caller must pass `secrets: inherit` and
+  # grant `packages: write`.
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+jobs:
+  docker:
+    name: container images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      # GHCR rejects upper-case names, and the repository slug may have them.
+      - name: Normalise image prefix
+        id: img
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/api.Dockerfile
+          push: true
+          tags: |
+            ${{ steps.img.outputs.prefix }}/api:${{ inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/api:latest
+          # One scope per image: both builds share the default scope otherwise,
+          # and each mode=max export replaces the other's cache.
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push the web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web.Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_USE_MOCK=false
+          tags: |
+            ${{ steps.img.outputs.prefix }}/web:${{ inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web

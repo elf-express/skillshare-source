@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    server/tests/<Project>.Tests/<Project>.Tests.csproj
+
+    Central Package Management:
+      - NO Version= on any PackageReference (versions live in server/Directory.Packages.props)
+      - NO own TargetFramework (inherited from server/Directory.Build.props)
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      coverlet.msbuild, NOT coverlet.collector: the CI run uses
+      -p:CollectCoverage=true (+ MergeWith), which only coverlet.msbuild reads.
+      The `dotnet new xunit` template adds coverlet.collector — remove it, and
+      never combine the two in one run (double instrumentation).
+    -->
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\<Project>\<Project>.csproj" />
+  </ItemGroup>
+
+</Project>

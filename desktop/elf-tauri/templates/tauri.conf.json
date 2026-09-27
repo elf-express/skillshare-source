@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "<AppName>",
+  "version": "0.0.1",
+  "identifier": "tw.elf.<appname>",
+  "build": {
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../<web-dir>/dist",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "<AppName>",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 640,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost <api-origin>; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "<Category>",
+    "shortDescription": "<one line>",
+    "longDescription": "<one paragraph>"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "<paste the WHOLE content of ~/.tauri/<appname>.key.pub>",
+      "endpoints": ["https://github.com/<owner>/<repo>/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

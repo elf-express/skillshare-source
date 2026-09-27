@@ -1,0 +1,34 @@
+{
+  "name": "<app-name>",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@<PNPM_VERSION>",
+  "scripts": {
+    "dev": "pnpm --filter @<scope>/web dev",
+    "build": "pnpm --filter @<scope>/web build",
+    "preview": "pnpm --filter @<scope>/web preview",
+    "lint": "pnpm -r --if-present run lint",
+    "lint:fix": "pnpm -r --if-present run lint:fix",
+    "format": "prettier --write \"**/*.{ts,vue,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,vue,json,md,css}\"",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "test:coverage": "pnpm -r --if-present run test:coverage",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "version:show": "node scripts/version.mjs",
+    "version:patch": "node scripts/version.mjs patch",
+    "version:minor": "node scripts/version.mjs minor",
+    "version:major": "node scripts/version.mjs major"
+  },
+  "devDependencies": {
+    "@playwright/test": "<version>",
+    "prettier": "<version>"
+  },
+  "engines": {
+    "node": ">=24.18"
+  }
+}

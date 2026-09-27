@@ -1,0 +1,85 @@
+# docker/docker-compose.yml
+# Web deployment: Vue bundle behind nginx + the ASP.NET Core API + PostgreSQL 18.
+# Run from the repo root. Copy docker/.env.example to docker/.env (git-ignored)
+# and fill it in; pass it explicitly so the lookup never depends on the
+# current directory:
+#   docker compose --env-file docker/.env -f docker/docker-compose.yml up --build
+# Then open http://localhost:8080
+# Placeholder: <app> (lower-case, used for local image names)
+#
+# This is THE deployment compose file. elf-postgresql's docker/docker-compose.dev.yml
+# is local-dev only; both use the service name `postgres` and docker/.env.
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      # `:?` makes compose refuse to start when a value is missing, instead of
+      # silently starting a database with an empty password.
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in docker/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in docker/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in docker/.env}
+    volumes:
+      # PostgreSQL 18 images keep data under /var/lib/postgresql/18/docker and
+      # declare the volume at /var/lib/postgresql. Mounting the old
+      # /var/lib/postgresql/data path (<=17 habit) is refused by the 18 image.
+      - pg-data:/var/lib/postgresql
+    healthcheck:
+      # $$ escapes compose interpolation so the container's own env is used.
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    # No `ports:` — only the api container talks to the database. Add
+    # '127.0.0.1:5432:5432' locally if you need a GUI client.
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+    image: <app>-api:local
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # All timestamps are UTC end to end: process clock and Npgsql session.
+      TZ: UTC
+      # Npgsql format, read by SqlSugar via ConnectionStrings:Default. Host is the
+      # compose service name. Credentials come only from docker/.env.
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Timezone=UTC
+    expose:
+      - '8080'
+    depends_on:
+      # service_healthy, not service_started: SqlSugar CodeFirst runs at
+      # start-up and fails if the database is still initialising.
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # curl is installed in api.Dockerfile's final stage — the aspnet image has
+      # neither curl nor wget, so without it this check can never pass.
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:8080/api/health >/dev/null || exit 1']
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/web.Dockerfile
+      args:
+        # Relative base → the browser stays same-origin and nginx proxies /api.
+        VITE_API_BASE_URL: /api
+        # Production image talks to the real API, never the mock.
+        VITE_USE_MOCK: 'false'
+    image: <app>-web:local
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  pg-data:

@@ -1,0 +1,85 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    name: review
+    # DECIDED EXCEPTION to "every PR is AI-reviewed": bot-authored pull requests
+    # are skipped rather than failed (a human reviews their diff). Dependabot's
+    # PRs cannot read repository secrets by design, so the token would always
+    # arrive empty and every dependency bump would carry a red check for a
+    # review that never could have run. A skipped job still satisfies a
+    # required status check.
+    if: ${{ !endsWith(github.actor, '[bot]') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      # Draws on the Claude subscription. Swap to `anthropic_api_key` with an
+      # ANTHROPIC_API_KEY secret to bill an API account instead — pass exactly
+      # one of the two; passing both only earns a warning for whichever secret
+      # does not exist.
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request. Reply in Traditional Chinese (Taiwan).
+            The repo holds pieces that have to stay in step, so weigh these first:
+
+            - apps/        Vue 3 + TypeScript front end (<script setup>, Pinia).
+                           Unit tests sit next to the file they cover:
+                           Foo.vue -> Foo.test.ts. A .test.vue file or a
+                           __tests__/ folder never runs.
+            - server/      ASP.NET Core 10 + SqlSugar 5.x on PostgreSQL 18.
+                           Entities are CodeFirst; wire shapes must match
+                           apps/src/api/types.ts and docs/api-contract.md.
+                           Unit tests live in server/tests/<Project>.Tests/;
+                           integration tests in
+                           server/tests/<AppName>.Api.IntegrationTests/.
+            - src-tauri/   Tauri 2 shell. Commands must appear in
+                           generate_handler! and permissions in
+                           capabilities/default.json, or they fail at runtime.
+            - docker/      Web deployment.
+            - e2e/         Playwright end-to-end tests (*.spec.ts).
+            - .github/     CI. Flag any change that weakens a gate: lowered
+                           coverage thresholds (line 55% is enforced), added
+                           `continue-on-error`, `paths:` filters on ci.yml,
+                           renamed required jobs, or removed `--frozen-lockfile`.
+
+            <PROJECT-SPECIFIC PITFALLS — replace this line with 3-8 bullets of
+            things that have already broken once in THIS repo, or delete it.>
+
+            Then the usual: correctness, security, performance, and whether
+            tests cover behaviour that would otherwise regress silently.
+            Flag any change that alters the API contract without updating
+            docs/ alongside it.
+
+            Note: The PR branch is already checked out in the current working
+            directory.
+
+            Use `gh pr comment` for top-level feedback.
+            Use `mcp__github_inline_comment__create_inline_comment` (with
+            `confirmed: true`) to highlight specific code issues.
+            Only post GitHub comments - don't submit review text as messages.
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+
+      # The action reports only `is_error: true` and swallows the reason. The
+      # full result is written to a file, so print it when something fails —
+      # otherwise diagnosing an auth or quota problem is guesswork.
+      - name: Show the raw result when the review fails
+        if: failure()
+        run: cat "$RUNNER_TEMP/claude-execution-output.json" || echo 'no output file'

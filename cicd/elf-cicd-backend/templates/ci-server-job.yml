@@ -1,0 +1,71 @@
+# Paste under `jobs:` in .github/workflows/ci.yml (same file as the web/e2e jobs
+# from elf-cicd-frontend). Replace <AppName>.
+#
+# Tests that need PostgreSQL start their own postgres:18 via Testcontainers
+# (fixture owned by elf-integration). ubuntu-latest ships Docker, so no
+# `services:` block is needed — do NOT add `services: postgres`.
+
+  server:
+    name: server (build · tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The SDK version comes only from global.json (no `dotnet-version:` here).
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore server/<AppName>.slnx
+
+      - name: Build
+        run: dotnet build server/<AppName>.slnx --no-restore --configuration Release
+
+      # coverlet.msbuild: every test project merges its result into coverage/coverage.json;
+      # the last cobertura file written is the COMBINED coverage of all test projects.
+      #   -m:1 → test projects run one after another (they share the merge file)
+      # The gate is applied to the combined number in the next step, so no single
+      # test project has to reach 55% on its own.
+      - name: Tests + coverage
+        run: >
+          dotnet test server/<AppName>.slnx
+          --no-build --configuration Release --verbosity normal -m:1
+          -p:CollectCoverage=true
+          -p:CoverletOutput=${{ github.workspace }}/coverage/
+          -p:MergeWith=${{ github.workspace }}/coverage/coverage.json
+          -p:CoverletOutputFormat=\"json,cobertura\"
+
+      # Threshold=55 · ThresholdType=line · ThresholdStat=total — on the merged report.
+      # Branch coverage is NOT part of the gate.
+      - name: Coverage gate (combined line 55%)
+        run: |
+          f=coverage/coverage.cobertura.xml
+          [ -f "$f" ] || { echo "::error::$f not found — coverlet.msbuild did not run"; exit 1; }
+          rate=$(grep -o -m1 'line-rate="[0-9.]*"' "$f" | head -1 | grep -o '[0-9.]*')
+          pct=$(awk "BEGIN { printf \"%.2f\", $rate * 100 }")
+          echo "combined line coverage: $pct%"
+          if awk "BEGIN { exit !($pct < 55) }"; then
+            echo "::error file=$f::Combined line coverage $pct% is below the required 55%"
+            exit 1
+          fi
+
+      # Branch 50% is advisory: warning annotation only.
+      - name: Branch coverage (advisory 50%)
+        if: success() || failure()
+        run: |
+          f=coverage/coverage.cobertura.xml
+          [ -f "$f" ] || { echo "no cobertura report found"; exit 0; }
+          rate=$(grep -o -m1 'branch-rate="[0-9.]*"' "$f" | head -1 | grep -o '[0-9.]*')
+          pct=$(awk "BEGIN { printf \"%.2f\", $rate * 100 }")
+          echo "combined branch coverage: $pct%"
+          if awk "BEGIN { exit !($pct < 50) }"; then
+            echo "::warning file=$f::Branch coverage $pct% is below the advisory 50%"
+          fi
+
+      - uses: actions/upload-artifact@v5
+        if: success() || failure()
+        with:
+          name: server-coverage
+          path: coverage/
+          retention-days: 7

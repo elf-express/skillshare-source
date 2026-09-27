@@ -2,4 +2,10 @@
 
 # BEGIN SKILLSHARE MANAGED - DO NOT EDIT
 _elf-dev/
+_superpowers/
 # END SKILLSHARE MANAGED
+
+.playwright-mcp
+.claude/settings.local.json
+.kilo/
+.skillignore.local

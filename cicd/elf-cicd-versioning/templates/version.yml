@@ -1,0 +1,116 @@
+name: Auto version
+
+# Every merge into main bumps the patch level, so the toolchains (package.json,
+# Cargo, Tauri, MSBuild) never drift apart. Bump minor/major by hand with
+# `pnpm version:minor` / `pnpm version:major` in the PR before merging; this job
+# only ever advances the patch.
+#
+# DECIDED (team rule, TypingTrainer behaviour): tagging and building release
+# artefacts happen ONLY when the commit SUBJECT contains [release]. Doing it on every commit produced a tag and three
+# platforms' worth of installers — roughly twenty minutes of CI — for changes
+# as small as a five-line workflow edit, and left a trail of tags that pointed
+# at nothing anyone had decided to publish.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump:
+    name: bump patch
+    runs-on: ubuntu-latest
+    # The job's own commit must not retrigger it. ([skip ci] in that commit
+    # already suppresses push workflows; this guard is the second lock.)
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.guard.outputs.release }}
+      version: ${{ steps.bump.outputs.version }}
+      publish: ${{ steps.commit.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # scripts/version.mjs has no dependencies — no pnpm install needed.
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      # A commit that already carries a tag was released deliberately — bumping
+      # it would immediately supersede the version that was just published.
+      - name: Check whether this commit is already released
+        id: guard
+        run: |
+          if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+            echo "Already tagged $(git describe --exact-match --tags HEAD); skipping."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump
+        id: bump
+        if: steps.guard.outputs.release == 'false'
+        run: |
+          node scripts/version.mjs patch
+          echo "version=$(node scripts/version.mjs)" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, and tag only when publishing
+        id: commit
+        if: steps.guard.outputs.release == 'false'
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          # The whole message, subject and body. Passed through the environment
+          # rather than interpolated into the script, so no punctuation in it
+          # can be interpreted as shell.
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): v$VERSION [skip ci]"
+
+          # Only the subject line decides. Matching the whole message means any
+          # commit that merely *mentions* [release] — a comment, a doc change,
+          # this very mechanism being described — publishes a version nobody
+          # asked for.
+          SUBJECT=${MESSAGE%%$'\n'*}
+          case "$SUBJECT" in
+            *'[release]'*) PUBLISH=true ;;
+            *) PUBLISH=false ;;
+          esac
+          echo "Subject: $SUBJECT"
+          echo "Publishing: $PUBLISH"
+
+          if [ "$PUBLISH" = "true" ]; then
+            # Annotated, not lightweight: --follow-tags only pushes annotated
+            # tags, so a lightweight one is silently left behind and the
+            # release never happens.
+            git tag -a "v$VERSION" -m "<AppName> v$VERSION"
+            git push --follow-tags
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            git push
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Version is now $VERSION. Put [release] in a PR title (squash merge) to tag and build it."
+          fi
+
+  # The tag above was pushed with GITHUB_TOKEN, which GitHub deliberately does
+  # not let trigger further workflows. So the release is invoked directly rather
+  # than waiting for a `push` event that will never arrive.
+  release:
+    name: release
+    needs: bump
+    if: needs.bump.outputs.publish == 'true'
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: v${{ needs.bump.outputs.version }}
+    # Required. A called workflow receives GITHUB_TOKEN automatically but no
+    # other secret, so without this the signing key arrives empty — and the
+    # failure reads like a malformed key rather than a missing one.
+    secrets: inherit

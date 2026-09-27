@@ -1,0 +1,116 @@
+name: CI
+
+# One workflow, one file: .github/workflows/ci.yml
+#   web     → owned by elf-cicd-frontend
+#   e2e     → owned by elf-cicd-frontend
+#   server  → owned by elf-cicd-backend (paste templates/ci-server-job.yml under `jobs:`)
+#
+# Job `name:` values are what branch protection lists as required checks.
+# Renaming one silently leaves the old name "expected" forever and blocks every PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: web (lint · types · tests · build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Must run BEFORE setup-node: `cache: pnpm` asks pnpm for its store path.
+      # No `version:` input — the version comes from `packageManager` in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # --frozen-lockfile: a lockfile that does not match package.json fails here
+      # instead of being silently rewritten in CI.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      # Fails the job when line coverage < 55% (vite.config.ts → test.coverage.thresholds).
+      - name: Unit tests + coverage gate (line 55%)
+        run: pnpm test:coverage
+
+      # Branch 50% is advisory: a warning annotation, never a failure.
+      - name: Branch coverage (advisory 50%)
+        if: success() || failure()
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const f = "apps/coverage/coverage-summary.json";
+            if (!fs.existsSync(f)) { console.log("no coverage summary"); process.exit(0); }
+            const t = JSON.parse(fs.readFileSync(f, "utf8")).total;
+            console.log(`lines ${t.lines.pct}%  branches ${t.branches.pct}%`);
+            if (t.branches.pct < 50) console.log(`::warning::Branch coverage ${t.branches.pct}% is below the advisory 50%`);
+          '
+
+      - name: Build
+        run: pnpm build
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: web-dist
+          path: apps/dist
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v5
+        if: success() || failure()
+        with:
+          name: web-coverage
+          path: apps/coverage
+          retention-days: 7
+
+  e2e:
+    name: e2e (browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # playwright.config.ts (repo root) uses `channel: 'chrome'`, so install `chrome`.
+      # A mismatch fails every test with "Executable doesn't exist".
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chrome
+
+      # Default CI e2e runs against the mock API (no backend, no auth setup project).
+      # The login variant is opt-in: it needs a backend webServer and the
+      # E2E_USER / E2E_PASSWORD secrets (see elf-e2e).
+      - run: pnpm test:e2e
+        env:
+          VITE_USE_MOCK: 'true'
+
+      # Requires the html reporter on CI (reporters: github + html; see SKILL.md 常見錯誤);
+      # with only the `github` reporter this folder never exists.
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # server: paste elf-cicd-backend/templates/ci-server-job.yml here

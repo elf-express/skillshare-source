@@ -1,0 +1,7 @@
+# Workspace packages. Only apps/ is a JS package; server/ and src-tauri/ are not.
+packages:
+  - apps
+
+# Refuse to install on an unsupported Node instead of warning and failing later
+# somewhere unrelated. (Replaces `engine-strict=true` in .npmrc from the npm era.)
+engineStrict: true
