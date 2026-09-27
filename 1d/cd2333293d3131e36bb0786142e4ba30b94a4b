@@ -1,0 +1,20 @@
+.metadata.json
+  h_77f3bffb3ce32a 36-272,282,285-287,289,293,297
+skillshare/SKILL.md
+  h_77f3bffb3ce32a 11
+skillshare/references/extras.md
+  h_77f3bffb3ce32a 162
+skillshare/references/mcp.md
+  h_77f3bffb3ce32a 109,180-183,190-192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1dcd2333293d3131e36bb0786142e4ba30b94a4b",
+  "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
