@@ -1,0 +1,377 @@
+cicd/elf-cicd-versioning/SKILL.md
+  s_05d0bb45e6bb5a::t_6841fb5c371a35 1-186,188-195
+  s_05d0bb45e6bb5a::t_59e2faa63787bc 187
+  s_05d0bb45e6bb5a::t_a2bafa22ea77f5 196-198
+testing/elf-unit/references/vitest-templates.md
+  s_05d0bb45e6bb5a::t_03b18d2a17e0d9 1-181
+  s_05d0bb45e6bb5a::t_41887b7d5ac577 182-197
+cicd/elf-cicd-desktop/templates/release.yml
+  s_05d0bb45e6bb5a::t_75efae2493aa3c 1-164,171-245
+  s_05d0bb45e6bb5a::t_83360c9a168d73 165-170
+cicd/elf-cicd-docker/templates/nginx.conf
+  s_05d0bb45e6bb5a::t_229aff23103865 1-38
+  s_05d0bb45e6bb5a::t_ead0cf3187bd9f 39-41
+backend/elf-postgresql/SKILL.md
+  s_05d0bb45e6bb5a::t_32c2de8b12b718 1-266
+  s_05d0bb45e6bb5a::t_ad401f7303c444 267-270
+testing/elf-e2e/SKILL.md
+  s_05d0bb45e6bb5a::t_90ac652d78b297 1-299
+  s_05d0bb45e6bb5a::t_095bd5636e958b 300-365
+desktop/elf-tauri/templates/main.rs
+  s_05d0bb45e6bb5a::t_598a38ec3f9267 1-7
+api/elf-api-design/SKILL.md
+  s_05d0bb45e6bb5a::t_46639abad21d1d 1-337
+testing/elf-allure-report/SKILL.md
+  s_05d0bb45e6bb5a::t_a8af23bb9e53de 1-228
+  s_05d0bb45e6bb5a::t_9b7520a9902232 229-250
+testing/elf-e2e/references/pom-templates.md
+  s_05d0bb45e6bb5a::t_d7e64810500852 1-223
+  s_05d0bb45e6bb5a::t_199369a4b7a4a6 224-240
+api/elf-api-contract/references/client-templates.md
+  s_05d0bb45e6bb5a::t_ed30a5e5a128ea 1-496
+api/elf-api-contract/SKILL.md
+  s_05d0bb45e6bb5a::t_62dfb4f4601275 179
+  s_05d0bb45e6bb5a::t_23dacf972d820a 1-178,180-190,192-250
+  s_05d0bb45e6bb5a::t_578d09d9c3f025 191
+  s_05d0bb45e6bb5a::t_ea965d4b18f934 251-252
+cicd/elf-cicd-backend/templates/global.json
+  s_05d0bb45e6bb5a::t_47e8c88699ee4a 1-6
+frontend/elf-i18n/references/setup.md
+  s_05d0bb45e6bb5a::t_f6b63cc3a47202 1-137,139-493,495,498,503,505-508,514,517,520-522,526,536,553,558-559,561,563,566,568,570,574-575
+  s_05d0bb45e6bb5a::t_1f1e79bcf47c85 138
+  s_05d0bb45e6bb5a::t_40e6a521713d8d 494,496-497,499-502,504,509-513,515-516,518-519,523-524,552
+  s_05d0bb45e6bb5a::t_6723ef267f7b63 525,527-535,537-551,554-557,560,562,564-565,567,569,571-573,576-580
+cicd/elf-cicd-frontend/templates/.nvmrc
+  s_05d0bb45e6bb5a::t_423cce94524661 1
+frontend/elf-ui-pattern/references/components.md
+  s_05d0bb45e6bb5a::t_ff97da69fae564 234-235,239-240
+  s_05d0bb45e6bb5a::t_9f3ebfa93bf15a 642
+  s_05d0bb45e6bb5a::t_21fb9809336ed8 148
+  s_05d0bb45e6bb5a::t_6ef763225b5839 111
+  s_05d0bb45e6bb5a::t_09a809b9e0f275 130-133
+  s_05d0bb45e6bb5a::t_ae254c19c2d258 1-110,112-129,134-147,149-233,236-238,241-255,260-593,609-641,643-682,687,689
+  s_05d0bb45e6bb5a::t_9a1275a65b6dd3 256-259
+  s_05d0bb45e6bb5a::t_fa1742580a6c62 594-608,688
+  s_05d0bb45e6bb5a::t_57a34ba2169191 683-686,690-773
+stack/elf-stack/SKILL.md
+  s_05d0bb45e6bb5a::t_a1c1f5dcfcf55b 1-48,50-82,94-244
+  s_05d0bb45e6bb5a::t_b60c4aa32cb408 49
+  s_05d0bb45e6bb5a::t_80234d1c8c242b 87-91
+  s_05d0bb45e6bb5a::t_191293849f0da5 83-86,92-93
+cicd/elf-cicd-docker/templates/web.Dockerfile
+  s_05d0bb45e6bb5a::t_aab14265feca10 1-42
+  s_05d0bb45e6bb5a::t_4d764a855be5c9 43-47
+cicd/elf-cicd-docker/templates/release-docker.yml
+  s_05d0bb45e6bb5a::t_c0d2860e6ef3a3 1-84
+cicd/elf-cicd-frontend/templates/pnpm-workspace.yaml
+  s_05d0bb45e6bb5a::t_a235791b020195 1-7
+frontend/elf-vue/references/templates.md
+  s_05d0bb45e6bb5a::t_ce590f793d4f44 425-426
+  s_05d0bb45e6bb5a::t_ec833e0f5b8af7 399-408,412
+  s_05d0bb45e6bb5a::t_3c5a53799cca0b 1-398,409-411,413-424,427-605
+desktop/elf-tauri/templates/desktop.ts
+  s_05d0bb45e6bb5a::t_1eef7fa419939c 1-80
+api/elf-api-contract/references/contract-tests.md
+  s_05d0bb45e6bb5a::t_ac072f88e8056b 1-180,182
+  s_05d0bb45e6bb5a::t_7d13e0a2e83d2f 181,183-198
+cicd/elf-cicd-docker/templates/env.example
+  s_05d0bb45e6bb5a::t_b5ab90c5a5f3f1 1-6
+cicd/elf-cicd-review/SKILL.md
+  s_05d0bb45e6bb5a::t_a599d088f9bde6 1-31,33-134
+  s_05d0bb45e6bb5a::t_bc34eb9d46e841 32
+  s_05d0bb45e6bb5a::t_f7c0f37052e35e 135-137
+frontend/design/elf-ui-design/templates/design-brief.md
+  s_05d0bb45e6bb5a::t_eebbef1f58489a 1-52
+frontend/design/elf-ui-design/references/workflow.md
+  s_05d0bb45e6bb5a::t_08b05d43213d44 25
+  s_05d0bb45e6bb5a::t_b008533349d030 1-24,26-121
+cicd/elf-cicd-backend/SKILL.md
+  s_05d0bb45e6bb5a::t_a5cc8daa6fe659 1-162
+  s_05d0bb45e6bb5a::t_c5f753533e5602 163-170
+cicd/elf-cicd-backend/templates/Project.Tests.csproj
+  s_05d0bb45e6bb5a::t_c8594fd621a0a9 1-2,5,11-12,14-17,20-22,24-26,30-40
+  s_05d0bb45e6bb5a::t_d067edcbc4f6d8 3-4,6-10,13,18-19,23,27-29
+backend/elf-sqlsugar/references/sqlsugar-setup.md
+  s_05d0bb45e6bb5a::t_2472039bb3d6b8 1-202,205-214
+  s_05d0bb45e6bb5a::t_0f2fba8bf35678 203-204
+  s_05d0bb45e6bb5a::t_9a49ba1548b1e7 215-269
+cicd/elf-cicd-review/templates/claude-review.yml
+  s_05d0bb45e6bb5a::t_3d32d33eaea353 1-82
+  s_05d0bb45e6bb5a::t_7474d04ed17259 83-85
+cicd/elf-cicd-frontend/templates/package.root.json
+  s_05d0bb45e6bb5a::t_112f29c511c7fd 1-34
+frontend/design/elf-ui-design/templates/spec.template.md
+  s_05d0bb45e6bb5a::t_159361e4d8cc33 1-60
+api/elf-api-design/references/server-templates.md
+  s_05d0bb45e6bb5a::t_8238c4d0e026bd 3-5,11,13,15-56,61-63,75,110,126,135,145,157-159,162,178,185-186,203,214,219-220,223-224,231-252,254-273,275-283,285-286,292-293,295-305,307,311,313,315-322,333,335-342,346-415,417-428,433-434,450-452,454-455,457-458,461-462,464-467,469,472-473,475-480,483-484,491,493-496,499-501,503-504,508-509,511-512,514,522-523,535,544-545,552,558,573,577,580,584,589,591-592,598,602,634,642,654
+  s_05d0bb45e6bb5a::t_706a4c17daa148 1-2,6-10,12,14,57-60,64-74,76-109,111-125,127-134,136-144,146-156,160-161,163-177,179-184,187-202,204-213,215-218,221-222,225-230,253,274,284,287-291,294,306,308-310,312,314,323-332,334,343-345,416,429-432,435-449,453,456,459-460,463,468,470-471,474,481-482,485-490,492,497-498,502,505-507,510,513,515-521,524-534,536-543,546-551,553-557,559-572,574-576,578-579,581-583,585-588,590,593-597,599-601,603-633,635-641,643-653,655-662
+cicd/elf-cicd-backend/templates/ci-server-job.yml
+  s_05d0bb45e6bb5a::t_e76c2aea9505e0 1-3,7-11,13,16,18-24,31-32,34,38,53-56,67-69,71
+  s_05d0bb45e6bb5a::t_17ed60163ea9ad 4-6,12,14-15,17,25-30,33,35-37,39-52,57-66,70
+frontend/design/elf-ui-design/templates/token-mapping.md
+  s_05d0bb45e6bb5a::t_31efd676cfa2ba 1-42
+backend/elf-dotnet/SKILL.md
+  s_05d0bb45e6bb5a::t_e0ec14d41218ba 1-282
+  s_05d0bb45e6bb5a::t_b46ab88a9bdc52 283-361
+frontend/design/elf-ui-design/templates/HANDOFF.template.md
+  s_05d0bb45e6bb5a::t_cb09e24ffac259 1-45
+frontend/elf-vue/SKILL.md
+  s_05d0bb45e6bb5a::t_bfe8c26c9828ce 1-5,7-15,17-64,66-92,94-133,137-139,141-151,153-157,166-170,172-269,271-288,292-305,310-321
+  s_05d0bb45e6bb5a::t_913440f62430e8 16
+  s_05d0bb45e6bb5a::t_2e58e7b6c181d5 134-136
+  s_05d0bb45e6bb5a::t_a244a42999cbd9 306-309
+  s_05d0bb45e6bb5a::t_789993065afe8e 270
+  s_05d0bb45e6bb5a::t_ead18f73015d12 289-291
+  s_05d0bb45e6bb5a::t_eb6a07c5469fe5 65
+  s_05d0bb45e6bb5a::t_58fabca5fb27c0 171
+  s_05d0bb45e6bb5a::t_2e3ee5fa5260a4 158-165
+  s_05d0bb45e6bb5a::t_92fa0d76af4516 152
+  s_05d0bb45e6bb5a::t_7d7b4190d19a2c 93
+  s_05d0bb45e6bb5a::t_508e03fd4f0eb0 6
+  s_05d0bb45e6bb5a::t_901b7fe0aa5e44 140
+  s_05d0bb45e6bb5a::t_fb14c3f66c1d63 322-329
+desktop/elf-tauri/templates/Cargo.toml
+  s_05d0bb45e6bb5a::t_cfa90a5076d198 1-32
+frontend/design/elf-ui-design/references/content.md
+  s_05d0bb45e6bb5a::t_80c0b0aef45cd3 1-23,25-71
+  s_05d0bb45e6bb5a::t_6520ef8b5edcca 24
+frontend/design/elf-ui-design/references/tokens.md
+  s_05d0bb45e6bb5a::t_38354ffb03b4d7 1-167
+cicd/elf-cicd-desktop/templates/release-body.md
+  s_05d0bb45e6bb5a::t_0490fa4329c2c7 1-31
+  s_05d0bb45e6bb5a::t_55679d3b96afb4 32
+cicd/elf-cicd-versioning/templates/version.mjs
+  s_05d0bb45e6bb5a::t_3f0481da9b9936 1-112
+cicd/elf-cicd-desktop/SKILL.md
+  s_05d0bb45e6bb5a::t_1699a1818e8f69 1-102,108-217
+  s_05d0bb45e6bb5a::t_21789aec950ca5 106-107
+  s_05d0bb45e6bb5a::t_3d045ee5c2fd83 103-105
+frontend/design/elf-ui-design/templates/review-checklist.md
+  s_05d0bb45e6bb5a::t_b4b409e050fc26 1-54
+cicd/elf-cicd-docker/templates/docker-compose.yml
+  s_05d0bb45e6bb5a::t_381a02984a6429 3-6
+  s_05d0bb45e6bb5a::t_748fc7b954fd25 1-2,7-76
+  s_05d0bb45e6bb5a::t_26dddf3d69acbf 77-85
+desktop/elf-tauri/references/signing-and-keys.md
+  s_05d0bb45e6bb5a::t_2019af2bb82900 1-214
+frontend/elf-vue/references/config.md
+  s_05d0bb45e6bb5a::t_7d6878bc04d679 51-55
+  s_05d0bb45e6bb5a::t_dd24494e1b80ca 28
+  s_05d0bb45e6bb5a::t_2a7884c7c0eafb 237-239,241-243
+  s_05d0bb45e6bb5a::t_28ecd45f03332c 71-72
+  s_05d0bb45e6bb5a::t_2b6a2c41209797 122-124
+  s_05d0bb45e6bb5a::t_52ed9563b8d684 158
+  s_05d0bb45e6bb5a::t_02a866e9785c8d 207
+  s_05d0bb45e6bb5a::t_2a8ae4adb5f853 1-27,29-36,38-39,41-50,56-70,73-95,98-106,108-115,117-121,125-157,159-206,208-236,240,244-377
+  s_05d0bb45e6bb5a::t_b5aa91a63cb647 96-97
+  s_05d0bb45e6bb5a::t_6e0d76bebc1707 40
+  s_05d0bb45e6bb5a::t_2eace3e4385df8 37
+  s_05d0bb45e6bb5a::t_0390721217a3d1 107
+  s_05d0bb45e6bb5a::t_067a2eb0ae4ad0 116
+cicd/elf-cicd-frontend/SKILL.md
+  s_05d0bb45e6bb5a::t_8e73bd64d28c35 1-188
+  s_05d0bb45e6bb5a::t_94ee5d82c5f60f 189-195
+frontend/design/elf-ui-design/SKILL.md
+  s_05d0bb45e6bb5a::t_f14a2a6ae5d5e4 178
+  s_05d0bb45e6bb5a::t_bdd6ff73d71410 190-191,193-194
+  s_05d0bb45e6bb5a::t_68be28f07cb5fa 1-168,175-176,180-189,192,195-274
+  s_05d0bb45e6bb5a::t_61a1aa9c6048e2 169-174,177,179
+api/elf-api-contract/references/api-contract-template.md
+  s_05d0bb45e6bb5a::t_3fdce3bb30cdbe 1-83
+  s_05d0bb45e6bb5a::t_4c474cc42b52b5 84
+frontend/design/elf-ui-design/references/case-typingtrainer.md
+  s_05d0bb45e6bb5a::t_f4d72131b0e146 1-61
+testing/elf-integration/SKILL.md
+  s_05d0bb45e6bb5a::t_9d0b9c5465da56 180
+  s_05d0bb45e6bb5a::t_eb49466861dc91 1-56,60-176,182-190
+  s_05d0bb45e6bb5a::t_25f586c69b0dc6 58-59
+  s_05d0bb45e6bb5a::t_ff39fe510ef2dc 57
+  s_05d0bb45e6bb5a::t_2bc08adc5f2c14 177-179
+  s_05d0bb45e6bb5a::t_d61a27c4a826fc 181
+  s_05d0bb45e6bb5a::t_f82433ed4ff570 191-193
+  s_64c77dc25716c1::t_110ffb2bacf389 194-196
+cicd/elf-cicd-frontend/templates/vite.config.ts
+  s_05d0bb45e6bb5a::t_ac2150acb2ec60 1-37
+backend/elf-sqlsugar/SKILL.md
+  s_05d0bb45e6bb5a::t_afddf1f7c9242f 1-271
+  s_05d0bb45e6bb5a::t_f62b32f3527379 272-298
+backend/elf-domain-modeling/SKILL.md
+  s_05d0bb45e6bb5a::t_de13f41124dd35 1-172
+  s_05d0bb45e6bb5a::t_810aa1c218ecff 173-179
+desktop/elf-tauri/templates/tauri.conf.json
+  s_05d0bb45e6bb5a::t_e25365b09a7960 1-53
+frontend/elf-i18n/SKILL.md
+  s_05d0bb45e6bb5a::t_78c3469e969090 1-217
+  s_05d0bb45e6bb5a::t_f01c5dff9df999 218-224
+desktop/elf-tauri/templates/lib.rs
+  s_05d0bb45e6bb5a::t_c6159f7a4a02cc 1-61
+frontend/design/elf-ui-design/references/component-mapping.md
+  s_05d0bb45e6bb5a::t_abee2a748ebbe7 1-52
+cicd/elf-cicd-docker/SKILL.md
+  s_05d0bb45e6bb5a::t_973112b501e57d 1-86,92-215
+  s_05d0bb45e6bb5a::t_9eb80c894dcded 216
+  s_05d0bb45e6bb5a::t_c8c43a3010e8d9 89-91
+  s_05d0bb45e6bb5a::t_308669950212ec 87-88
+cicd/elf-cicd-versioning/templates/version.yml
+  s_05d0bb45e6bb5a::t_aeea87b959328c 1-116
+frontend/elf-ui-pattern/SKILL.md
+  s_05d0bb45e6bb5a::t_b75e1c59e346bd 144-146
+  s_05d0bb45e6bb5a::t_5359c2f94f139d 100
+  s_05d0bb45e6bb5a::t_8d571aabc5bd63 1-99,104-143,147-264
+  s_05d0bb45e6bb5a::t_53207eaa1d3c95 101-103
+  s_05d0bb45e6bb5a::t_9f085018a9d3d0 265
+cicd/elf-cicd-frontend/templates/ci.yml
+  s_05d0bb45e6bb5a::t_3c12ee7a0c85c3 1-113
+  s_05d0bb45e6bb5a::t_d22aa7f201ebc2 114-116
+cicd/elf-cicd-frontend/templates/package.apps.json
+  s_05d0bb45e6bb5a::t_480a317784a9ef 1-21
+testing/elf-integration/references/integration-templates.md
+  s_05d0bb45e6bb5a::t_ac5034806e02ca 1-385,396
+  s_05d0bb45e6bb5a::t_1aef6eaf08ce58 386-395,397-438
+cicd/elf-cicd-docker/templates/dockerignore
+  s_05d0bb45e6bb5a::t_b0064fd4250b6a 1-21
+testing/elf-unit/SKILL.md
+  s_05d0bb45e6bb5a::t_8c9f214616a593 1-365
+  s_05d0bb45e6bb5a::t_fd088dea14eec9 366-429
+backend/elf-domain-modeling/references/entity-templates.md
+  s_05d0bb45e6bb5a::t_5fd8d06ea791ab 1-260
+  s_05d0bb45e6bb5a::t_fbf2a66fa30aea 261-280
+cicd/elf-cicd-docker/templates/api.Dockerfile
+  s_05d0bb45e6bb5a::t_c8b2e97950e9e6 1-30
+  s_05d0bb45e6bb5a::t_39131d23514f22 31-47
+backend/elf-dotnet/references/project-templates.md
+  s_05d0bb45e6bb5a::t_73931d9689a10c 124-125
+  s_05d0bb45e6bb5a::t_ded03a4fd32d80 1-111,123,131-346,358,369
+  s_05d0bb45e6bb5a::t_e503819b8ecd25 112-122,126-130,347-357,359-368,370-372
+desktop/elf-tauri/SKILL.md
+  s_05d0bb45e6bb5a::t_0aa06d3936089d 1-236
+  s_05d0bb45e6bb5a::t_6e8b69afa8ae16 237-250
+desktop/elf-tauri/templates/capabilities/default.json
+  s_05d0bb45e6bb5a::t_c422f166fba675 1-7
+.gitignore
+  s_05d0bb45e6bb5a::t_5a1ef415ef5fca 5,7-11
+.metadata.json
+  s_05d0bb45e6bb5a::t_f0aeb20d47d2ae 7-8,34-38,41,47,50-51,53-68
+frontend/design/ui-ux-pro-max/data/_sync_all.py
+  s_05d0bb45e6bb5a::t_48e456983b1cde 1-414
+frontend/design/ui-ux-pro-max/data/app-interface.csv
+  s_05d0bb45e6bb5a::t_134869709e1187 1-31
+frontend/design/ui-ux-pro-max/data/charts.csv
+  s_05d0bb45e6bb5a::t_890cc7fc7f9fc1 1-26
+frontend/design/ui-ux-pro-max/data/colors.csv
+  s_05d0bb45e6bb5a::t_11dcfc14462651 1-162
+frontend/design/ui-ux-pro-max/data/design.csv
+  s_05d0bb45e6bb5a::t_0d82d3ac79a7ef 1-1776
+frontend/design/ui-ux-pro-max/data/draft.csv
+  s_05d0bb45e6bb5a::t_a98b4ccafac558 1-1779
+frontend/design/ui-ux-pro-max/data/google-fonts.csv
+  s_05d0bb45e6bb5a::t_3004731b352a99 1-1924
+frontend/design/ui-ux-pro-max/data/icons.csv
+  s_05d0bb45e6bb5a::t_b84e6b00fc6ab0 1-106
+frontend/design/ui-ux-pro-max/data/landing.csv
+  s_05d0bb45e6bb5a::t_7b89c72f74453a 1-35
+frontend/design/ui-ux-pro-max/data/products.csv
+  s_05d0bb45e6bb5a::t_68ae9f4452009f 1-162
+frontend/design/ui-ux-pro-max/data/react-performance.csv
+  s_05d0bb45e6bb5a::t_2ec5a72d40a61d 1-45
+frontend/design/ui-ux-pro-max/data/stacks/angular.csv
+  s_05d0bb45e6bb5a::t_c3036d4959b8f5 1-51
+frontend/design/ui-ux-pro-max/data/stacks/astro.csv
+  s_05d0bb45e6bb5a::t_0de264292176ab 1-54
+frontend/design/ui-ux-pro-max/data/stacks/flutter.csv
+  s_05d0bb45e6bb5a::t_f0eebf2764572d 1-53
+frontend/design/ui-ux-pro-max/data/stacks/html-tailwind.csv
+  s_05d0bb45e6bb5a::t_e7c05a7390d9fa 1-56
+frontend/design/ui-ux-pro-max/data/stacks/jetpack-compose.csv
+  s_05d0bb45e6bb5a::t_2f144904bc70cb 1-53
+frontend/design/ui-ux-pro-max/data/stacks/laravel.csv
+  s_05d0bb45e6bb5a::t_8eb3fcce344f09 1-51
+frontend/design/ui-ux-pro-max/data/stacks/nextjs.csv
+  s_05d0bb45e6bb5a::t_57d6afffd30719 1-53
+frontend/design/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+  s_05d0bb45e6bb5a::t_bc2361346601ae 1-51
+frontend/design/ui-ux-pro-max/data/stacks/nuxtjs.csv
+  s_05d0bb45e6bb5a::t_0b04ce610cc928 1-59
+frontend/design/ui-ux-pro-max/data/stacks/react-native.csv
+  s_05d0bb45e6bb5a::t_f86e7195c23f16 1-52
+frontend/design/ui-ux-pro-max/data/stacks/react.csv
+  s_05d0bb45e6bb5a::t_1983f348f03442 1-54
+frontend/design/ui-ux-pro-max/data/stacks/shadcn.csv
+  s_05d0bb45e6bb5a::t_a2420ab6c1af79 1-61
+frontend/design/ui-ux-pro-max/data/stacks/svelte.csv
+  s_05d0bb45e6bb5a::t_5d47f3f6cdcfe2 1-54
+frontend/design/ui-ux-pro-max/data/stacks/swiftui.csv
+  s_05d0bb45e6bb5a::t_f7e8295908fb90 1-51
+frontend/design/ui-ux-pro-max/data/stacks/threejs.csv
+  s_05d0bb45e6bb5a::t_ba9028bb5490fa 1-54
+frontend/design/ui-ux-pro-max/data/stacks/vue.csv
+  s_05d0bb45e6bb5a::t_66c18a70ee5a40 1-50
+frontend/design/ui-ux-pro-max/data/styles.csv
+  s_05d0bb45e6bb5a::t_f9ef8a998b0eea 1-85
+frontend/design/ui-ux-pro-max/data/typography.csv
+  s_05d0bb45e6bb5a::t_ada48eeb79549b 1-74
+frontend/design/ui-ux-pro-max/data/ui-reasoning.csv
+  s_05d0bb45e6bb5a::t_652eb18d5c3301 1-162
+frontend/design/ui-ux-pro-max/data/ux-guidelines.csv
+  s_05d0bb45e6bb5a::t_837f815262ff8a 1-100
+frontend/design/ui-ux-pro-max/scripts/core.py
+  s_05d0bb45e6bb5a::t_2dd2c52557385c 1-262
+frontend/design/ui-ux-pro-max/scripts/design_system.py
+  s_05d0bb45e6bb5a::t_9a995206575699 1-1148
+frontend/design/ui-ux-pro-max/scripts/search.py
+  s_05d0bb45e6bb5a::t_c053b7896662f2 1-114
+skillshare/SKILL.md
+  s_05d0bb45e6bb5a::t_6765e558ab9791 4-8,11,16-18,20-61,64-68,70-75,77-82,84-90,92-98,100-105,107-110,112-118,120-123,125-133,137,144-147,150-152,154
+skillshare/references/TROUBLESHOOTING.md
+  s_05d0bb45e6bb5a::t_5f337286161e28 3,5,8-11,14-35,38-40,43,46,49-51,53,55-60
+skillshare/references/audit.md
+  s_05d0bb45e6bb5a::t_6516a191642f67 3,45,76,86-88
+skillshare/references/backup.md
+  s_05d0bb45e6bb5a::t_d315cb183c757f 3,12-13,18-20,31-34,39-40
+skillshare/references/extras.md
+  s_05d0bb45e6bb5a::t_c68d1be944871a 15-16,33,48,76,80,85,92,105,131-136,143-173,188,194-241
+skillshare/references/init.md
+  s_05d0bb45e6bb5a::t_6d4507dcf658a8 24,55-56,63
+skillshare/references/install.md
+  s_05d0bb45e6bb5a::t_1e2bd566f1317b 3-4,67-70,80,90-91,100,157-160,188,204-205,212-214
+skillshare/references/log.md
+  s_05d0bb45e6bb5a::t_c9eaea41b56067 3,43
+skillshare/references/mcp.md
+  s_05d0bb45e6bb5a::t_96e672f7b72d5e 1-321
+skillshare/references/native-agents.md
+  s_05d0bb45e6bb5a::t_a65a9a64994045 1-56
+skillshare/references/plugins.md
+  s_05d0bb45e6bb5a::t_68b9d3659fbace 1-129
+skillshare/references/status.md
+  s_05d0bb45e6bb5a::t_c5f8778d597540 3,12,44,81-86,99-101
+skillshare/references/sync.md
+  s_05d0bb45e6bb5a::t_1da2f9f4c66da6 1,10,18,35-52,86,97-104,126-127,132-133
+skillshare/references/targets.md
+  s_05d0bb45e6bb5a::t_13005c464da038 3-4,12,16-34,57-73,151-153
+skillshare/references/trash.md
+  s_05d0bb45e6bb5a::t_c64c8105b61990 32,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "526a6794547f54b03dc5ac4f4d523d3e5c766347",
+  "prompts": {},
+  "sessions": {
+    "s_05d0bb45e6bb5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0e473c5a-f5f9-451c-9c67-72561974182d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_64c77dc25716c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a9349d830bd5d19a9",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
