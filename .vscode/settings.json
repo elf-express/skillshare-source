@@ -1,0 +1,10 @@
+{
+    "i18n-ally.localesPaths": [
+        "_elf-dev/skills/frontend/i18n",
+        "mcp-library/mcpjungle/MCPJungle/web/dashboard/src/locales"
+    ],
+    "i18n-ally-next.localesPaths": [
+        "_elf-dev/skills/frontend/i18n",
+        "mcp-library/mcpjungle/MCPJungle/web/dashboard/src/locales"
+    ]
+}
