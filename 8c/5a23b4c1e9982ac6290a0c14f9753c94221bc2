@@ -1,0 +1,16 @@
+.mcp.json
+  h_77f3bffb3ce32a 1-3
+.metadata.json
+  h_77f3bffb3ce32a 38,282
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8c5a23b4c1e9982ac6290a0c14f9753c94221bc2",
+  "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
