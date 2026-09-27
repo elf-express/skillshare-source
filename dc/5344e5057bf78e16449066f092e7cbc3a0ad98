@@ -1,0 +1,42 @@
+agents/elf-devops.md
+  s_05d0bb45e6bb5a::t_c95ba5fa5711e7 1-45
+agents/elf-mcp-knowledge.md
+  s_05d0bb45e6bb5a::t_62a22aeccba420 1-38
+agents/elf-reviewer.md
+  s_05d0bb45e6bb5a::t_e7e3bebe512926 1-38
+scripts/sync-agents.sh
+  s_05d0bb45e6bb5a::t_c9d2ea0e67f260 1-47
+agents/elf-ui-designer.md
+  s_05d0bb45e6bb5a::t_3eb621181539d1 1-43
+agents/README.md
+  s_05d0bb45e6bb5a::t_3492657c4463a1 1-82
+  s_05d0bb45e6bb5a::t_e740ef0928a346 83-88
+agents/elf-frontend-dev.md
+  s_05d0bb45e6bb5a::t_2bd40f022b8498 1-49
+agents/elf-backend-dev.md
+  s_05d0bb45e6bb5a::t_86a7aa9e87aba6 1-52
+agents/168-devils-advocate.md
+  s_05d0bb45e6bb5a::t_a2bebdac8f7b38 1-14
+agents/168-format-checker.md
+  s_05d0bb45e6bb5a::t_eb1e2e5fe76347 1-21
+agents/168-reviewer.md
+  s_05d0bb45e6bb5a::t_8c1e8f0833505d 1-18
+agents/168-terminologist.md
+  s_05d0bb45e6bb5a::t_f6bf921a65279b 1-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dc5344e5057bf78e16449066f092e7cbc3a0ad98",
+  "prompts": {},
+  "sessions": {
+    "s_05d0bb45e6bb5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0e473c5a-f5f9-451c-9c67-72561974182d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
