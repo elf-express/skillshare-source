@@ -1,0 +1,7 @@
+{
+  "name": "<server-name>",
+  "transport": "streamable_http",
+  "description": "<what it knows>:<one sentence>(<tool_a> / <tool_b> / ...)",
+  "url": "http://<container-name>:<PORT>/mcp",
+  "bearer_token": "${<SERVER>_MCP_AUTH_TOKEN}"
+}

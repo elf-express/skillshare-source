@@ -1,0 +1,8 @@
+{
+  "name": "<server-name>",
+  "transport": "stdio",
+  "description": "<what it does>(需要 <TOKEN_NAME>)。",
+  "command": "npx",
+  "args": ["-y", "<npm-package>"],
+  "env": { "<TOKEN_NAME>": "${<TOKEN_NAME>}" }
+}

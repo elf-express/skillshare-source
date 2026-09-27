@@ -1,0 +1,24 @@
+# Add ONE entry per new server image to .github/workflows/docker-publish.yml -> jobs.build-and-push.strategy.matrix.include
+# (the workflow already pins every action to a full commit SHA — keep it that way, see SKILL.md rule 18).
+          - image: <server-name>
+            context: ./<server-dir>
+            # dockerfile: ./<server-dir>/<Other>.Dockerfile   # only when not <context>/Dockerfile (docs-registrar uses this)
+            title: <Human readable title>
+            description: <One sentence for the OCI label>
+
+# And, for PR verification, the same server in .github/workflows/ci.yml:
+#   jobs.build-test.strategy.matrix.include:
+#          - name: <server-name>
+#            dir: <server-dir>
+#   jobs.docker-build.strategy.matrix.include:
+#          - image: <server-name>
+#            context: ./<server-dir>
+# And in .github/dependabot.yml:
+#  - package-ecosystem: "npm"
+#    directory: "/<server-dir>"
+#    schedule: { interval: "weekly" }
+#    open-pull-requests-limit: 5
+#    commit-message: { prefix: "chore(<short>-deps)" }
+#    ignore:
+#      - dependency-name: "*"
+#        update-types: ["version-update:semver-major"]   # restored from the pre-monorepo config (evidence E3)

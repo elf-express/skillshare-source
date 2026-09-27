@@ -1,0 +1,19 @@
+services:
+  <server-name>:
+    build: .
+    image: ghcr.io/elf-express/<server-name>:latest
+    container_name: <server-name>
+    ports:
+      - "<PORT>:<PORT>"
+    environment:
+      TRANSPORT: http
+      PORT: "<PORT>"
+      # Set a token to require Authorization: Bearer <token>; empty = public (only acceptable on an internal network)
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      TZ: ${TZ:-Asia/Taipei}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:<PORT>/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

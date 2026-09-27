@@ -1,0 +1,6 @@
+{
+  "name": "<corpus-id>",
+  "transport": "streamable_http",
+  "description": "<CORPUS_TITLE>:<one sentence>(docs_list_corpora / docs_search / docs_read / docs_outline<append per capability: / docs_cheatsheet / docs_code_search / docs_code_read / docs_symbol>)",
+  "url": "http://docs-mcp-server:5690/mcp/<corpus-id>"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "<group-name>",
+  "description": "<which clients use this group and why>",
+  "included_servers": ["<server-a>", "<server-b>"],
+  "excluded_tools": []
+}

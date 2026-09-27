@@ -1,0 +1,60 @@
+# MCPJungle gateway + docs-mcp + 一次性 registrar。自包含,跟你其他 stack 一樣:
+#   - DB 用「外部 IP」連(MCPJUNGLE_DATABASE_URL 的 host 填你 DB 的 IP)→ 本 stack 不含 Postgres、不需 shared-db 網路。
+#   - 網路 mcpjungl 由本 stack「自建」(部署時自動建 <project>_mcpjungl,像 immich_default 那樣),不必先 docker network create。
+# 機密走 .env,不進 git。
+# 起:
+#   cp .env.example .env   # 填 MCPJUNGLE_DATABASE_URL(host 用你 DB 的 IP)
+#   docker compose -f docker-compose.mcpjungle.yml up -d --build
+services:
+  mcpjungle:
+    build:
+      context: ./MCPJungle
+      dockerfile: Dockerfile.fullbuild
+    image: mcpjungle-fork:latest
+    container_name: mcpjungle-server
+    environment:
+      # DB 連線字串:host 用你 DB 的 IP(例 192.168.25.100:15432)。密碼不落地到 git。
+      DATABASE_URL: ${MCPJUNGLE_DATABASE_URL:?set MCPJUNGLE_DATABASE_URL in .env}
+      SERVER_MODE: ${SERVER_MODE:-development}
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      MCP_SERVER_INIT_REQ_TIMEOUT_SEC: ${MCP_SERVER_INIT_REQ_TIMEOUT_SEC:-30}
+      TZ: ${TZ:-Asia/Taipei}
+    ports:
+      - "${MCPJUNGLE_HOST_PORT:-18800}:8080"
+    volumes:
+      - ${MCPJUNGLE_DATA_DIR:-/mnt/docker/app/data/mcpjungle}:/host:ro
+    networks: [mcpjungl]
+    restart: always
+
+  docs-mcp-server:
+    build: ../docs-mcp-server
+    image: ghcr.io/elf-express/docs-mcp-server:latest
+    container_name: docs-mcp-server
+    environment:
+      TRANSPORT: http
+      PORT: "5690"
+      # dev 留空 = 僅內部網路可達。要硬化:設 DOCS_MCP_AUTH_TOKEN 並在 servers/*.json 加 bearer_token。
+      MCP_AUTH_TOKEN: ${DOCS_MCP_AUTH_TOKEN:-}
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [mcpjungl]
+    restart: unless-stopped
+
+  # 一次性:等 gateway 起來後自動把所有 server 註冊,然後結束(GitOps 自動部署)。
+  # 設定檔 + 腳本烤進 image(不用 bind mount,Dockhand 等 clone-進容器的工具才相容)。
+  registrar:
+    build:
+      context: .
+      dockerfile: Dockerfile.registrar
+    image: ghcr.io/elf-express/docs-registrar:latest
+    depends_on:
+      - mcpjungle
+      - docs-mcp-server
+    environment:
+      REGISTRY_URL: http://mcpjungle:8080
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [mcpjungl]
+    restart: "no"
+
+networks:
+  mcpjungl:
+    driver: bridge        # 本 stack 自建(prefix 為 <project>_mcpjungl);不必先 docker network create

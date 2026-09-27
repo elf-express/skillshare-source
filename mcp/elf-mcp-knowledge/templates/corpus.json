@@ -1,0 +1,5 @@
+{
+  "title": "<CORPUS_TITLE>",
+  "description": "<ONE_SENTENCE: what it is, which topics, whether code examples are bundled>",
+  "capabilities": { "cheatsheet": false, "examples": false, "symbol": false }
+}
