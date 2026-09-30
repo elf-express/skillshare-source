@@ -9,3 +9,7 @@ _superpowers/
 .claude/settings.local.json
 .kilo/
 .skillignore.local
+
+# Removed as a submodule — the working repo lives at its own clone
+# (elf-express/mcp-library). Kept here only if someone re-clones it locally.
+mcp-library/
