@@ -7,16 +7,19 @@ description: |
   capabilities（cheatsheet / examples / symbol）、docs_* 工具、語料或 server 命名、servers/*.json、REGISTER_LIST、
   「讓 AI 查得到某份文件 / 某個框架的知識」時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
 # 新增知識庫到 MCPJungle（Elf Express）
 
-> 參考實作：`elf-express/mcp-library` —— `docs-mcp-server/`（多語料知識 server）＋ `mcpjungle/`（gateway 與註冊）。
+> 參考實作：`elf-express/mcp-library` —— `mcp/docs-mcp-server/`（多語料知識 server）＋ `mcpjungle/`（gateway 與註冊）。
+> 路徑在 `fb1d578` 之後全部收進 `mcp/`（legacy server 在 `mcp/legacy/`）。
 > 使用情境：**一台 MCPJungle gateway，底下掛很多「知識型」MCP server / 語料；AI 工具只連 gateway。**
 
 相關 skill：
+- **`elf-mcp-book`** — 知識來源是「一本書」（`knowledge.books/` 的素材）時**先看它**：素材怎麼放、四類衍生物哪些不上架、
+  `sources.json` 怎麼從 front matter 產生、標題可辨識性。本 skill 負責素材挑好之後的上架流程
 - `elf-mcp-gateway` — gateway 部署、registrar、nginx、GHCR、安全（本 skill 第 5–7 步會用到）
 - `elf-mcp-server` — 語料模式放不下時，從零寫一個知識 MCP server 的範本與禁止簡化規則
 - `elf-unit`（測試放置 / 覆蓋率）、`elf-stack`（版本）、`elf-cicd-docker`（映像）
@@ -36,6 +39,7 @@ metadata:
 
 | 情況 | 路線 | 要改程式碼嗎 |
 |---|---|---|
+| 來源是一本書 / 一份線上文件的擷取產物（`knowledge.books/` 底下） | **A. 新增語料**，但**先讀 `elf-mcp-book`** 挑哪一份、排除哪些 | 否 |
 | 知識是 markdown（可轉成 md）＋可選的範例原始碼 | **A. 新增語料**（預設，90% 的情況） | 否 |
 | 語料需要現有能力以外的查詢方式（例：依版本號查、表格欄位查） | **B. 新增 capability + 一個 `docs_*` 工具** | 是，見 `references/add-capability.md` |
 | 需要即時資料（DB / 外部 API）、非文字資料、或必須另一個 runtime | **C. 獨立知識 MCP server** | 是，照 `elf-mcp-server` |
@@ -66,15 +70,16 @@ metadata:
    - 書名本身可含 `-`（`vue-router-en`）；分辨書名與語言靠 `corpus.json` 的 `book` / `language` 欄位，**不靠**拆字串。
    - id 總長 **≤ 30 字元**，因 gateway 工具名為 `<id>__<tool>`，部分用戶端上限約 64 字元。
    - `corpus.json` **MUST** 含 `book`、`language`（BCP 47，如 `zh-TW`）、`source`（原始網址）、`title`、`description`、`capabilities`。
-   - 目錄樹與完整範例見 repo 的 `docs-mcp-server/corpora/README.md`（唯一權威版本）。
+   - 目錄樹與完整範例見 repo 的 `mcp/docs-mcp-server/corpora/README.md`（唯一權威版本）。
    WHY：`.` 不在 MCPJungle 允許字元內，`_` 會和 `__` 切分衝突；語言放後綴讓同書各語言相鄰、AI 從 id 就知道語言。
 3. **MUST** id 在「整台 gateway」唯一，不只是 `corpora/` 內唯一。
    現有保留名：`docs`（策略 B 整包）、`sqlsugar-zh-tw`、`fc-zh-tw`、`opnsense-en`、`opnsense-zh-tw`、`filesystem`、`fetch`、`time`，以及 DB 裡任何已註冊的名字（舊名 `sqlsugar`、`fc` 已改名，gateway 需先 `deregister` 舊名）。
+   注意：`main` 的 `corpora/` 目前**只有** `fc-zh-tw`、`sqlsugar-zh-tw`；`opnsense-*` 只在 `feat/corpora-naming` 分支（`corpora/README.md` 的「現有語料」表描述的是該分支）。兩個 opnsense id 仍視為**已保留**，不要拿去命名別的書。
    WHY：重名註冊會報 `duplicate key value violates unique constraint "idx_mcp_servers_name" (SQLSTATE 23505)`；`servers/*.json` 看不出 DB 實際有什麼，要以 `list servers` 為準。
 4. **MUST** 用領域名（`sqlsugar`、`furion`、`fc`），**MUST NOT** 用 `docs`、`notes`、`kb`、`test`、`new` 這種泛名。
    WHY：AI 端看到的工具是 `<id>__docs_search`，id 就是 AI 選工具的唯一線索。
 5. **MUST NOT** 為語料新增工具名（例如 `furion_search`）。工具固定 `docs_*` 8 個，語料是**參數**。
-   WHY：`docs-mcp-server/src/index.ts` 註解「語料是參數不是新工具，故工具數恆為 8」；工具數隨語料膨脹會吃爆 AI 的工具清單。
+   WHY：`mcp/docs-mcp-server/src/index.ts` 註解「語料是參數不是新工具，故工具數恆為 8」；工具數隨語料膨脹會吃爆 AI 的工具清單。
 
 ### 語料內容
 
@@ -120,11 +125,11 @@ Step 7  同 PR 更新文件
 **Step 0 — 選 id、查撞名**
 
 ```bash
-ls docs-mcp-server/corpora/ mcpjungle/servers/
+ls mcp/docs-mcp-server/corpora/ mcpjungle/servers/
 docker exec mcpjungle-server /mcpjungle list servers      # 以 gateway 執行期清單為準
 ```
 
-**Step 1 — 語料資料夾**（`docs-mcp-server/corpora/<id>/`）
+**Step 1 — 語料資料夾**（`mcp/docs-mcp-server/corpora/<id>/`）
 
 ```text
 corpora/<id>/
@@ -139,13 +144,19 @@ corpora/<id>/
 
 ```json
 {
-  "title": "<人類可讀名稱>",
-  "description": "<一句話：這是什麼、涵蓋哪些主題、附不附程式碼範例>",
+  "book": "<書名，小寫、同一本書各語言共用>",
+  "language": "<BCP 47：en / zh-TW / zh-CN>",
+  "source": "https://<原始網址>",
+  "title": "<人類可讀名稱，用該語料的語言寫>",
+  "description": "<一句話：這是什麼、涵蓋哪些主題、附不附程式碼範例、有沒有已知缺陷（機器翻譯、失效圖片連結…）>",
   "capabilities": { "cheatsheet": false, "examples": false, "symbol": false }
 }
 ```
 
-能力對照（目前：`sqlsugar` = cheatsheet + examples；`fc` = symbol）：
+六個欄位**都要寫**（`corpora/README.md` 第三節的團隊規定）；`book` / `language` / `source` 程式不讀，但它們是回溯來源與分辨同書各語言的唯一依據。
+上游授權要求保留聲明時另加 `license` 欄並在語料根目錄放 `LICENSE` 全文。
+
+能力對照（目前：`sqlsugar-zh-tw` = cheatsheet + examples；`fc-zh-tw` = symbol）：
 
 | capability | 啟用的工具 | 語料需要具備 |
 |---|---|---|
@@ -154,7 +165,7 @@ corpora/<id>/
 | `examples` | `docs_code_search` `docs_code_read` | `examples/` 下有白名單副檔名原始碼 |
 | `symbol` | `docs_symbol` | API / 組件名以 `#`/`##`/`###` 標題呈現 |
 
-**Step 3 — 本機驗證**（`cd docs-mcp-server`；PowerShell 用 `$env:X="..."`）
+**Step 3 — 本機驗證**（`cd mcp/docs-mcp-server`；PowerShell 用 `$env:X="..."`）
 
 ```bash
 npm install && npm run build && npm test          # 既有 57 個測試必須全過，數量不得減少
@@ -178,8 +189,11 @@ curl http://localhost:5690/health                 # corpora / docs 數要 +1 / +
 再改 `mcpjungle/registrar.sh`：
 
 ```sh
-LIST="${REGISTER_LIST:-sqlsugar fc <id> filesystem fetch time}"
+# 現行預設值（registrar.sh）是 sqlsugar-zh-tw fc-zh-tw filesystem fetch time —— 把 <id> 插進去：
+LIST="${REGISTER_LIST:-sqlsugar-zh-tw fc-zh-tw <id> filesystem fetch time}"
 ```
+
+`docker-compose.dockhand.yml` 的預設值只有兩本書（`sqlsugar-zh-tw fc-zh-tw`，接現有 gateway 時用），要加也在那裡各自維護。
 
 策略 B（`docs-all.json` → `docs__docs_search`）不需要任何改動，新語料自動出現在 `corpus` 參數。
 
@@ -204,7 +218,8 @@ docker exec mcpjungle-server /mcpjungle invoke <id>__docs_search --input '{"quer
 |---|---|
 | 根 `README.md` | 結構表的語料清單與篇數 |
 | 根 `CLAUDE.md` | 「目前:sqlsugar 開 cheatsheet+examples、fc 開 symbol…」那行、registrar 預設清單 |
-| `docs-mcp-server/README.md` | 種子語料清單與篇數、工具表 |
+| `mcp/docs-mcp-server/README.md` | 種子語料清單與篇數、工具表 |
+| `mcp/docs-mcp-server/corpora/README.md` | 第一節「現有語料」表（id / book / language / 篇數 / capabilities）與第六節的總量數字 |
 | `mcpjungle/README.md` | `REGISTER_LIST` 預設值、策略 A 範例 |
 | `servers/<id>.json` | description 列齊工具 |
 

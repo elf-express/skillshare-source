@@ -1,20 +1,20 @@
 ---
 name: elf-mcp-gateway
 description: |
-  Elf Express MCPJungle gateway 部署與註冊規範：vendored fork 從源碼 build、docker compose（gateway + docs-mcp + 一次性 registrar）、
+  Elf Express MCPJungle gateway 部署與註冊規範：vendored fork 從源碼 build、docker compose（內建 Postgres + gateway + docs-mcp + 一次性 registrar，零設定可起）、
   mcpjungle/servers/*.json 註冊檔格式、registrar 重試與冪等、REGISTER_LIST、Dockhand / pull 部署、nginx 反向代理（SSE）、
   GHCR 發佈（GHCR_PAT fallback）、SHA 釘選的 GitHub Actions、環境變數與安全（SERVER_MODE、bearer token、dashboard 不外露）。
   當任務涉及 mcpjungle/ 目錄、docker-compose*.yml、Dockerfile.registrar、registrar.sh / register.sh、servers/*.json、
   MCPJungle 設定或升級、nginx.example.conf、docker-publish.yml / ci.yml，或排查「gateway 看不到工具 / 註冊失敗 / 連不上」時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
 # MCPJungle Gateway 部署與註冊（Elf Express）
 
 > 參考實作：`elf-express/mcp-library` 的 `mcpjungle/`、根 `docker-compose*.yml`、`.github/workflows/`。
-> 架構：**AI 工具只連一個 MCPJungle**；gateway 後面掛多個知識 MCP server（目前 `docs-mcp-server` 的 `sqlsugar` / `fc`，
+> 架構：**AI 工具只連一個 MCPJungle**；gateway 後面掛多個知識 MCP server（目前 `docs-mcp-server` 的 `sqlsugar-zh-tw` / `fc-zh-tw`，
 > 加上官方 stdio server `filesystem` / `fetch` / `time`）。
 
 相關 skill：
@@ -39,16 +39,25 @@ metadata:
 
 ### 拓撲與 compose
 
-1. **MUST** 以根 `docker-compose.yml`（`include: mcpjungle/docker-compose.mcpjungle.yml`）為正式入口；三個服務：
+1. **MUST** 以根 `docker-compose.yml`（`include: mcpjungle/docker-compose.mcpjungle.yml`）為正式入口；**四個**服務：
+   `postgres`（`postgres:16-alpine`，container `mcpjungle-postgres`，**不對外開 port**，volume `pgdata`）、
    `mcpjungle`（container `mcpjungle-server`，:18800→8080）、`docs-mcp-server`（:5690，只在內網）、`registrar`（一次性，`restart: "no"`）。
-2. **MUST** `MCPJUNGLE_DATABASE_URL` 的 host 填 DB 的 **IP**（例 `<DB_HOST_IP>:15432`），**不是容器名**；stack 不含 Postgres。
-   WHY：`6d25d6f` 決策——DB 走外部 IP、網路 `mcpjungl` 由 stack 自建（實際名 `<project>_mcpjungl`），不必 `docker network create`。自包含測試改用 `docker-compose.localtest.yml` 或 `shared-db/`。
+   docs-mcp 的 build context 是 `../mcp/docs-mcp-server`（`fb1d578` 把 server 收進 `mcp/` 之後的路徑）。
+2. **MUST** 維持「**DB 內建、零設定可起**」：stack 自帶 `postgres` service，`mcpjungle` 的 `DATABASE_URL` 預設值是
+   `postgres://mcpjungle:mcpjungle@postgres:5432/mcpjungle?sslmode=disable`（**容器名** `postgres`，在 `mcpjungl` 網路內解析），
+   gateway 以 `depends_on: postgres: condition: service_healthy` 等 DB 就緒。`docker compose up -d --build` 不必先 `cp .env.example .env`。
+   WHY：`a39e3eb`（feat(deploy): bundle Postgres into the stack, drop shared-db）——這條**取代**了早先 `6d25d6f` 的「DB 走外部 IP、stack 不含 Postgres」決策，`shared-db/` 目錄已不存在。
+2a. **MUST** 只有要接「既有的外部 DB」才在 `.env` 設 `MCPJUNGLE_DATABASE_URL` 覆寫（host 填該 DB 的 **IP**、port 填它實際監聽的 port）；
+   內建那顆容器仍會起，可 `docker compose stop postgres` 關掉。
+2b. **MUST** 改內建 DB 密碼時 **`POSTGRES_PASSWORD` 與 `MCPJUNGLE_DATABASE_URL` 兩處同步改**，否則 gateway 連不上 DB。
+   `pgdata` volume 的資料 `docker compose down` 不會刪，`down -v` 才會——**MUST NOT** 在正式環境用 `down -v` 當重啟手段。
+2c. 網路 `mcpjungl` 由 stack **自建**（實際名 `<project>_mcpjungl`），不必 `docker network create`；自包含端到端測試用 `docker-compose.localtest.yml`（現況見待確認 8）。
 3. **MUST** 分清兩個位址：`--registry http://<host>:18800`（CLI → gateway）與 `servers/*.json` 的 `http://docs-mcp-server:5690/...`（gateway → server，用**容器名**在 `mcpjungl` 內解析）。
 4. **MUST** gateway image 從 vendored fork 源碼 build：`context: ./MCPJungle`、`dockerfile: Dockerfile.fullbuild`、tag `mcpjungle-fork:latest`（`75c0649`）。
 5. **MUST** gateway runtime 保持 **Node 22+ 與 uv**（`Dockerfile.fullbuild` stage 3：`ghcr.io/astral-sh/uv:debian` + nodesource `setup_22.x` + `tzdata`）。
    WHY：`67b8864`——Node 20 跑不動使用 Node 22 API 的 stdio server（`@smartbear/mcp` 用 `module.enableCompileCache`）；`npx` / `uvx` 是 stdio server 的前提。
 6. **MUST** `MCP_SERVER_INIT_REQ_TIMEOUT_SEC` 預設 **30**。WHY：`bafd8e8`——`npx -y` 首次執行要下載套件，10 秒不夠。
-7. **MUST** 三個服務都設 `TZ: ${TZ:-Asia/Taipei}`，gateway image 安裝 `tzdata`（`bafd8e8`）。TZ 只影響日誌 / 顯示；DB 時間欄位依 `elf-postgresql` 以 UTC `timestamptz` 儲存。
+7. **MUST** 四個服務都設 `TZ: ${TZ:-Asia/Taipei}`（含 `postgres`），gateway image 安裝 `tzdata`（`bafd8e8`）。TZ 只影響日誌 / 顯示；DB 時間欄位依 `elf-postgresql` 以 UTC `timestamptz` 儲存。
 8. **MUST** 要接「現有」gateway 時用 `mcpjungle/docker-compose.dockhand.yml`（只起 docs-mcp + registrar，加入 external 網路 `MCPJUNGLE_NETWORK`），**MUST NOT** 再起第二個 gateway。
    WHY：container 名固定 `mcpjungle-server`，同機已有同名 gateway 會撞名。
 
@@ -97,7 +106,8 @@ metadata:
     注意：其他團隊 skill（`elf-stack` 等）寫 `@v5` 版本標籤，與本 repo 衝突，見待確認。
 21. **MUST** GHCR 登入用 `password: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}`，**MUST NOT** 改成 step `if: secrets...`。
     WHY：`5c42768`——`secrets` context 不能用在 step `if:`（報 `Unrecognized named-value: 'secrets'`）。
-22. **MUST** `docker-publish.yml` 維持：matrix 每個 image 一筆（`docs-mcp-server`、`docs-registrar`（自訂 `dockerfile`）、`fc-designer-mcp`、`sqlsugar-mcp`）、`linux/amd64,linux/arm64`、
+22. **MUST** `docker-publish.yml` 維持：matrix 每個 image 一筆（`docs-mcp-server` → `./mcp/docs-mcp-server`、`docs-registrar` → `./mcpjungle`（自訂 `dockerfile`）、
+    `fc-designer-mcp` → `./mcp/legacy/fc-designer-mcp`、`sqlsugar-mcp` → `./mcp/legacy/sqlsugar-mcp/sqlsugar-mcp-server`；context 已隨 `fb1d578` 搬到 `mcp/` 下，image 名**不變**以免線上斷）、`linux/amd64,linux/arm64`、
     `metadata-action` tags（semver 三層、branch、`sha-<short>`、預設分支 `latest`、手動 tag）、GHA cache `scope=<image>`、`provenance: false`。
 23. **MUST** 新 server 同 PR 加進：`docker-publish.yml` matrix、`ci.yml` 的 `build-test` 與 `docker-build` matrix、`dependabot.yml`（含 `semver-major` ignore）。範本 `templates/docker-publish.matrix-entry.yml`。
     WHY：證據 E4——核心 `docs-mcp-server` 至今不在 CI matrix 與 dependabot；證據 E3——拿掉 major ignore 後主版本分岔。
@@ -120,8 +130,8 @@ metadata:
 部署（根目錄）：
 
 ```bash
-cp .env.example .env                                   # 填 MCPJUNGLE_DATABASE_URL
-docker compose up -d --build                           # build 法：現場 build 最新源碼
+docker compose up -d --build                           # 零設定即可起（DB 內建）；build 法：現場 build 最新源碼
+cp .env.example .env                                   # 只在要改預設值時才需要（密碼、外部 DB、port、TZ…）
 docker compose -f docker-compose.pull.yml up -d        # pull 法：拉 GHCR 映像（docs-mcp-server、docs-registrar，pull_policy: always）
 # GHCR 為 private 時，部署端先：echo "$GHCR_PAT" | docker login ghcr.io -u <github-user> --password-stdin
 ```
@@ -133,7 +143,7 @@ docker compose ps                                                     # mcpjungl
 docker logs $(docker compose ps -aq registrar)                        # 「registrar: 完成」＋清單
 docker exec mcpjungle-server /mcpjungle list servers
 docker exec mcpjungle-server /mcpjungle list tools
-docker exec mcpjungle-server /mcpjungle invoke sqlsugar__docs_list_corpora --input '{}'
+docker exec mcpjungle-server /mcpjungle invoke sqlsugar-zh-tw__docs_list_corpora --input '{}'
 curl -s http://<host>:18800/health                                    # 外部可達性（經 nginx 則打 https://<domain>/health）
 ```
 
@@ -170,9 +180,9 @@ docker compose up -d --force-recreate registrar
 
 ## 5. 檢查清單
 
-- [ ] `.env` 只含 `.env.example` 列出的變數；DB host 是 IP
+- [ ] `.env` 只含 `.env.example` 列出的變數（全部選用）；用內建 DB 時**不要**設 `MCPJUNGLE_DATABASE_URL`，改密碼則兩處同步
 - [ ] `docker compose config` 無錯；gateway `build.context: ./MCPJungle`、`Dockerfile.fullbuild`
-- [ ] `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`、三服務 `TZ`
+- [ ] `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`、四服務 `TZ`；`postgres` 有 healthcheck 且 gateway `depends_on: service_healthy`
 - [ ] 新 `servers/<name>.json`：name 合規且唯一、description 列齊工具、無明文 token
 - [ ] `REGISTER_LIST` 兩處（registrar.sh / dockhand compose）按需更新
 - [ ] registrar `Exited (0)`；`list servers` / `list tools` / 一次 `invoke` 成功並貼到 PR
@@ -190,7 +200,7 @@ docker compose up -d --force-recreate registrar
 | `duplicate key value violates unique constraint "idx_mcp_servers_name" (SQLSTATE 23505)` | 同名 server 已被 registrar 自動註冊 | 換 name，或先 `deregister` |
 | registrar `mkdir /app: read-only file system` | GitOps 工具下使用相對 bind mount | 用烤好設定的 `docs-registrar` image（`54a9c08`） |
 | registrar 反覆「上游尚未就緒」後放棄 | docs-mcp 啟動失敗或不在 `mcpjungl` 網路 | `docker logs docs-mcp-server`；確認 `networks: [mcpjungl]` |
-| registrar「等 gateway 逾時(120s)」 | gateway 連不上 DB（DB host 寫成容器名） | `MCPJUNGLE_DATABASE_URL` 改 IP |
+| registrar「等 gateway 逾時(120s)」 | gateway 連不上 DB：改了 `POSTGRES_PASSWORD` 卻沒同步 `MCPJUNGLE_DATABASE_URL`，或覆寫的外部 DB 位址不通 | `docker logs mcpjungle-server`；兩處密碼對齊（規則 2b），或移除覆寫回用內建 DB |
 | stdio server 註冊時 init timeout | `npx -y` 首次下載慢 | `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`（或更高） |
 | stdio server 啟動即崩、log 有 `enableCompileCache is not a function` | gateway runtime Node 20 | Node 22（`67b8864`） |
 | 起 stack 報 container name `mcpjungle-server` already in use | 同機已有 gateway | 停舊的，或改用 dockhand compose 接現有 gateway |
@@ -212,7 +222,8 @@ docker compose up -d --force-recreate registrar
 5. `bearer_token: "${VAR}"` 展開：fork 的 CLI 有此功能（`cmd/config_reader_env_test.go`），但 registrar 用的是**上游** `ghcr.io/mcpjungle/mcpjungle:latest-stdio` 為 base，且 compose 的 registrar 目前沒有傳 `DOCS_MCP_AUTH_TOKEN`；硬化時需實測並補 env。
 6. CI Node 版本：`ci.yml` / `npm-publish.yml` 用 `node-version: 20`，與團隊 Node 24.18、Docker `node:26-alpine`、gateway Node 22 皆不同。
 7. TZ 與 DB：gateway 設 `TZ=Asia/Taipei`；MCPJungle 寫入 Postgres 的時間欄位型別（timestamp vs timestamptz）未查證，是否符合團隊「DB 一律 UTC」。
-8. `docker-compose.localtest.yml` 仍用上游 image、Node 20 runtime、無 TZ / timeout 30，與正式 stack 行為不一致；是否同步。
+8. `docker-compose.localtest.yml` 與正式 stack 已三處不一致：① 仍用上游 image、無 TZ / timeout 30 ② 仍是雙網路（`shared-db` ＋ `mcpjungl`）寫法，而 `shared-db/` 目錄已隨 `a39e3eb` 移除
+   ③ **`build: ../docs-mcp-server` 路徑在 `fb1d578` 之後已失效**（現為 `../mcp/docs-mcp-server`），照註解執行會 build 失敗。是否同步或廢除。
 9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`——MCPJungle 本身的路由是 `/mcp` 與 `/v0/groups/<group>/mcp`，此寫法是否正確待實測。
 10. 備援（README「公司一套、家裡一套」）：兩套 gateway 的 DB 與註冊同步方式未文件化。
 11. docs-mcp-server 在 compose 內沒有 healthcheck（獨立 compose 有）；是否補上並讓 registrar `depends_on: condition: service_healthy`（不取代重試）。

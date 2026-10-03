@@ -1,5 +1,8 @@
 {
-  "title": "<CORPUS_TITLE>",
-  "description": "<ONE_SENTENCE: what it is, which topics, whether code examples are bundled>",
+  "book": "<book-name-lowercase>",
+  "language": "<en | zh-TW | zh-CN>",
+  "source": "https://<official-docs-homepage>",
+  "title": "<CORPUS_TITLE, written IN the corpus language>",
+  "description": "<ONE_SENTENCE: what it is, which topics, whether code examples are bundled, any known defect (machine translation, dangling image links)>",
   "capabilities": { "cheatsheet": false, "examples": false, "symbol": false }
 }

@@ -6,6 +6,7 @@ model: inherit
 color: purple
 skills:
   - mcp__elf-mcp-knowledge
+  - mcp__elf-mcp-book
   - mcp__elf-mcp-gateway
 ---
 
@@ -13,9 +14,9 @@ skills:
 
 ## 開工前
 
-1. 已預載：`elf-mcp-knowledge`（新增知識庫主流程、命名規則）、`elf-mcp-gateway`（註冊與部署）。
+1. 已預載：`elf-mcp-knowledge`（新增知識庫主流程、命名規則）、`elf-mcp-book`（書籍素材與上架挑選）、`elf-mcp-gateway`（註冊與部署）。
 2. 要改 MCP server 程式碼時再載入 `mcp__elf-mcp-server`。
-3. 讀 mcp-library 的 `CLAUDE.md` 與 `docs-mcp-server/corpora/README.md`（目錄樹與命名的唯一權威版本）。
+3. 讀 mcp-library 的 `CLAUDE.md` 與 `mcp/docs-mcp-server/corpora/README.md`（目錄樹與命名的唯一權威版本）。
 
 ## 固定做法
 

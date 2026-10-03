@@ -82,6 +82,7 @@ skillshare-source/
 │   └── elf-allure-report/         ★ Allure 3 報告
 ├── mcp/
 │   ├── elf-mcp-knowledge/         ★ 新增知識庫到 MCPJungle（主流程、命名 <書名>-<語言>）
+│   ├── elf-mcp-book/              ★ 書籍素材（knowledge.books/）與「挑一份上架成語料」
 │   ├── elf-mcp-server/            ★ 寫 MCP server
 │   └── elf-mcp-gateway/           ★ MCPJungle 註冊與部署
 ├── tools/                           第三方工具：agent-browser、find-skills、project-planner、audit-website
@@ -121,7 +122,7 @@ skillshare-source/
 | `elf-backend-dev` | 寫 .NET 後端 | elf-stack、elf-dotnet、elf-sqlsugar、elf-postgresql、elf-api-design、elf-unit |
 | `elf-ui-designer` | UI 設計、交接包、設計驗收 | elf-ui-design、elf-ui-pattern |
 | `elf-devops` | CI/CD、Docker、發版 | elf-stack、elf-cicd-frontend / backend / review / versioning |
-| `elf-mcp-knowledge` | 新增知識庫到 MCPJungle | elf-mcp-knowledge、elf-mcp-gateway |
+| `elf-mcp-knowledge` | 新增知識庫到 MCPJungle | elf-mcp-knowledge、elf-mcp-book、elf-mcp-gateway |
 | `elf-reviewer` | 唯讀審查：抓違規與「被簡化」 | 依變更內容自行載入 |
 | `168-*`（4 個） | 168小隊：OPNsense 文件翻譯審查 | — |
 

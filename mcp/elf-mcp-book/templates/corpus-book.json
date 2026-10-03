@@ -1,0 +1,9 @@
+{
+  "book": "<book-name-lowercase>",
+  "language": "<en | zh-TW | zh-CN>",
+  "source": "https://<official-docs-homepage>",
+  "license": "<SPDX or upstream license + link; full text goes in LICENSE next to this file. Note derivative status, e.g. 繁中為機器翻譯衍生作品>",
+  "title": "<human-readable name, written IN the corpus language>",
+  "description": "<what it is>（<source domain>，<N> 篇，<YYYY-MM-DD> 擷取<; 機器翻譯則寫: Google 翻譯，未經人工校稿，術語以 <other-corpus-id> 原文為準>）：<涵蓋的主題，逗號分隔>。檔案<扁平、以編號排序 | 分一層分類目錄>；「000 目錄.md」為章節目錄。僅含文字：圖片連結（../images/…）與指向已排除「000 全書」合併檔的連結刻意保留為失效連結。",
+  "capabilities": { "cheatsheet": false, "examples": false, "symbol": false }
+}

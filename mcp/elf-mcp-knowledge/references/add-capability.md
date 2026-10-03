@@ -22,7 +22,7 @@
 | 7 | `src/index.ts` | 檔頭註解的工具清單與「工具數恆為 N」 | `dd4853a` 修過一次 |
 | 8 | `tests/<cap>.test.ts` | gating（未開能力的真實語料回提示）＋命中＋未命中＋邊界 | `tests/symbol.test.ts` |
 | 9 | 語料 | 目標語料 `corpus.json` 開新能力 | — |
-| 10 | 文件 | 根 `CLAUDE.md` 能力清單、`docs-mcp-server/README.md` 工具表、`servers/<id>.json` description | 證據 E9、E10 |
+| 10 | 文件 | 根 `CLAUDE.md` 能力清單、`mcp/docs-mcp-server/README.md` 工具表、`servers/<id>.json` description | 證據 E9、E10 |
 
 ## 程式碼範本（完整貼上後替換 `<...>`）
 

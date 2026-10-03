@@ -12,7 +12,7 @@ set -eu
 REGISTRY="${REGISTRY_URL:-http://mcpjungle:8080}"
 CONFIGS="${CONFIGS_DIR:-/configs}"
 # 要註冊哪些(空白分隔);可用 env REGISTER_LIST 覆寫
-LIST="${REGISTER_LIST:-sqlsugar fc filesystem fetch time}"
+LIST="${REGISTER_LIST:-sqlsugar-zh-tw fc-zh-tw filesystem fetch time}"
 
 echo "registrar: 等待 gateway $REGISTRY ..."
 i=0

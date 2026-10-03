@@ -6,16 +6,17 @@ description: |
   /health、stderr 日誌、測試、Dockerfile，以及「禁止簡化」清單。當任務涉及新建 MCP server、修改 src/index.ts 的 registerTool、
   tool description / inputSchema、http.ts transport、MCP 相關測試或 Dockerfile，或重構 / 精簡既有 MCP server 程式碼時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
 # MCP Server 撰寫規範（Elf Express）
 
-> 參考實作：`elf-express/mcp-library` 的 `docs-mcp-server/`（核心、多語料）、`sqlsugar-mcp/sqlsugar-mcp-server/` 與
-> `fc-designer-mcp/`（legacy，工具描述寫得最完整）。完整範本在 `templates/`，已在 Node 24.18 下實測 `tsc` 通過、9 個測試通過、stdio 可呼叫工具。
+> 參考實作：`elf-express/mcp-library` 的 `mcp/docs-mcp-server/`（核心、多語料）、`mcp/legacy/sqlsugar-mcp/sqlsugar-mcp-server/` 與
+> `mcp/legacy/fc-designer-mcp/`（legacy，工具描述寫得最完整）。路徑在 `fb1d578` 之後全部收進 `mcp/`，legacy 另歸 `mcp/legacy/`（不在根 compose 堆疊）。完整範本在 `templates/`，已在 Node 24.18 下實測 `tsc` 通過、9 個測試通過、stdio 可呼叫工具。
 
 相關 skill：
+- **`elf-mcp-book`** — 來源是「一本書」時的素材與上架規範（`knowledge.books/`）
 - **`elf-mcp-knowledge`** — 「新增知識庫」主流程。**要掛新文件 / 新書時先看它**：90% 的情況是新增語料，不需要寫新 server
 - `elf-mcp-gateway` — 寫好的 server 如何註冊到 MCPJungle、部署、CI
 - `elf-stack`（版本）、`elf-unit`（測試放置 / 覆蓋率 55%）、`elf-cicd-docker`（映像）、`elf-cicd-review`（PR AI review）
@@ -118,7 +119,7 @@ pnpm run build
  | node dist/index.js
 ```
 
-HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PORT>/health`，再照 `docs-mcp-server/README.md`「驗證 MCP 流程」的 initialize → 帶 `mcp-session-id` 呼叫。
+HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PORT>/health`，再照 `mcp/docs-mcp-server/README.md`「驗證 MCP 流程」的 initialize → 帶 `mcp-session-id` 呼叫。
 
 ---
 
@@ -127,10 +128,10 @@ HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PO
 > 使用者痛點：「AI 越寫越簡單」。以下每條附證據編號（見 `references/simplification-evidence.md`）或現行程式碼位置。
 > **任何 PR 讓下列基準值下降，必須在 PR 描述逐條說明並取得人工同意。**
 
-基準值（`docs-mcp-server`，HEAD `bafd8e8`）——修改前後都跑一次並貼到 PR：
+基準值（`mcp/docs-mcp-server`，HEAD `f05dcb1`，2026-10-04 實測未變）——修改前後都跑一次並貼到 PR：
 
 ```bash
-cd docs-mcp-server
+cd mcp/docs-mcp-server
 grep -c 'registerTool(' src/index.ts          # 8
 grep -c '\.strict()' src/index.ts             # 8
 grep -c 'annotations: READ_ONLY' src/index.ts # 8
@@ -143,7 +144,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 4. **MUST NOT** 把友善文字錯誤改成 throw，或把錯誤訊息的「下一步建議」刪掉。WHY：證據 E8，`dd4853a` 補回被寫短的缺 corpus 訊息。
 5. **MUST NOT** 為了讓測試通過放寬比對或加 fallback；**MUST NOT** 刪測試、改成 `it.skip`、把斷言改寬（`toMatch(/./)`）。WHY：證據 E7（`e3d8808` 移除讓測試假通過的 token-OR fallback）。
 6. **MUST NOT** 移除 `truncateIfNeeded`、mtime 快取、BOM 處理、`SKIP_DIRS`、副檔名白名單。WHY：分別防爆 context、確保改檔即時生效、避免亂碼、避免掃進 `node_modules`/`bin`/`obj`。
-7. **MUST NOT** 移除 HTTP 模式的 `/health`、Bearer 驗證、404（未知 scope）、400（無 session）、500 包裝與 `onclose` 清理。WHY：gateway healthcheck、registrar 等待、MCPJungle 連線都依賴這些行為（`docs-mcp-server/src/http.ts`）。
+7. **MUST NOT** 移除 HTTP 模式的 `/health`、Bearer 驗證、404（未知 scope）、400（無 session）、500 包裝與 `onclose` 清理。WHY：gateway healthcheck、registrar 等待、MCPJungle 連線都依賴這些行為（`mcp/docs-mcp-server/src/http.ts`）。
 8. **MUST NOT** 移除 stdio 或 HTTP 任一 transport。WHY：stdio 給本機 `.mcp.json` / `npx -y @elf-express/docs-mcp-server`，HTTP 給 gateway 與遠端連接器（CLAUDE.md「A–D 四種接法」）。
 9. **MUST NOT** 用 `console.log`。WHY：stdio 串流污染。
 10. **MUST NOT** 只改程式不改檔頭註解 / README / servers/*.json 描述。WHY：證據 E8、E9、E10。
@@ -189,7 +190,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻。是否搬移並加門檻。
 4. .NET 10 MCP server：repo 內**沒有**任何 C# MCP server（`.cs` 檔都是 SqlSugar 範例 / 效能測試資料），本 skill 不提供 .NET 範本；若要用官方 C# SDK，需另立規範。
 5. zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
-6. `express-rate-limit` 已加進 `docs-mcp-server/package.json`（未 commit）但程式未使用；nginx 範例說 rate limit 放邊界。應用層要不要限流。
+6. `express-rate-limit`（`^8.5.2`）已 commit 進 `mcp/docs-mcp-server/package.json`，但 `src/` 仍無任何 import（`grep -rn express-rate-limit src/` 無結果）；nginx 範例說 rate limit 放邊界。應用層要不要限流、不用就該移除依賴。
 7. Bearer token 比對用 `===`（非 constant-time）；是否改 `crypto.timingSafeEqual`。
 8. 工具層逾時：現有工具都是同步檔案讀取、沒有 per-tool timeout；若新 server 會呼叫外部 API，逾時值與重試策略待定（gateway 端 `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30` 只管初始化）。
 9. 工具描述語言：現況繁中描述＋英文工具名；給 gateway 後多語系用戶是否要中英並列。

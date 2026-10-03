@@ -19,7 +19,7 @@
 | `elf-backend-dev` | server/ endpoint、service、實體、交易、後端測試 | Read, Grep, Glob, Edit, Write, Bash, Skill | `stack__elf-stack` `backend__elf-dotnet` `backend__elf-sqlsugar` `backend__elf-postgresql` `api__elf-api-design` `testing__elf-unit` | elf-domain-modeling、elf-api-contract、elf-integration、elf-cicd-backend、elf-cicd-docker、sqlsugar-docs |
 | `elf-ui-designer` | 設計整理、依原型 / 交接包規劃畫面、token、設計驗收 | Read, Grep, Glob, Write, Skill, WebFetch | `frontend__design__elf-ui-design` `frontend__elf-ui-pattern` | elf-i18n、ui-ux-pro-max、web-design-guidelines |
 | `elf-devops` | workflows、版號、Docker、GHCR、Tauri 發佈、CI 除錯 | Read, Grep, Glob, Edit, Write, Bash, Skill | `stack__elf-stack` `cicd__elf-cicd-frontend` `cicd__elf-cicd-backend` `cicd__elf-cicd-review` `cicd__elf-cicd-versioning` | elf-cicd-docker、elf-cicd-desktop、elf-tauri、elf-mcp-gateway、elf-allure-report |
-| `elf-mcp-knowledge` | 新增 / 改名知識庫語料、註冊 MCPJungle | Read, Grep, Glob, Edit, Write, Bash, Skill | `mcp__elf-mcp-knowledge` `mcp__elf-mcp-gateway` | elf-mcp-server |
+| `elf-mcp-knowledge` | 新增 / 改名知識庫語料、註冊 MCPJungle | Read, Grep, Glob, Edit, Write, Bash, Skill | `mcp__elf-mcp-knowledge` `mcp__elf-mcp-book` `mcp__elf-mcp-gateway` | elf-mcp-server |
 | `elf-reviewer` | 合併前審查規範與「被簡化」（**唯讀**） | Read, Grep, Glob, Skill | （無，依變更自行載入） | 全部 elf-* |
 | `168-terminologist` | 168小隊：建立術語表 | Read, Grep, Glob, Write | — | — |
 | `168-reviewer` | 168小隊：審稿修正譯文 | Read, Grep, Glob, Edit, Write | — | — |
@@ -37,7 +37,7 @@
 ```text
 用 elf-backend-dev 在 server/ 新增「訂單查詢」API，分頁、只查自己公司的資料
 用 elf-reviewer 審查這個分支相對 main 的變更
-用 elf-mcp-knowledge 把 E:\source\Knowledge.books 的某本書加進知識庫
+用 elf-mcp-knowledge 把 mcp-library 的 knowledge.books/ 裡某本書加進知識庫
 ```
 
 也可以在 `/agents` 看清單。
