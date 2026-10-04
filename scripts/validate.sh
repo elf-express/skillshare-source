@@ -25,7 +25,6 @@ PY=$(command -v python3 || command -v python || true)
 section "discover skill folders"
 mapfile -t skill_dirs < <(
   find . -name SKILL.md \
-    -not -path './_elf-dev/*' \
     -not -path './.git/*' \
     -not -path './node_modules/*' \
     -exec dirname {} \; | sort
@@ -78,10 +77,10 @@ else
 fi
 
 section ".gitignore enforcement"
-if git ls-files _elf-dev/ 2>/dev/null | grep -q .; then
-  err "_elf-dev/ has tracked files — must stay gitignored (it's a separate repo)"
+if git ls-files _superpowers/ 2>/dev/null | grep -q .; then
+  err "_superpowers/ has tracked files — must stay gitignored (it's a separate repo)"
 else
-  pass "_elf-dev/ is properly gitignored"
+  pass "_superpowers/ is properly gitignored"
 fi
 
 section "skillshare CLI checks"

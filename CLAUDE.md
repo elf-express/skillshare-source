@@ -26,8 +26,6 @@ skillshare/                        skillshare's built-in skill — tracked (see 
 frontend/design/ui-ux-pro-max/     tracked third-party bundle; its skills live one level deeper,
                                    in skills/<name>/SKILL.md
 _superpowers/                      tracked repo obra/superpowers (own .git, gitignored)
-_elf-dev/                          old team repo — DEPRECATED, ignored via .skillignore.local;
-                                   its content now lives in the elf-* skills
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
 docs/                              screenshots only — not a skill
@@ -45,7 +43,7 @@ Agent `skills:` lists use the flattened name.
 
 ## Tracked content — do not hand-edit
 
-Four paths are **not ours**: skillshare pulls them from upstream and records their commit plus
+Three paths are **not ours**: skillshare pulls them from upstream and records their commit plus
 per-file hashes in `.metadata.json` (`entries`). Local edits there are silently undone on the next
 update and make `skillshare status` report drift.
 
@@ -54,7 +52,11 @@ update and make `skillshare status` report drift.
 | `_superpowers/` | `obra/superpowers` | `skillshare update _superpowers` |
 | `frontend/design/ui-ux-pro-max/` | `Yeachan-Heo/oh-my-claudecode` | `skillshare update frontend/design/ui-ux-pro-max` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
-| `_elf-dev/` | `elf-express/org-skills` — DEPRECATED, leave alone | — |
+
+`_elf-dev/` (the old `elf-express/org-skills` checkout) was removed on 2026-10-04 with
+`skillshare uninstall _elf-dev`: all 11 of its skills were disabled and superseded by the `elf-*` ones
+(e.g. its 29-line `backend/dotnet` became the 361-line `backend/elf-dotnet`). Re-add it only if you need
+the history: `skillshare install https://github.com/elf-express/org-skills.git`.
 
 ### No application code lives here
 
@@ -96,13 +98,13 @@ removing or renaming a skill folder, or changing `.skillignore`.
 ## Validation
 
 `bash scripts/validate.sh` is the closest thing this repo has to a test suite. It needs
-`python3`/`python`, skips `_elf-dev/`, and checks **every** `SKILL.md` — the tracked third-party ones
+`python3`/`python`, and checks **every** `SKILL.md` — the tracked third-party ones
 included:
 
 - frontmatter exists and has `name` + `description`
 - no folder name contains `__`
 - `.metadata.json` parses as JSON
-- `_elf-dev/` has no tracked files
+- `_superpowers/` has no tracked files (a gitignored repo must never get committed)
 - `skillshare sync --dry-run` and `skillshare audit --yes --no-tui --quiet` both succeed
   (skipped with a warning when the CLI is absent — a pass there is not proof)
 
@@ -113,8 +115,9 @@ per-skill runner: to check one skill, read it against the section list above, th
 
 Two caveats before you treat a red result as your own doing:
 
-- Its `find` excludes only `_elf-dev/`, `.git/` and `node_modules/`, so it also validates the stale
-  skill copies inside `.kilo/worktrees/` (120 folders found vs the 100 that actually sync).
+- Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
+  repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present it
+  reports 101 folders, which matches what syncs.
 - `skillshare audit` can exit non-zero on a clean tree — currently from CRITICAL findings in the
   `ui-ux-pro-max` update that are not yet in `audit_accepted`. Run `skillshare audit` and compare
   before blaming a change.

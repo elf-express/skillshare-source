@@ -89,7 +89,6 @@ skillshare-source/
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
-├── _elf-dev/                        舊團隊 repo（已停用，內容已搬到上面的 elf-* skill）
 ├── scripts/validate.sh              提交前檢查
 └── docs/
 ```
@@ -160,7 +159,7 @@ skillshare-source/
 | 檔案 | 用途 | 進 git？ |
 |---|---|---|
 | `.skillignore` | 團隊共用：哪些資料夾不是 skill（`docs/`、`scripts/`、`agents/`…） | 是 |
-| `.skillignore.local` | 本機覆寫（例：`!/skillshare`、`_elf-dev/`、`.kilo/`） | 否 |
+| `.skillignore.local` | 本機覆寫（例：`!/skillshare`、`.kilo/`，或排除吃常駐預算的大型第三方包） | 否 |
 
 > VS Code 的 Kilo Code 擴充會在 repo 裡建 `.kilo/worktrees/`，已被忽略；不用 Kilo 可直接解除安裝。
 
