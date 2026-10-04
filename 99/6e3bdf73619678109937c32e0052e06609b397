@@ -1,0 +1,61 @@
+agents/elf-mcp-knowledge.md
+  s_05d0bb45e6bb5a::t_209aba8b08fbb4 9,17,19
+mcp/elf-mcp-gateway/references/simplification-evidence.md
+  s_05d0bb45e6bb5a::t_7bd578da65ae7c 16-17,20,26-27
+mcp/elf-mcp-gateway/templates/.env.example
+  s_05d0bb45e6bb5a::t_9240127cccf990 1-6,8-13,15-25,27
+mcp/elf-mcp-gateway/templates/docker-compose.mcpjungle.yml
+  s_05d0bb45e6bb5a::t_69c59c23df3f1f 1-86
+mcp/elf-mcp-gateway/templates/registrar.sh
+  s_05d0bb45e6bb5a::t_b5afc7a36a5ed3 15
+mcp/elf-mcp-knowledge/SKILL.md
+  s_05d0bb45e6bb5a::t_7d849a448f0815 10,16-17,21-22,42,73,77,82,128,132,147-151,156-159,168,192-193,196-197,221-222
+mcp/elf-mcp-knowledge/templates/corpus.json
+  s_05d0bb45e6bb5a::t_8cefade7ae7805 2-6
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_05d0bb45e6bb5a::t_e0b25c2beee7e6 16-17,20
+README.md
+  s_94f72ef52d29c7::t_b655a1c742fd66 1-187
+agents/README.md
+  s_94f72ef52d29c7::t_b26a5faf73e593 1-88
+mcp/elf-mcp-book/SKILL.md
+  s_94f72ef52d29c7::t_1aa73c81b4eee9 1-286
+mcp/elf-mcp-book/references/simplification-evidence.md
+  s_94f72ef52d29c7::t_85c42fdcabd50b 1-60
+mcp/elf-mcp-book/templates/corpus-book.json
+  s_94f72ef52d29c7::t_104a238e40e59d 1-9
+mcp/elf-mcp-book/templates/make-sources-json.mjs
+  s_94f72ef52d29c7::t_d71c866de57e5f 1-55
+mcp/elf-mcp-gateway/SKILL.md
+  s_94f72ef52d29c7::t_2a3f0142999c2e 4,10,17,42-43,45-54,60,109-110,133-134,146,183,185,203,225-226
+mcp/elf-mcp-knowledge/references/add-capability.md
+  s_94f72ef52d29c7::t_b40db5f32b0841 25
+mcp/elf-mcp-knowledge/references/simplification-evidence.md
+  s_94f72ef52d29c7::t_2a09ac9ff36769 16-17,20
+mcp/elf-mcp-server/SKILL.md
+  s_94f72ef52d29c7::t_a49c688c0f0aba 9,15-16,19,122,131,134,147,193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "996e3bdf73619678109937c32e0052e06609b397",
+  "prompts": {},
+  "sessions": {
+    "s_05d0bb45e6bb5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0e473c5a-f5f9-451c-9c67-72561974182d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    },
+    "s_94f72ef52d29c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74143f3a-816c-47bc-81d8-5952c8d89e55",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
