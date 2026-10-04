@@ -1,0 +1,19 @@
+.metadata.json
+  s_b3610e3bd0f4b8::t_f7a9eb2b65579c 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "584cc41d6f674de8ef8fa9245a295a8b77105614",
+  "prompts": {},
+  "sessions": {
+    "s_b3610e3bd0f4b8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_b3610e3bd0f4b8",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
