@@ -1,12 +1,10 @@
 ---
 name: elf-mcp-book
 description: |
-  Elf Express 書籍素材庫（knowledge.books/）與「素材 → docs-mcp 語料」上架規範：書的目錄與語言資料夾命名、
-  Git LFS 圖片與 linguist-vendored、哪些衍生物（en+zh-TW 雙語對照 / en-translated 回譯 / 000 全書 合併檔）
-  只留在素材區不上架、從 YAML front matter 產生 sources.json、標題可辨識性檢查、授權與機器翻譯註明、
-  168小隊譯文審查的分工，以及「禁止簡化」清單。當任務涉及 knowledge.books/ 下任何檔案、新增或整理一本書的素材、
-  把某本書的某個語言上架成語料、處理書籍圖片與 Git LFS、.gitattributes 的素材規則、
-  產生或修補語料的 sources.json、執行 168小隊譯文審查，或排查「書上架後查不到 / CI 擋大檔」時觸發。
+  Elf Express 書籍素材（knowledge.books/）與「挑一份上架成 docs-mcp 語料」的規範。
+  當任務涉及 knowledge.books/ 下的檔案、新增或整理一本書的素材、把某本書的某個語言上架成語料、
+  書籍圖片與 Git LFS、.gitattributes 的素材規則、語料的 sources.json、168小隊譯文審查，
+  或排查「書上架後查不到 / CI 擋大檔」時觸發。
 metadata:
   version: 1.0.0
   owner: Elf Express

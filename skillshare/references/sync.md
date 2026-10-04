@@ -15,7 +15,7 @@ Distribute skills from source to all targets using each target's sync mode (`mer
 
 ```bash
 skillshare sync                # Execute (auto-detects mode)
-skillshare sync --all          # Sync skills + agents + extras + MCP
+skillshare sync --all          # Sync skills + agents + extras + MCP + hooks
 skillshare sync --dry-run      # Preview
 skillshare sync --force        # Override conflicts
 skillshare sync --json         # JSON output
@@ -115,8 +115,17 @@ Git commit and push source to remote. **Global mode only.**
 ```bash
 skillshare push                # Default message
 skillshare push -m "message"   # Custom message
+skillshare push --pull         # Merge remote changes, push, then sync targets
 skillshare push --dry-run      # Preview
 ```
+
+At `git_root: root`, unpushed commits that add or modify `config.yaml` (including
+its directory tree) block push, `--pull`, and `--dry-run`. Unpushed means on no
+ref of the push remote (upstream remote, or `origin` before the first push);
+push always sends only the current branch there. Remove the file from the listed
+commits with the `git rebase -i <commit>` shown in the error and amend them
+before retrying; skillshare never rewrites history automatically. A later
+removal does not erase earlier contents. Removal-only commits remain pushable.
 
 **Project mode:** Use `git push` directly on the project repo.
 
@@ -140,6 +149,10 @@ the source; editing a copy target does not. Inspect `diff` before collecting cop
 
 **Import local changes:** `collect <target>` → `sync`
 
-**Cross-machine sync (global):** Machine A: `push` → Machine B: `pull`
+**Cross-machine sync (global):** Machine A: `push` → Machine B: `pull`. `pull` syncs
+only what `git_root` holds. Plugins, hooks and MCP live in `config.yaml`, which no
+scope tracks: run `sync --all` and `sync plugins` after `pull`, re-add plugins from an
+HTTPS source on each machine (imports are not portable), and keep MCP in a
+`sources.mcp` file inside a `root`-scope repository to version it.
 
 **Team sharing (project):** Edit `.skillshare/skills/` → `git commit && git push` → Team: `git pull && skillshare install -p && skillshare sync`
