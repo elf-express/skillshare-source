@@ -190,7 +190,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻。是否搬移並加門檻。
 4. .NET 10 MCP server：repo 內**沒有**任何 C# MCP server（`.cs` 檔都是 SqlSugar 範例 / 效能測試資料），本 skill 不提供 .NET 範本；若要用官方 C# SDK，需另立規範。
 5. zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
-6. `express-rate-limit`（`^8.5.2`）已 commit 進 `mcp/docs-mcp-server/package.json`，但 `src/` 仍無任何 import（`grep -rn express-rate-limit src/` 無結果）；nginx 範例說 rate limit 放邊界。應用層要不要限流、不用就該移除依賴。
+6. `express-rate-limit`（`^8.5.2`）加在 `mcp/docs-mcp-server/package.json` 但**從未 commit**（`git show HEAD:mcp/docs-mcp-server/package.json | grep -c express-rate-limit` → 0，實測 2026-10-04），`src/` 也無任何 import；nginx 範例說 rate limit 放邊界。應用層要不要限流；不限流就該把這行從工作目錄拿掉，別讓它一直掛著。
 7. Bearer token 比對用 `===`（非 constant-time）；是否改 `crypto.timingSafeEqual`。
 8. 工具層逾時：現有工具都是同步檔案讀取、沒有 per-tool timeout；若新 server 會呼叫外部 API，逾時值與重試策略待定（gateway 端 `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30` 只管初始化）。
 9. 工具描述語言：現況繁中描述＋英文工具名；給 gateway 後多語系用戶是否要中英並列。

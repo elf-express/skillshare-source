@@ -226,4 +226,7 @@ docker compose up -d --force-recreate registrar
    ③ **`build: ../docs-mcp-server` 路徑在 `fb1d578` 之後已失效**（現為 `../mcp/docs-mcp-server`），照註解執行會 build 失敗。是否同步或廢除。
 9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`——MCPJungle 本身的路由是 `/mcp` 與 `/v0/groups/<group>/mcp`，此寫法是否正確待實測。
 10. 備援（README「公司一套、家裡一套」）：兩套 gateway 的 DB 與註冊同步方式未文件化。
+11a. **`mcpjungle/nginx.example.conf` 在 mcp-library 裡從未 `git add`**（實測 2026-10-04，`git ls-files --error-unmatch` 回非零）。
+    本 skill 規則 16 與禁止簡化 5 都以它為權威出處，但重新 clone 的人拿不到——要嘛把它提交上去，要嘛改以本 skill 的 `templates/nginx.example.conf` 為準。
+    同樣未納管的還有 `AGENTS.md`、`.mcp.json`、`docs/superpowers/**`。
 11. docs-mcp-server 在 compose 內沒有 healthcheck（獨立 compose 有）；是否補上並讓 registrar `depends_on: condition: service_healthy`（不取代重試）。
