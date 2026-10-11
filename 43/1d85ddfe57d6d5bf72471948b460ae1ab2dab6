@@ -1,0 +1,57 @@
+agents/README.md
+  s_dd1f6c3477c949::t_2579129ca6de61 21,39
+cicd/elf-cicd-desktop/templates/release.yml
+  s_dd1f6c3477c949::t_cb5626e696fdca 12,25-52,55,264
+  s_dd1f6c3477c949::t_041c9aa65a8cdf 115,125
+workflow/elf-team-rule/SKILL.md
+  s_dd1f6c3477c949::t_eae19c07186161 28,192,196
+agents/elf-devops.md
+  s_dd1f6c3477c949::t_2579129ca6de61 3,13,20,34-35
+mcp/elf-mcp-knowledge/SKILL.md
+  s_dd1f6c3477c949::t_2579129ca6de61 200,297
+cicd/elf-cicd-frontend/templates/ci.yml
+  s_dd1f6c3477c949::t_2579129ca6de61 12,14
+cicd/elf-cicd-docker/SKILL.md
+  s_dd1f6c3477c949::t_cb5626e696fdca 20,109,181,190
+  s_dd1f6c3477c949::t_041c9aa65a8cdf 204
+cicd/elf-cicd-review/SKILL.md
+  s_dd1f6c3477c949::t_2579129ca6de61 72-73,89,115
+cicd/elf-cicd-frontend/SKILL.md
+  s_dd1f6c3477c949::t_2579129ca6de61 81-82,84
+README.md
+  s_dd1f6c3477c949::t_2579129ca6de61 75
+desktop/elf-tauri/references/signing-and-keys.md
+  s_dd1f6c3477c949::t_cb5626e696fdca 97
+cicd/elf-cicd-docker/templates/release-docker.yml
+  s_dd1f6c3477c949::t_cb5626e696fdca 6,25-52,55
+agents/elf-mcp-knowledge.md
+  s_dd1f6c3477c949::t_2579129ca6de61 28
+cicd/elf-cicd-desktop/SKILL.md
+  s_dd1f6c3477c949::t_cb5626e696fdca 21,43-44,46-48,165,201-202
+  s_dd1f6c3477c949::t_041c9aa65a8cdf 190
+cicd/elf-cicd-versioning/SKILL.md
+  s_dd1f6c3477c949::t_ac656bb4bc8caa 4-8,10,17,20,24-27,29,43,45-49,51,53-60,62,64-69,76,90-91,93-96,98-104,107,109,113,124-137,139,141-147,150-151,158-159,162-169,176-180,186-190,193,199-200
+cicd/elf-cicd-versioning/templates/version.mjs
+  s_dd1f6c3477c949::t_c05547d15fc858 12
+desktop/elf-tauri/SKILL.md
+  s_dd1f6c3477c949::t_cb5626e696fdca 22
+  s_dd1f6c3477c949::t_041c9aa65a8cdf 225
+mcp/elf-mcp-gateway/SKILL.md
+  s_dd1f6c3477c949::t_2579129ca6de61 220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "431d85ddfe57d6d5bf72471948b460ae1ab2dab6",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
