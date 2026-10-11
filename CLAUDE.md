@@ -154,7 +154,7 @@ feature branch → PR → `dev` → `release` → `main`.
 |---|---|
 | `dev`     | integration — feature branches (`feat/e-<id>-<name>` etc.) merge here via PR; GitHub default branch |
 | `release` | the only stable version — teammates' skillshare sources sit on it; fast-forwarded from `origin/dev` |
-| `main`    | mirror, fast-forwarded from `origin/release`; never a source for installs (renamed from `master` on 2026-10-11) |
+| `main`    | 主庫 — the protected main line and the external baseline; only fast-forwarded from `origin/release`, never committed to, never used as the stable version or install source (renamed from `master` on 2026-10-11) |
 
 ```bash
 git fetch origin
