@@ -1,0 +1,28 @@
+README.md
+  s_dd1f6c3477c949::t_70c7fc67b8776b 21,23-25,158
+CLAUDE.md
+  s_dd1f6c3477c949::t_70c7fc67b8776b 148-151,155-157,160-164,167-169,171
+workflow/elf-team-rule/references/05-alignment-check.md
+  s_dd1f6c3477c949::t_70c7fc67b8776b 92,98
+workflow/elf-team-rule/SKILL.md
+  s_dd1f6c3477c949::t_70c7fc67b8776b 200
+  s_dd1f6c3477c949::t_b8daa36374eb79 191
+BRANCHING.md
+  s_dd1f6c3477c949::t_18e13e093bc914 1-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "99a8bba1e38f7d355ff20834a69171b60a8909a2",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
