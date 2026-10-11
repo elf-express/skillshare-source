@@ -1,0 +1,53 @@
+workflow/elf-team-rule/references/04-release-ci-check.md
+  s_dd1f6c3477c949::t_68b9955565bdca 20,24-26,64,76,79-80
+workflow/elf-team-rule/references/01-contribution-fork.md
+  s_dd1f6c3477c949::t_68b9955565bdca 63
+cicd/elf-cicd-docker/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 9,215
+cicd/elf-cicd-frontend/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 9,82
+mcp/elf-mcp-gateway/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 10
+cicd/elf-cicd-versioning/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 70-71,173-182,193,198,206,211-213
+workflow/elf-team-rule/assets/BRANCHING-type3-own-project.md
+  s_dd1f6c3477c949::t_68b9955565bdca 45-46,48,57
+CLAUDE.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 120
+desktop/elf-tauri/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 10
+workflow/elf-team-rule/references/05-alignment-check.md
+  s_dd1f6c3477c949::t_68b9955565bdca 98
+cicd/elf-cicd-review/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 9
+mcp/elf-mcp-knowledge/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 10
+workflow/elf-team-rule/references/03-own-project.md
+  s_dd1f6c3477c949::t_68b9955565bdca 88-89,91
+workflow/elf-team-rule/assets/BRANCHING-type1-contribution-fork.md
+  s_dd1f6c3477c949::t_68b9955565bdca 39,73-76,84,92
+workflow/elf-team-rule/assets/BRANCHING-type2-private-fork.md
+  s_dd1f6c3477c949::t_68b9955565bdca 37,73
+cicd/elf-cicd-desktop/SKILL.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 10,47,71,190
+desktop/elf-tauri/references/signing-and-keys.md
+  s_dd1f6c3477c949::t_148e02e17eef0e 98
+workflow/elf-team-rule/SKILL.md
+  s_dd1f6c3477c949::t_98000760368af9 37,65,77,84,90,94-95,171,186,197-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6758f98acdc3549c33dd39e9a80aeaa3f529e203",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
