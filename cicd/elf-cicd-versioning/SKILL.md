@@ -67,7 +67,7 @@ metadata:
     為什麼：tag 打在沒測過的 `dev` 提交上、或版號忘了改，都會發出一個名不符實的版本；在 verify 擋下，比發出去再撤回便宜。
 17. `verify` 的 checkout MUST 用 `fetch-depth: 0`。為什麼：淺 clone 沒有 `origin/release` 的歷史，`merge-base --is-ancestor` 會一律失敗。
 18. 所有 job 的 checkout MUST 用 `ref: ${{ inputs.tag || github.ref }}`，tag 名稱 MUST 用 `${{ inputs.tag || github.ref_name }}`（兩種觸發共用）。
-19. 需要 secret 的 job MUST 在建置前先檢查 secret 非空，空的就 `exit 1`（範例見 elf-cicd-desktop 規則 13）。
+19. 需要**必要** secret（例如 `TAURI_SIGNING_PRIVATE_KEY`）的 job MUST 在建置前先檢查 secret 非空，空的就 `exit 1`（範例見 elf-cicd-desktop 規則 13）；選用的 secret 依各 skill 規定，例如 Apple 憑證缺少時只發警告（elf-cicd-desktop 規則 14）。
     為什麼：空的 secret 常在建置十分鐘後才以看似格式錯誤的訊息失敗，fail fast 才看得出是沒設定。
 
 ## 3. 標準範本
@@ -177,7 +177,7 @@ jobs:
 - MUST NOT 改用 lightweight tag，或讓 workflow 用 `GITHUB_TOKEN` 推 tag。
 - MUST NOT 讓 bot 或 workflow 提交到 `dev`、`release`、`main`（包括「只是改版號」）。
 - MUST NOT 手改任何版號欄位而略過 `scripts/version.mjs`。
-- MUST NOT 拿掉 secret 的 fail-fast 檢查。
+- MUST NOT 拿掉必要 secret 的 fail-fast 檢查（選用 secret 依各 skill 規定，例如 Apple 憑證只發警告）。
 
 ## 5. 檢查清單
 
