@@ -8,7 +8,7 @@ description: |
   noninteractive automation, and guidance for the terminal UI.
 argument-hint: "[command] [target] [--json] [--dry-run] [-p|-g]"
 metadata:
-  version: v0.24.0
+  version: v0.25.4
 ---
 
 # Skillshare CLI
@@ -32,12 +32,13 @@ Check `skillshare <command> --help` if the installed version differs from these 
 - MCP uses its own receiving targets and source definitions. Read [mcp.md](references/mcp.md)
   before editing MCP settings or importing native configurations. Its Agent notes cover
   what is specific to Claude Code, Codex, OpenCode and Pi: scopes and files, names and
-  credentials they refuse, Pi's built-in MCP and `piOptions`, the portable `tools` policy,
-  upgrading Pi settings from 0.22, turning a global server off in one project, and `mcp.projects` for many folders from
-  one config.
+  credentials they refuse, Pi's built-in MCP and `piOptions`, OMP's native MCP and preserved enable/disable lists, the portable `tools` policy,
+  upgrading Pi settings from 0.22, turning a global server off in one project, `mcp.projects` for many folders from
+  one config, and `mcp serve` for Agents that cannot reach the synced skill folders.
 - Plugins keep their native components together. Read [plugins.md](references/plugins.md)
   for installation, import, sync selection, updates, and native compatibility limits
-  across Claude, Codex, Cursor, Antigravity, Pi, and OpenCode, including Pi packages from pi.dev.
+  across Claude, Codex, Cursor, Antigravity, Pi, OMP, and OpenCode, including Pi packages from pi.dev
+  and OMP marketplace plugins and standalone extension selection.
 - Hooks preserve each Agent's native event map or extension/plugin code. Read
   [hooks.md](references/hooks.md) before import, synchronization or recovery.
 
@@ -91,6 +92,10 @@ For project setup, use `init -p`, then `install -p` and `sync -p`. Rehydrate con
 remote dependencies with `install` without a source. For full flag details and agents,
 read [install.md](references/install.md) and [sync.md](references/sync.md).
 
+To use a local skills checkout in place, run `skillshare link <path> --enable`, then
+`sync`; `skillshare unlink <name>` removes only the link. Read
+[TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for how such links are followed.
+
 ### Disable or remove
 
 ```bash
@@ -105,6 +110,18 @@ skillshare sync
 
 Run the requested operation, not this entire example sequence. Quote glob patterns so
 Skillshare receives them unchanged. Disabling uses ignore rules; uninstall uses trash.
+
+### Move skills into folders
+
+```bash
+skillshare move my-skill frontend --dry-run
+skillshare move my-skill other-skill frontend
+skillshare sync
+```
+
+Use `move` instead of `mv` for installed skills: it keeps their install records, so
+nothing is downloaded again. It does not sync; run `sync` afterwards. Read
+[install.md](references/install.md) for refusals and project mode.
 
 ### MCP settings
 
@@ -145,6 +162,9 @@ skillshare hub default my-hub                            # Set default hub
 skillshare hub remove my-hub                             # Remove a hub
 skillshare hub index --source ~/.config/skillshare/skills/ --full --audit  # Build hub index
 ```
+The active `follow_source_links` setting also applies to `hub index` (including
+`--source`), built-in dashboard search, and Hub draft candidates.
+
 ## References
 
 Read the matching file for command flags, examples, and limitations. Avoid loading all
@@ -158,7 +178,7 @@ references for a single task.
 | Complete plugins, native lifecycle, and sync selection | [plugins.md](references/plugins.md) |
 | Init flags | [init.md](references/init.md) |
 | Sync/collect/commit/push/pull | [sync.md](references/sync.md) |
-| Install/update/uninstall/new | [install.md](references/install.md) |
+| Install/update/uninstall/move/new | [install.md](references/install.md) |
 | Status/diff/list/search/check | [status.md](references/status.md) |
 | Security audit | [audit.md](references/audit.md) |
 | Trash | [trash.md](references/trash.md) |
