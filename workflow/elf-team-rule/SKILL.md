@@ -188,6 +188,7 @@ git branch -a
 | `gh run rerun` 回 `This workflow run cannot be retried` | run 太舊，無法重跑 | 下一個提交會重新觸發；不要為了清紅叉而做空提交，先回報 |
 | 第 2 種初次建立時 `fatal: a branch named 'main' already exists` | 從第 1 種 clone，本地已有預設分支 `main` | 改用 `git init` 再加 remote（`references/02` A 節） |
 | 設了分支保護後 `git push origin release` 被拒 | 設了「必須經過 PR」 | 依規則 20，只禁止 force push／刪除、限制 push 名單 |
+| `git status` 出現 `?? .ocrca/` | Orca 把 worktree 建在 repo 裡的 `.ocrca/` | 把 `.ocrca/` 加進 `.gitignore`；skill 來源 repo 另加進 `.skillignore.local`，否則 `skillshare sync` 會連到 worktree 裡的重複 skill |
 | 合併狀態一直 pending | 安裝的 GitHub App 建了 check suite 卻從不回報 | 回報使用者，由管理員決定移除 App 或調整必要檢查 |
 | `release` 快轉後 `main` 推不上去 | 有 bot 或人直接在 `main` 提交（例如舊的 `version.yml` 自動 bump 版號） | 停下來回報；舊專案依 `elf-cicd-versioning` 3.4 遷移 |
 
@@ -196,5 +197,5 @@ git branch -a
 1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8。
 2. **status checks 對直接 push 的效果**：GitHub ruleset 的「Require status checks to pass」在直接 push（非 PR）時是否生效、是否會擋快轉推送，尚未實測。最可能出事的組合是 `dev` 設了 required checks（elf-cicd-review 規則 17），而規則 18 的同步合併由維護者直接 push：本機新做的合併提交沒有任何 check。實測前先把維護者加進 bypass 名單（規則 21）。
 5. **XiHan.Framework fork 的例外**：它是第 1 種，但只有 `main`、`dev`、`gh-pages`，沒有 `release`；工作分支用 `bug/` 而不是 `fix/`。要在它的 `BRANCHING.md` 記錄為例外，還是改成符合本規範，待決定。
-3. **主線叫 `master` 的 repo**：例如 skillshare-source 本身用 `master`，而且 `master` 從 `dev` 快轉（規範是 `main` 從 `release` 快轉），也沒有 `BRANCHING.md`。要改名為 `main`，還是在 `BRANCHING.md` 記錄例外，待決定。
+3. （已決議 2026-10-11）skillshare-source 的 `master` 已改名為 `main`，改由 `release` 快轉，並補上 `BRANCHING.md`。其他主線叫 `master` 的 repo，一律比照改名，不記為例外。
 4. **團隊標準容量**：規則 16 的「預估總工時超過團隊標準容量」沒有具體數字。

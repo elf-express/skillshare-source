@@ -18,8 +18,11 @@ irm https://raw.githubusercontent.com/runkids/skillshare/main/install.ps1 | iex
 # macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/runkids/skillshare/main/install.sh | sh
 
-# 2. 把本 repo 設為來源（會 clone 到本機）
+# 2. 把本 repo 設為來源（會 clone 到本機），再切到穩定版 release
 skillshare init -g --remote https://github.com/elf-express/skillshare-source.git
+cd ~/.config/skillshare/skills     # source 目錄；實際路徑看 `skillshare status` 的 Source 一行
+git switch release
+skillshare pull                    # 之後更新也是這一行，只會拿到 release 上的內容
 
 # 3. 加入你有在用的 AI 工具（例：codex、qwen、grok、trae）
 skillshare init --discover --select "codex,qwen"
@@ -152,7 +155,7 @@ skillshare-source/
 4. SKILL.md 控制在約 400 行內；長範本放 `references/` 或 `templates/` 並連結。
 5. 版本數字只寫在 `elf-stack`，其他 skill 引用它。
 6. 提交前：`bash scripts/validate.sh`（命名、格式、同步預覽、安全稽核）。
-7. 開 PR，**不要直接推 master**；PR 會跑 Claude AI code review。
+7. 開 PR 到 `dev`，**不要直接推 `dev`、`release`、`main`**；PR 會跑 Claude AI code review。分支流程見 [BRANCHING.md](BRANCHING.md)。
 
 ---
 
