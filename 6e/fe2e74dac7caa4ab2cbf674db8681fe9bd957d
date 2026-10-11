@@ -1,0 +1,19 @@
+.ocrca/e-235-spec-skill
+  s_dd1f6c3477c949::t_a55724baed4b67 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6efe2e74dac7caa4ab2cbf674db8681fe9bd957d",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
