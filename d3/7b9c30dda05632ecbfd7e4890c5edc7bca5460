@@ -1,0 +1,47 @@
+.gitignore
+  s_dd1f6c3477c949::t_ab8808526a6e80 10
+README.md
+  s_dd1f6c3477c949::t_ab8808526a6e80 88-89
+workflow/elf-team-rule/references/03-own-project.md
+  s_dd1f6c3477c949::t_8f800240f317bb 81-82
+  s_dd1f6c3477c949::t_660c98b96d1813 19,41,47,50-51,60-61,64
+workflow/elf-team-rule/references/04-release-ci-check.md
+  s_dd1f6c3477c949::t_e2b6feacfe123c 1-99
+workflow/elf-team-rule/assets/BRANCHING-type3-own-project.md
+  s_dd1f6c3477c949::t_660c98b96d1813 20,28-29,35-36,38,50,52,54-55
+workflow/elf-team-rule/assets/BRANCHING-type1-contribution-fork.md
+  s_dd1f6c3477c949::t_660c98b96d1813 29,55-56,62-63,65,77,79,81-82
+workflow/elf-team-rule/references/05-alignment-check.md
+  s_dd1f6c3477c949::t_4229e1bd33c911 68-76
+  s_dd1f6c3477c949::t_68d466b941bea5 1-67,77-98
+workflow/elf-team-rule/references/02-private-fork.md
+  s_dd1f6c3477c949::t_8f800240f317bb 129
+  s_dd1f6c3477c949::t_e8c8060361a4d1 32,35,37,42-43,50,53
+  s_dd1f6c3477c949::t_660c98b96d1813 20,54-55,90,96,99-100,109-110,113
+  s_dd1f6c3477c949::t_2317b835862e79 86,89
+workflow/elf-team-rule/assets/BRANCHING-type2-private-fork.md
+  s_dd1f6c3477c949::t_660c98b96d1813 28,53-54,60-61,63,67,69,71-72
+CLAUDE.md
+  s_dd1f6c3477c949::t_ab8808526a6e80 21
+workflow/elf-team-rule/SKILL.md
+  s_dd1f6c3477c949::t_f966b605addf25 3-10,13,15-20,22,24-30,32,34,36-39,41,43-46,48,50-57,59,61-69,71,73-77,79,81-83,85,87-89,91,93-96,98,100,102-106,108-109,111,113-116,119-123,125,127-131,133,135-140,142-143,145,147-150,155-198
+workflow/elf-team-rule/references/01-contribution-fork.md
+  s_dd1f6c3477c949::t_8f800240f317bb 78,121
+  s_dd1f6c3477c949::t_660c98b96d1813 18,52-53,81,84-85,94,97,100,103,125,139,175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d37b9c30dda05632ecbfd7e4890c5edc7bca5460",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
