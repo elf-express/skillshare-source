@@ -1,0 +1,43 @@
+.metadata.json
+  s_dd1f6c3477c949::t_7ec35e82b4b9cb 6-7,7026,7028,7031-7033,7035-7037,7039-7040,7042,7044,7046-7050
+skillshare/SKILL.md
+  s_dd1f6c3477c949::t_c97751da850ffa 11,35-37,40-41,95-98,114-125,165-167,181
+skillshare/references/TROUBLESHOOTING.md
+  s_dd1f6c3477c949::t_d132fece58c060 59-74,77-80
+skillshare/references/audit.md
+  s_dd1f6c3477c949::t_d9eb0268af7aa4 30,59-70
+skillshare/references/extras.md
+  s_dd1f6c3477c949::t_5f624b4c686cb9 38,40,56-65,175-177,188-190,193-200,204-206,306,319-322,325-326,333
+skillshare/references/hooks.md
+  s_dd1f6c3477c949::t_50b7f1a7d13fe8 6,10-17,52,69
+skillshare/references/install.md
+  s_dd1f6c3477c949::t_b5423bc2063b22 1,73,86-87,122-124,161-163,201-202,211-247
+skillshare/references/mcp.md
+  s_dd1f6c3477c949::t_4ea37501771219 4-7,26-27,56-67,107,121-122,131-153,163-164,274,291-295,360-361,368-369,371
+skillshare/references/plugins.md
+  s_dd1f6c3477c949::t_f2fec383471c89 26-28,89,105-108,125-156,169-174
+skillshare/references/status.md
+  s_dd1f6c3477c949::t_c4d2d165f9ad0f 79-80,113-116
+skillshare/references/sync.md
+  s_dd1f6c3477c949::t_4efa81069cf5e2 25-27
+skillshare/references/targets.md
+  s_dd1f6c3477c949::t_8a7a3c4439702f 17-19,24-25,49-60,80,181,198
+skillshare/references/trash.md
+  s_dd1f6c3477c949::t_7de5e5b3000d74 3-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "28f5077d0c25f47507bb909d28f868a060fcbf70",
+  "prompts": {},
+  "sessions": {
+    "s_dd1f6c3477c949": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "684fccbd-fa6c-4dab-88e0-7a62dcd81a3e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
