@@ -145,24 +145,30 @@ Frontmatter contract (full table and rationale: [agents/README.md](agents/README
 
 ## Branch workflow
 
-Three branches kept on the same commit via fast-forward:
+動手前先讀 BRANCHING.md，依 elf-team-rule 規範操作分支。
+
+This repo is type 3 (own project) in `workflow/elf-team-rule`. Branches move one way, by fast-forward only:
+feature branch → PR → `dev` → `release` → `main`.
 
 | Branch | Role |
 |---|---|
-| `dev`     | primary development branch — feature branches merge here (via PR) |
-| `master`  | promoted from `dev` via `--ff-only` |
-| `release` | promoted from `master` via `--ff-only` |
+| `dev`     | integration — feature branches (`feat/e-<id>-<name>` etc.) merge here via PR; GitHub default branch |
+| `release` | the only stable version — teammates' skillshare sources sit on it; fast-forwarded from `origin/dev` |
+| `main`    | mirror, fast-forwarded from `origin/release`; never a source for installs (renamed from `master` on 2026-10-11) |
 
 ```bash
-git checkout master  && git merge --ff-only dev && git push origin master
-git checkout release && git merge --ff-only dev && git push origin release
-git checkout dev
+git fetch origin
+git log --oneline origin/release..origin/dev     # show what is about to ship
+git switch release && git merge --ff-only origin/dev     && git push origin release
+git log --oneline origin/main..origin/release
+git switch main    && git merge --ff-only origin/release && git push origin main
 ```
 
-Do **not** commit directly on `master` — it breaks the FF chain. AI agents open a feature branch and a PR; they never push to `master`/`release`.
+Do **not** commit on `main` or `release` — it breaks the FF chain. AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.
 
-Check the chain before promoting: `git log --oneline dev..master` must be empty. When it is not, master
-carries commits `dev` never saw and `--ff-only` will refuse — report that instead of forcing anything.
+When `--ff-only` refuses, the target carries commits the source never saw — report that instead of forcing anything.
+
+A clone made before the rename still has a local `master`: `git branch -m master main && git fetch origin && git branch -u origin/main main`.
 
 ## Common operations
 

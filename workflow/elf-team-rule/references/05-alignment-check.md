@@ -89,10 +89,10 @@ git range-diff main..pr/<短名> <feat 分支起點>..<feat 分支終點>
 ```
 $ git rev-list --left-right --count origin/release...origin/dev
 0	0
-$ git rev-list --left-right --count origin/master...origin/release
+$ git rev-list --left-right --count origin/main...origin/release
 0	0
 $ git merge-base --is-ancestor origin/release origin/dev && echo 可以快轉
 可以快轉
 ```
 
-`release`、`dev`、`master` 都指向 eaf52f4f，彼此對齊。注意這個 repo 的主線叫 `master`，見 SKILL.md「待確認」第 3 項。
+`release`、`dev`、`main` 都指向 eaf52f4f，彼此對齊（當時主線還叫 `master`，2026-10-11 已改名為 `main`）。
