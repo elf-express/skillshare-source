@@ -9,8 +9,9 @@ name: CI
 # Renaming one silently leaves the old name "expected" forever and blocks every PR.
 
 on:
+  # PRs target dev (elf-team-rule); release is fast-forwarded from a tested dev.
   push:
-    branches: [main]
+    branches: [dev, release]
   pull_request:
 
 jobs:

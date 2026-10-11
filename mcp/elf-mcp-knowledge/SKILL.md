@@ -197,7 +197,7 @@ LIST="${REGISTER_LIST:-sqlsugar-zh-tw fc-zh-tw <id> filesystem fetch time}"
 
 策略 B（`docs-all.json` → `docs__docs_search`）不需要任何改動，新語料自動出現在 `corpus` 參數。
 
-**Step 5 — 部署**：push main → `docker-publish.yml` 重建 `docs-mcp-server` 與 `docs-registrar` 兩個 image（語料打包在 image 內）。
+**Step 5 — 部署**：（現況）push main → `docker-publish.yml` 重建 `docs-mcp-server` 與 `docs-registrar` 兩個 image（語料打包在 image 內）。
 build 法 `docker compose up -d --build`；pull 法 `docker compose -f docker-compose.pull.yml up -d`。細節見 `elf-mcp-gateway`。
 
 **Step 6 — 驗證 gateway**（三項都要貼輸出到 PR）
@@ -294,3 +294,4 @@ docker exec mcpjungle-server /mcpjungle invoke <id>__docs_search --input '{"quer
 5. `include_index`（legacy `sqlsugar_list_notes` 附 index.md 導航）是否要以 `docs_outline` 參數補回（證據 E5）。
 6. 每個新語料是否強制附一個 `tests/<id>.test.ts` smoke test（本 skill 建議強制）。
 7. `docs-mcp-server` 核心測試何時加入 CI matrix（證據 E4）——在那之前，第 5 節的測試項只能靠 PR 作者自證。
+8. **分支模型與團隊規範不符**：mcp-library 只有 `main`，`docker-publish.yml` 在 push `main` 時重建映像（實測 2026-10-11，`gh api repos/elf-express/mcp-library/branches`）。依 `elf-team-rule` 應導入 `dev` / `release`、改由 `release` 上的 tag 部署；導入時 Step 5 與 `elf-mcp-gateway` 一併改寫。

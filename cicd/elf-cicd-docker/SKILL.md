@@ -17,7 +17,7 @@ metadata:
 
 相關 skill：
 - `elf-cicd-desktop` — 同一個 `release.yml` 的桌面 job；有桌面版時 docker job 放進那個檔案
-- `elf-cicd-versioning` — `version.yml` 以 `workflow_call` 呼叫 release（需 `secrets: inherit`、`packages: write`）
+- `elf-cicd-versioning` — 在 `release` 上打 tag 觸發 release；`verify` job（docker job `needs: verify`）
 - `elf-cicd-frontend` / `elf-cicd-backend` — PR 階段的 build / test
 - `elf-stack` — 團隊技術棧版本總表
 
@@ -106,7 +106,7 @@ metadata:
     （`cache-from: type=gha,scope=api` / `cache-to: type=gha,mode=max,scope=api`，web 同理）。
     WHY：未指定 scope 時兩個映像共用預設 scope，互相覆蓋快取。
 26. **MUST** 有桌面版的專案把 docker job 放進 `elf-cicd-desktop` 的同一個 `release.yml`；純網頁專案才用獨立的 [`templates/release-docker.yml`](templates/release-docker.yml)。
-    WHY：`version.yml` 只呼叫一個 workflow。
+    WHY：一個 tag 只跑一個 workflow，共用同一個 `verify` job。
 27. **MUST** 有桌面版又有 docker job 時，保留 `.github/release-body.md`（`elf-cicd-desktop`）最後一行 GHCR 連結 `ghcr.io/<owner>/<repo>`（小寫）；沒有 docker job 就刪除該行。
 
 ---
@@ -178,7 +178,7 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - [ ] compose：只有 web 有 `ports`；api 有 `TZ: UTC`，連線字串含 `Timezone=UTC`
 - [ ] 本機 `pnpm docker:up` 後 `docker compose … ps` 三個服務皆 running / healthy，`http://localhost:8080/api/health` 回 200
 - [ ] release docker job：小寫前綴、兩個 tag、`packages: write`、每個映像各自的 gha `scope`
-- [ ] 呼叫端 `version.yml` 給了 `packages: write` 與 `secrets: inherit`
+- [ ] docker job `needs: verify`；獨立的 release-docker.yml 也有 `verify` job
 
 ---
 
@@ -187,7 +187,7 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 | 症狀 | 原因 | 修正 |
 |---|---|---|
 | 推送報 `repository name must be lowercase` | GHCR 名稱含大寫 | 用 `${GITHUB_REPOSITORY,,}` 產生前綴 |
-| 推送報 `denied: permission_denied` / 403 | job 沒有 `packages: write`，或呼叫端沒給 | job 與 `version.yml` 的 release job 都加 `packages: write` |
+| 推送報 `denied: permission_denied` / 403 | job 沒有 `packages: write` | docker job 加 `packages: write` |
 | web 容器啟動卡住不動（離線環境） | 保留了 `default.conf`，IPv6 腳本呼叫 `apk manifest` | `rm -f /etc/nginx/conf.d/default.conf`，設定檔改名 |
 | `dotnet restore` 找不到專案 | 新增 ProjectReference 沒補 `COPY *.csproj` | 補 COPY 行，路徑維持同樣相對結構 |
 | `pnpm install --frozen-lockfile` 報 lockfile 不符 / 找不到 workspace 套件 | 沒 COPY `pnpm-workspace.yaml` 或某個 workspace 的 `package.json` | 補齊 manifest COPY |
@@ -201,7 +201,7 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 | 時間欄位差 8 小時 | 連線字串沒有 `Timezone=UTC` 或容器沒設 `TZ=UTC` | 兩者都加（規則 19） |
 | 前端呼叫 API 出現 CORS 錯誤 | `VITE_API_BASE_URL` 設成絕對網址 | 設 `/api`，由 nginx 同源代理 |
 | 每次 release 映像都完整重建 | 兩個映像共用 gha 快取 scope 互相覆蓋 | 每個映像加 `scope=api` / `scope=web` |
-| desktop job 金鑰錯誤但 docker job 綠燈 | `GITHUB_TOKEN` 是唯一自動傳遞的 secret（沒 `secrets: inherit`） | 見 `elf-cicd-desktop` |
+| desktop job 金鑰錯誤但 docker job 綠燈 | docker job 只用 `GITHUB_TOKEN`（自動提供），桌面簽章金鑰沒設定或名稱不符 | 見 `elf-cicd-desktop` |
 
 ---
 

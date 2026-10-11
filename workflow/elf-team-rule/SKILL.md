@@ -25,6 +25,7 @@ metadata:
 - 建立新 repo、新 fork、新私有 fork，或替既有 repo 補 `BRANCHING.md`
 - 要對原作者送 PR（第 1 種）
 - 要設定 GitHub 分支保護或 ruleset
+- 發版（版號與 tag 的做法見 `cicd/elf-cicd-versioning`）
 - 「release 的 CI/CD 為什麼沒過」「發版後部署失敗」→ `references/04-release-ci-check.md`
 - 「main 跟上游有沒有對齊」「release 是不是 dev 測過的版本」「pr 分支跟 dev 改的一不一樣」→ `references/05-alignment-check.md`
 - 要建立或接手一個 Task 很多的 Plan
@@ -188,11 +189,11 @@ git branch -a
 | 第 2 種初次建立時 `fatal: a branch named 'main' already exists` | 從第 1 種 clone，本地已有預設分支 `main` | 改用 `git init` 再加 remote（`references/02` A 節） |
 | 設了分支保護後 `git push origin release` 被拒 | 設了「必須經過 PR」 | 依規則 20，只禁止 force push／刪除、限制 push 名單 |
 | 合併狀態一直 pending | 安裝的 GitHub App 建了 check suite 卻從不回報 | 回報使用者，由管理員決定移除 App 或調整必要檢查 |
-| `release` 快轉後 `main` 推不上去 | 有 bot 或人直接在 `main` 提交（例如自動 bump 版號） | 停下來回報，見「待確認」第 1 項 |
+| `release` 快轉後 `main` 推不上去 | 有 bot 或人直接在 `main` 提交（例如舊的 `version.yml` 自動 bump 版號） | 停下來回報；舊專案依 `elf-cicd-versioning` 3.4 遷移 |
 
 ## 7. 待確認
 
-1. **與既有 CI skill 的衝突**：`cicd/elf-cicd-versioning` 規定「合併到 `main` 自動 bump patch、bot 推 `chore(release)` 提交到 `main`、PR 用 Squash and merge 到 `main`」；`cicd/elf-cicd-frontend` 的 CI 觸發是 `push: branches: [main]`；`mcp/elf-mcp-knowledge` 部署是 push `main`；`agents/elf-devops.md` 同樣寫「合併到 main」。這些都和本規範「`main` 不提交、只快轉，部署用 `release`」相反，需要團隊決定以哪邊為準後修改其中一方。
+1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8。
 2. **status checks 對直接 push 的效果**：GitHub ruleset 的「Require status checks to pass」在直接 push（非 PR）時是否生效、是否會擋快轉推送，尚未實測。
 3. **主線叫 `master` 的 repo**：例如 skillshare-source 本身用 `master`，而且 `master` 從 `dev` 快轉（規範是 `main` 從 `release` 快轉），也沒有 `BRANCHING.md`。要改名為 `main`，還是在 `BRANCHING.md` 記錄例外，待決定。
 4. **團隊標準容量**：規則 16 的「預估總工時超過團隊標準容量」沒有具體數字。

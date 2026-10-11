@@ -18,7 +18,7 @@ metadata:
 
 相關 skill：
 - `elf-tauri` — `src-tauri/` 專案慣例、updater 設定、簽章金鑰產生與保管（`docs/signing-and-keys.md`）
-- `elf-cicd-versioning` — `version.yml`：自動 bump、`[release]` 標記、以 `workflow_call` 呼叫本流程
+- `elf-cicd-versioning` — 版號、在 `release` 上打 tag、本流程的觸發與 `verify` job
 - `elf-cicd-docker` — 同一個 `release.yml` 內的 `docker` job（GHCR 映像）
 - `elf-cicd-frontend` / `elf-cicd-backend` — PR 階段 CI（lint、test、build）
 - `desktop/tauri-v2` — 第三方通用 Tauri 2 知識（本 skill 不重複）
@@ -40,12 +40,12 @@ metadata:
 
 ### 觸發與呼叫
 
-1. **MUST** 同時保留三種觸發：`push: tags: ['v*']`、`workflow_dispatch`（input `tag`）、`workflow_call`（input `tag`）。
-   WHY：用 `GITHUB_TOKEN` 推的 tag 不會觸發任何 workflow（GitHub 防遞迴），所以 `version.yml` 必須用 `workflow_call` 直接呼叫。
+1. **MUST** 只保留兩種觸發：`push: tags: ['v*']`、`workflow_dispatch`（input `tag`），並有 `verify` job，`desktop` job `needs: verify`（範本見 `elf-cicd-versioning` 3.2）。
+   WHY：tag 由人在 `release` 上推送，會直接觸發 `push: tags`；`verify` 擋下版號不符或不在 `release` 上的 tag。`workflow_call` 只是給已移除的 `version.yml` 用。
 2. **MUST** 所有 checkout / tagName 都寫 `${{ inputs.tag || github.ref }}` / `${{ inputs.tag || github.ref_name }}`。
-   WHY：三種觸發來源的 tag 放在不同欄位。
-3. **MUST** 呼叫端（`version.yml`）寫 `secrets: inherit`，且給 `permissions: contents: write, packages: write`。
-   WHY：被呼叫的 workflow 只會自動拿到 `GITHUB_TOKEN`，其他 secret 全是空字串。TypingTrainer 因此連掛三次 release。
+   WHY：兩種觸發來源的 tag 放在不同欄位。
+3. **MUST** 保留「Require the signing key」等 secret 檢查 step，secret 為空就 `exit 1`。
+   WHY：secret 為空時 Tauri 報 "Missing comment in secret key"，看起來像金鑰格式錯，不像沒設定。TypingTrainer 因此連掛三次 release。
 
 ### 矩陣
 
@@ -162,7 +162,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 
 提交 release.yml 前：
 
-- [ ] 三種觸發（push tag / workflow_dispatch / workflow_call）都在，且都有 `tag` input
+- [ ] 只有 push tag / workflow_dispatch 兩種觸發；有 `verify` job，`desktop` job `needs: verify`
 - [ ] `max-parallel: 1`、`fail-fast: false`
 - [ ] macOS 列 `args: '--target universal-apple-darwin'` + 兩個 rust target
 - [ ] `pnpm/action-setup@v4` 在 `setup-node` 之前，且沒有 `version:`
@@ -173,7 +173,6 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 - [ ] `updater-manifest` job 存在、權限 `contents: write`、斷言四個平台 key
 - [ ] `<AppName>` 已全部替換；`.github/release-body.md` 存在、中英雙語完整，release.yml 沒有內嵌的 release 文字
 - [ ] 有 `docker` job ⇔ release-body.md 有 GHCR 行（小寫 `<owner>/<repo>`）
-- [ ] 呼叫端 `version.yml` 有 `secrets: inherit`（→ `elf-cicd-versioning`）
 
 首次發佈後：
 
@@ -188,7 +187,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 
 | 症狀 | 原因 | 修正 |
 |---|---|---|
-| CI 報 `Missing comment in secret key` | 金鑰**是空的**（Tauri 先 base64 解碼再驗證，空字串當成格式錯） | 呼叫端加 `secrets: inherit`；確認 `gh secret list` 有 `TAURI_SIGNING_PRIVATE_KEY` |
+| CI 報 `Missing comment in secret key` | 金鑰**是空的**（Tauri 先 base64 解碼再驗證，空字串當成格式錯） | 確認 `gh secret list` 有 `TAURI_SIGNING_PRIVATE_KEY`（名稱完全一致） |
 | Docker job 成功、desktop job 金鑰錯誤 | 同上 — `GITHUB_TOKEN` 是唯一自動傳遞的 secret | 同上 |
 | 三個 job 都綠，但部分平台收不到更新 | 平行寫 `latest.json`，後寫覆蓋先寫 | `max-parallel: 1`；靠 `updater-manifest` job 抓 |
 | `updater-manifest` 報 `release not found`，資產明明在 | 權限 `contents: read` 看不到 draft | 改 `contents: write` |
@@ -199,7 +198,8 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 | 很久沒問題的 macOS 發佈突然失敗 | Developer ID 憑證（5 年）到期或 API key 被撤銷 | 重新產生憑證並更新 secrets |
 | setup-node 報找不到 pnpm | `pnpm/action-setup` 放在 `setup-node` 之後 | 調換順序 |
 | `pnpm/action-setup` 報版本衝突 | 同時寫了 `version:` 與 `packageManager` 且不一致 | 移除 `version:` |
-| tag 推上去但 release 沒跑 | tag 由 `GITHUB_TOKEN` 推送（不觸發事件）或是 lightweight tag | 由 `version.yml` 以 `workflow_call` 呼叫；用 `git tag -a`（→ `elf-cicd-versioning`） |
+| tag 推上去但 release 沒跑 | tag 由 workflow 用 `GITHUB_TOKEN` 推送（不觸發事件） | 由人在 `release` 上 `git tag -a` 後推送（→ `elf-cicd-versioning`） |
+| `verify` 失敗，其他 job 都 skipped | tag 不等於 `package.json` 版號，或 tag 不在 `release` 上 | 依 `elf-cicd-versioning` 常見錯誤處理 |
 | Ubuntu 編譯 `webkit2gtk` 找不到 | 安裝了 4.0 版套件 | 用 `libwebkit2gtk-4.1-dev` |
 | Windows 使用者更新後「程式和功能」出現兩筆、或更新失敗 | 使用者裝的是 `-setup.exe`（NSIS），`latest.json` 卻指向 `.msi` | `updaterJsonPreferNsis: true` |
 | Release 頁面文字與 repo 裡的 release-body.md 不同 | release.yml 內嵌了另一份 `releaseBody` | 刪除內嵌文字，改由「Read the release notes」step 讀檔（規則 23） |

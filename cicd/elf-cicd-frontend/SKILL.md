@@ -78,9 +78,10 @@ metadata:
 
 **Workflow 本身**
 
-23. MUST 只有一個 `.github/workflows/ci.yml`，觸發條件固定 `push: branches: [main]` + `pull_request`。
+23. MUST 只有一個 `.github/workflows/ci.yml`，觸發條件固定 `push: branches: [dev, release]` + `pull_request`。
+    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule），`pull_request` 擋住合併前；`push` 到 `dev`、`release` 讓合併後與發佈前的提交都有結果可查。`main` 只從 `release` 快轉，同一個提交在 `release` 已跑過，不必再跑。
 24. MUST NOT 在 `ci.yml` 使用 `paths:` / `paths-ignore:` 過濾。
-    為什麼：`main` 的 branch protection 把這些 job 設為 required check；被路徑過濾掉的 workflow 不會回報狀態，PR 會永遠卡在 "Expected — Waiting for status"。
+    為什麼：`dev` 的 branch protection 把這些 job 設為 required check；被路徑過濾掉的 workflow 不會回報狀態，PR 會永遠卡在 "Expected — Waiting for status"。
 25. MUST NOT 改 job 的 `name:`（`web (lint · types · tests · build)`、`e2e (browser)`）。若真的要改，同一個 PR 必須同步改 branch protection 的 required checks。
 26. MUST NOT 在 CI 加 `continue-on-error: true` 讓失敗的步驟變綠。
 

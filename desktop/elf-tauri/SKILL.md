@@ -19,7 +19,7 @@ metadata:
 
 相關 skill：
 - `elf-cicd-desktop` — 三平台 release workflow、secrets 檢查、latest.json 驗證
-- `elf-cicd-versioning` — `scripts/version.mjs` 與自動 bump
+- `elf-cicd-versioning` — `scripts/version.mjs`、版號 PR 與在 `release` 上打 tag
 - `elf-vue` — 前端元件 / store 規範（desktop 橋接只能在 `api/` 層被呼叫）
 - `elf-stack` — 團隊版本總表（Node 24.18、pnpm 版號）
 
@@ -222,7 +222,7 @@ export async function readSetting(key: string): Promise<string | null> {
 | `invoke` 報權限不足 / not allowed | `capabilities/default.json` 缺 plugin 權限，或 `windows` 沒含該視窗 label | 加最小權限；確認 `windows: ["main"]` |
 | `tauri build` 報 `failed to decode base64 pubkey` | `pubkey` 是佔位字串或只貼了一部分 | 貼上 `.key.pub` 完整內容 |
 | 本機 build 失敗，提示需要簽章金鑰 | `createUpdaterArtifacts: true` 但沒設 `TAURI_SIGNING_PRIVATE_KEY` | `export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/<appname>.key)"`；只測前端用 `pnpm desktop:dev` |
-| CI 報 `Missing comment in secret key` | secret 是空的（呼叫端沒 `secrets: inherit`） | 見 `elf-cicd-desktop` |
+| CI 報 `Missing comment in secret key` | secret 是空的（沒設定或名稱不符） | 見 `elf-cicd-desktop` |
 | 使用者按「下載並安裝」才失敗，CI 全綠 | 私鑰與 `pubkey` 不成對 | 重新 `gh secret set`，確認時間 |
 | App 報 `Could not fetch a valid release JSON from the remote` | release 仍為 draft | `gh release edit vX.Y.Z --draft=false --latest` |
 | macOS / Linux 更新完仍是舊版 | 沒呼叫 `relaunch()` 或缺 `process:allow-restart` | 補上 `relaunch` 與權限 |

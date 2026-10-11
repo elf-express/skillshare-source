@@ -3,7 +3,7 @@ name: Release
 # Container images for the web deployment.
 #
 # - Project WITH a desktop app: copy only `jobs.docker` below into the existing
-#   release.yml from elf-cicd-desktop, so version.yml calls a single workflow.
+#   release.yml from elf-cicd-desktop, so one tag runs one workflow.
 # - Web-only project: use this whole file as .github/workflows/release.yml.
 #
 # Images: ghcr.io/<owner>/<repo>/api and ghcr.io/<owner>/<repo>/web,
@@ -20,18 +20,39 @@ on:
         description: 'Existing tag to build (e.g. v0.0.1)'
         required: true
         type: string
-  # A tag pushed with GITHUB_TOKEN triggers nothing, so version.yml calls this
-  # directly (elf-cicd-versioning). The caller must pass `secrets: inherit` and
-  # grant `packages: write`.
-  workflow_call:
-    inputs:
-      tag:
-        required: true
-        type: string
 
 jobs:
+  # The tag must equal package.json's version and point at a commit on the
+  # release branch (elf-cicd-versioning). Nothing is built when it does not.
+  verify:
+    name: verify tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          # Full history, so origin/release is there to compare against.
+          fetch-depth: 0
+
+      - name: Tag must match the version and sit on release
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match package.json version $version"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$(git rev-parse "$TAG^{commit}")" origin/release; then
+            echo "::error::$TAG is not on release. Fast-forward release first, then tag the commit it points to."
+            exit 1
+          fi
+
   docker:
     name: container images
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -72,7 +72,7 @@ skillshare-source/
 │   ├── elf-cicd-frontend/         ★ pnpm、lint、typecheck、Vitest 55%、Playwright
 │   ├── elf-cicd-backend/          ★ dotnet test、coverlet 55%、Testcontainers
 │   ├── elf-cicd-review/           ★ 每個 PR 的 Claude AI code review
-│   ├── elf-cicd-versioning/       ★ 自動版號、[release] 才打 tag 發版
+│   ├── elf-cicd-versioning/       ★ 版號 PR 進 dev、在 release 上打 tag 發版
 │   ├── elf-cicd-desktop/          ★ Tauri 三平台發佈、簽章、latest.json
 │   └── elf-cicd-docker/           ★ Dockerfile、nginx、compose、GHCR
 ├── testing/
