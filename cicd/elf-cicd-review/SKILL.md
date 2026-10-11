@@ -6,7 +6,7 @@ description: |
   ANTHROPIC_API_KEY、調整審查 prompt、Dependabot 或 bot PR 審查失敗、AI 審查 job 報
   is_error 卻看不到原因，或設定 branch protection 要求 AI 審查通過時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -69,7 +69,8 @@ metadata:
 
 **與 branch protection 的關係**
 
-17. MUST 在 `main` 的 branch protection 把 `review` 設為 required check（連同 CI 的 `web` / `e2e` / `server`）。
+17. MUST 在 `dev` 的 branch protection 把 `review` 設為 required check（連同 CI 的 `web` / `e2e` / `server`）。
+    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule）；`main`、`release` 只快轉、不經 PR，設在那裡永遠用不到。
 18. MUST 理解：`review` 綠燈只代表「審查跑完」，**不代表沒有問題**。PR 作者 MUST 逐條回應 AI 留言（修正或說明不修的理由）後才合併。
 
 ## 3. 標準範本
@@ -85,7 +86,7 @@ metadata:
 1. 產生訂閱 token：本機執行 `claude setup-token`，取得 token。
 2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret：`CLAUDE_CODE_OAUTH_TOKEN`。
 3. 安裝 Claude GitHub App 到該 repo（`claude` CLI 內 `/install-github-app` 會引導）。
-4. Settings → Branches（或 Rulesets）→ `main` → Require status checks：勾選 `review`。
+4. Settings → Branches（或 Rulesets）→ `dev` → Require status checks：勾選 `review`。
 
 ### 3.2 地雷段落範例（照這個粒度寫）
 
@@ -111,7 +112,7 @@ Known pitfalls in this repo — check every PR against them:
 - [ ] `--allowedTools` 與規則 9 完全相同
 - [ ] 有 `if: failure()` 印 `$RUNNER_TEMP/claude-execution-output.json` 的 step
 - [ ] prompt 已列出 repo 目錄與本專案地雷（或已刪除佔位段落）
-- [ ] `main` branch protection 已把 `review` 設為 required
+- [ ] `dev` branch protection 已把 `review` 設為 required
 - [ ] 開一個測試 PR，確認 PR 上出現 AI 總評留言與至少能留逐行留言
 
 ## 5. 常見錯誤

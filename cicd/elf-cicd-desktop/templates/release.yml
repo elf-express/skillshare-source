@@ -9,7 +9,7 @@ name: Release
 # (from elf-cicd-desktop/templates/release-body.md).
 
 on:
-  # Covers a tag pushed by a person.
+  # A tag pushed by a person on the release branch (elf-cicd-versioning).
   push:
     tags: ['v*']
 
@@ -21,19 +21,38 @@ on:
         required: true
         type: string
 
-  # How version.yml (elf-cicd-versioning) reaches this workflow. A tag pushed
-  # with GITHUB_TOKEN does not trigger anything — GitHub suppresses it to avoid
-  # recursive runs — so the auto-version job has to call this directly instead
-  # of relying on `push`. The caller MUST pass `secrets: inherit`.
-  workflow_call:
-    inputs:
-      tag:
-        required: true
-        type: string
-
 jobs:
+  # The tag must equal package.json's version and point at a commit on the
+  # release branch (elf-cicd-versioning). Nothing is built when it does not.
+  verify:
+    name: verify tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          # Full history, so origin/release is there to compare against.
+          fetch-depth: 0
+
+      - name: Tag must match the version and sit on release
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match package.json version $version"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$(git rev-parse "$TAG^{commit}")" origin/release; then
+            echo "::error::$TAG is not on release. Fast-forward release first, then tag the commit it points to."
+            exit 1
+          fi
+
   desktop:
     name: desktop (${{ matrix.platform }})
+    needs: verify
     permissions:
       contents: write
     strategy:
@@ -93,7 +112,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Fails loudly and immediately when the key did not reach this workflow.
-      # It arrives empty unless the caller passes `secrets: inherit`, and a
+      # It arrives empty when the repository secret is missing or misnamed, and a
       # build that gets an empty key spends ten minutes compiling before
       # reporting something that reads like a malformed key rather than a
       # missing one ("Missing comment in secret key").
@@ -103,7 +122,7 @@ jobs:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           if [ -z "$KEY" ]; then
-            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. A called workflow only receives secrets when the caller passes 'secrets: inherit'."
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. Add it under Settings -> Secrets and variables -> Actions (exact name)."
             exit 1
           fi
           echo "Signing key present."
@@ -242,4 +261,4 @@ jobs:
 
   # Web deployment images, when the project has one: paste the `docker` job
   # from elf-cicd-docker/templates/release-docker.yml here. Keep it in THIS
-  # file so version.yml only ever calls one workflow.
+  # file so one tag runs one workflow, behind the same verify job.

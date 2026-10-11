@@ -7,6 +7,7 @@ _superpowers/
 .playwright-mcp
 .claude/settings.local.json
 .kilo/
+.ocrca/
 .skillignore.local
 
 # Removed as a submodule — the working repo lives at its own clone

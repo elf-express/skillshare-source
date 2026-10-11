@@ -18,7 +18,7 @@ and agents (AI helpers that apply those rules) — fanned out by the
 
 ```
 <category>/elf-<name>/SKILL.md     team skills (stack, frontend, frontend/design, api, backend,
-                                   desktop, cicd, testing, mcp)
+                                   desktop, cicd, testing, mcp, workflow)
 <category>/<name>/                 third-party skills (not elf-*)
 tools/                             third-party tooling skills
 agents/*.md                        team agents (copied to ~/.claude/agents by scripts/sync-agents.sh)
@@ -117,7 +117,7 @@ Two caveats before you treat a red result as your own doing:
 
 - Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present it
-  reports 101 folders, which matches what syncs.
+  reports 102 folders, which matches what syncs.
 - `skillshare audit` can exit non-zero on a clean tree — currently from CRITICAL findings in the
   `ui-ux-pro-max` update that are not yet in `audit_accepted`. Run `skillshare audit` and compare
   before blaming a change.

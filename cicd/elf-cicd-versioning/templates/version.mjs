@@ -9,7 +9,7 @@
 //   node scripts/version.mjs major      → 0.1.0 -> 1.0.0
 //   node scripts/version.mjs 1.2.3      → set explicitly
 //
-// No dependencies on purpose: version.yml runs it without `pnpm install`.
+// No dependencies on purpose: it must run on a fresh clone, before `pnpm install`.
 //
 // Replace <AppName> / <crate-name>. Delete the Tauri targets if the repo has
 // no src-tauri/. pnpm-lock.yaml does not record workspace package versions,

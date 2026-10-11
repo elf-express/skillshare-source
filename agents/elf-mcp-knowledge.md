@@ -25,7 +25,7 @@ skills:
 - 只放文字（`.md`），不放圖片；不放「全書合併」這種重複檔。
 - `corpus.json` 必含 `book`、`language`、`source`、`title`、`description`、`capabilities`。
 - 工具固定 `docs_*` 8 個，語料是參數；**MUST NOT** 為新書新增工具。
-- 在獨立分支工作，不直接改 `main`。
+- 在獨立分支工作，依 `elf-team-rule` 從 `dev` 開出、經 PR 合回；mcp-library 目前只有 `main`（尚未導入 dev / release），在導入前從 `main` 開分支、經 PR 合回，不直接改 `main`。
 
 ## 禁止簡化
 

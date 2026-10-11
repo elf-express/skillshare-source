@@ -72,7 +72,7 @@ skillshare-source/
 │   ├── elf-cicd-frontend/         ★ pnpm、lint、typecheck、Vitest 55%、Playwright
 │   ├── elf-cicd-backend/          ★ dotnet test、coverlet 55%、Testcontainers
 │   ├── elf-cicd-review/           ★ 每個 PR 的 Claude AI code review
-│   ├── elf-cicd-versioning/       ★ 自動版號、[release] 才打 tag 發版
+│   ├── elf-cicd-versioning/       ★ 版號 PR 進 dev、在 release 上打 tag 發版
 │   ├── elf-cicd-desktop/          ★ Tauri 三平台發佈、簽章、latest.json
 │   └── elf-cicd-docker/           ★ Dockerfile、nginx、compose、GHCR
 ├── testing/
@@ -85,6 +85,8 @@ skillshare-source/
 │   ├── elf-mcp-book/              ★ 書籍素材（knowledge.books/）與「挑一份上架成語料」
 │   ├── elf-mcp-server/            ★ 寫 MCP server
 │   └── elf-mcp-gateway/           ★ MCPJungle 註冊與部署
+├── workflow/
+│   └── elf-team-rule/             ★ git 分支規範（三種 repo 類型）、release CI/CD 核對、分支對齊、Plan 容量
 ├── tools/                           第三方工具：agent-browser、find-skills、project-planner、audit-website
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）

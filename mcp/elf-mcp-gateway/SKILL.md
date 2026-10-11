@@ -7,7 +7,7 @@ description: |
   當任務涉及 mcpjungle/ 目錄、docker-compose*.yml、Dockerfile.registrar、registrar.sh / register.sh、servers/*.json、
   MCPJungle 設定或升級、nginx.example.conf、docker-publish.yml / ci.yml，或排查「gateway 看不到工具 / 註冊失敗 / 連不上」時觸發。
 metadata:
-  version: 1.1.0
+  version: 1.1.1
   owner: Elf Express
 ---
 
@@ -217,7 +217,7 @@ docker compose up -d --force-recreate registrar
 
 1. **Action 版本策略衝突**：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 寫 `actions/*@v5`；以哪個為團隊標準。另 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12）。
 2. **PR AI review**：團隊標準要求 Claude AI review（`elf-cicd-review`），本 repo `.github/workflows/` 目前**沒有** claude-review workflow。
-3. **發版流程**：`release.yml` 已刪（證據 E1），`v*.*.*` tag 目前靠人工推；是否導入 `elf-cicd-versioning`。
+3. **發版流程**：`release.yml` 已刪（證據 E1），`v*.*.*` tag 目前靠人工推；是否導入 `elf-cicd-versioning`。另 mcp-library 只有 `main`、`docker-publish.yml` 在 push `main` 時重建 `latest`（實測 2026-10-11），與 `elf-team-rule`「部署一律用 `release`」不符；導入 `dev` / `release` 後，本 skill 第 6 節「main 的 Action」一列一併改寫。
 4. **公網存取模型**：gateway 目前 `SERVER_MODE=development`（無用戶端驗證），nginx 範例也未加驗證；對外開放前要選 enterprise 模式或 nginx 層驗證。
 5. `bearer_token: "${VAR}"` 展開：fork 的 CLI 有此功能（`cmd/config_reader_env_test.go`），但 registrar 用的是**上游** `ghcr.io/mcpjungle/mcpjungle:latest-stdio` 為 base，且 compose 的 registrar 目前沒有傳 `DOCS_MCP_AUTH_TOKEN`；硬化時需實測並補 env。
 6. CI Node 版本：`ci.yml` / `npm-publish.yml` 用 `node-version: 20`，與團隊 Node 24.18、Docker `node:26-alpine`、gateway Node 22 皆不同。
