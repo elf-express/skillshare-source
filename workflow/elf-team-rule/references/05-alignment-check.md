@@ -95,4 +95,4 @@ $ git merge-base --is-ancestor origin/release origin/dev && echo 可以快轉
 可以快轉
 ```
 
-四條分支都指向 eaf52f4f，彼此對齊。注意這個 repo 的主線叫 `master`，見 SKILL.md「待確認」第 3 項。
+`release`、`dev`、`master` 都指向 eaf52f4f，彼此對齊。注意這個 repo 的主線叫 `master`，見 SKILL.md「待確認」第 3 項。

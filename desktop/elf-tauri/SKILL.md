@@ -7,7 +7,7 @@ description: |
   tauri.conf.json、tauri-plugin-updater、自動更新、@tauri-apps/* 在前端的使用、簽章金鑰或
   docs/signing-and-keys.md 時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.0.1
   owner: Elf Express
 ---
 

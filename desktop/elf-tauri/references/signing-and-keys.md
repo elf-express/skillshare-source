@@ -95,7 +95,7 @@ Finished 2 updater signatures at:
 
 `Missing comment in secret key` 幾乎都代表金鑰**不存在**，而不是格式錯：Tauri 先 base64 解碼再驗證，空字串就會報格式錯誤。
 確認 repo 的 Actions secrets 裡有 `TAURI_SIGNING_PRIVATE_KEY`（名稱完全一致），而且沒有設在 release job 沒用到的 environment 底下。
-（TypingTrainer 因此失敗三次 release。）
+（TypingTrainer 當時是 `workflow_call` 的呼叫端沒寫 `secrets: inherit`，金鑰以空字串送進來，連掛三次 release；現行流程（人推 tag 直接觸發）下等價的原因是 secret 沒設定或名稱不符。）
 
 ---
 

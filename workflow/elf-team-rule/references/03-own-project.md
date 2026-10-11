@@ -85,8 +85,10 @@ git push origin release
 每次發佈後接著做：
 
 ```
+git fetch origin
+git log --oneline origin/main..origin/release    # 先列出會帶進去的提交
 git switch main
-git merge --ff-only release
+git merge --ff-only origin/release
 git push origin main
 ```
 

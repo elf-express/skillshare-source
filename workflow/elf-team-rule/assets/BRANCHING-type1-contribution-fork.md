@@ -36,6 +36,7 @@ git remote -v
 
 ```
 git fetch upstream
+git log --oneline origin/main..upstream/main   # 先列出會帶進來的提交
 git switch main
 git merge --ff-only upstream/main
 git push origin main
@@ -69,9 +70,10 @@ git push origin release
 送 PR 給原作者：
 
 ```
-git switch -c pr/xxx main
-git cherry-pick <該主題的提交>
-gh pr create --repo {{作者帳號}}/{{repo 名稱}} --base main
+git switch -c pr/<短名> main
+git cherry-pick -x <該主題的提交>       # 清單先給使用者確認；不 cherry-pick 合併提交
+git push -u origin pr/<短名>
+gh pr create --repo {{作者帳號}}/{{repo 名稱}} --base main --head elf-express:pr/<短名>   # 使用者明確同意後才執行
 ```
 
 ## 分支保護設定建議
@@ -79,7 +81,7 @@ gh pr create --repo {{作者帳號}}/{{repo 名稱}} --base main
 建議在 GitHub 設定分支保護規則（Branch Protection Rules 或 Ruleset）：
 
 * **`main` 與 `release`**：禁止 force push、禁止刪除、只允許維護者 push。**不要**設「必須經過 Pull Request」：這兩條分支是在本機 `merge --ff-only` 後直接 push 的，GitHub 的 PR 合併會產生新提交或新 SHA，無法快轉。
-* **`dev`**：禁止 force push、禁止刪除；開發分支（`feat/*`、`fix/*`、`docs/*`、`chore/*`、`test/*`、`merge/*`）一律經 PR 合併，維護者保留直接 push 權限，給沒有衝突的 `main` → `dev` 同步合併使用。
+* **`dev`**：禁止 force push、禁止刪除；開發分支（`feat/*`、`fix/*`、`docs/*`、`chore/*`、`test/*`、`merge/*`）一律經 PR 合併，維護者保留直接 push 權限，給沒有衝突的 `main` → `dev` 同步合併使用；`dev` 設了 required status checks 時，維護者要列在 bypass 名單，否則本機做的合併提交推不上去（尚未實測，見 elf-team-rule 待確認 2）。
 
 ## 禁止事項
 
@@ -87,4 +89,5 @@ gh pr create --repo {{作者帳號}}/{{repo 名稱}} --base main
 * 不把 `main` 當穩定版或部署來源。
 * 不直接在 `dev` 上開發。
 * 不從 `dev` 或開發分支直接對原作者開 PR；一個 `pr/` 分支只放一個主題。
+* 未經使用者明確同意，不對原作者的 repo 開 PR、留言或推送任何東西。
 * `--ff-only` 失敗、合併或 cherry-pick 有衝突時，停下來回報，不要自行處理。

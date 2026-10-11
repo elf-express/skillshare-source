@@ -60,6 +60,7 @@ git push -u origin release
 
 ```
 git fetch upstream
+git log --oneline origin/main..upstream/main    # 先列出這次會帶進來的提交
 git switch main
 git merge --ff-only upstream/main
 git push origin main

@@ -7,7 +7,7 @@ description: |
   capabilities（cheatsheet / examples / symbol）、docs_* 工具、語料或 server 命名、servers/*.json、REGISTER_LIST、
   「讓 AI 查得到某份文件 / 某個框架的知識」時觸發。
 metadata:
-  version: 1.1.0
+  version: 1.1.1
   owner: Elf Express
 ---
 

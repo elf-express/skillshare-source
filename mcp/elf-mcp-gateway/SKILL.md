@@ -7,7 +7,7 @@ description: |
   當任務涉及 mcpjungle/ 目錄、docker-compose*.yml、Dockerfile.registrar、registrar.sh / register.sh、servers/*.json、
   MCPJungle 設定或升級、nginx.example.conf、docker-publish.yml / ci.yml，或排查「gateway 看不到工具 / 註冊失敗 / 連不上」時觸發。
 metadata:
-  version: 1.1.0
+  version: 1.1.1
   owner: Elf Express
 ---
 

@@ -6,7 +6,7 @@ description: |
   nginx.conf、docker-compose.yml、.dockerignore、release.yml 的 docker job、GHCR 映像名稱與 tag、
   GHA build cache，或排查容器建置 / 啟動 / 推送失敗時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -212,5 +212,6 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - postgres 18 volume 路徑改為 `/var/lib/postgresql` 依據官方映像變更說明，團隊尚未在實際專案驗證。
 - 各映像獨立 gha cache `scope` 是對參考專案的改良（參考專案未設定 scope），尚未在團隊 CI 實測命中率。
 - `node:24.18-alpine` tag 在 Docker Hub 是否存在（若只有 `24-alpine` / `24.18.x-alpine`，需調整）。
+- 以 `workflow_dispatch` 重建舊 tag 時，docker job 仍會推 `latest`，等於把 `latest` 退回舊版（既有行為，elf-cicd-versioning 3.3 把重建列為正式操作後更容易遇到）。是否改為 `inputs.tag` 有值時不推 `latest`，待決定。
 - 正式環境部署方式（直接 compose、Kubernetes 或其他）與 secrets 注入方式尚未定義；本 skill 只涵蓋建置與推送。
 - 正式環境的應用程式帳號如何建立（`docker-entrypoint-initdb.d` 初始化腳本、部署管線，或 DBA 手動），以及 CodeFirst 在正式環境由哪個步驟以擁有者帳號執行（規則 19a、elf-postgresql 規則 28、elf-sqlsugar 規則 18a）。

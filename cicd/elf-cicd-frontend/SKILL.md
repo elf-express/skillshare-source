@@ -6,7 +6,7 @@ description: |
   .nvmrc / engines / packageManager 釘版、format / lint / typecheck / 單元測試 / 覆蓋率門檻、
   前端 build artifact、Playwright 在 CI 上執行，或把專案從 npm 轉成 pnpm 時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -79,7 +79,7 @@ metadata:
 **Workflow 本身**
 
 23. MUST 只有一個 `.github/workflows/ci.yml`，觸發條件固定 `push: branches: [dev, release]` + `pull_request`。
-    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule），`pull_request` 擋住合併前；`push` 到 `dev`、`release` 讓合併後與發佈前的提交都有結果可查。`main` 只從 `release` 快轉，同一個提交在 `release` 已跑過，不必再跑。
+    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule），`pull_request` 擋住合併前，`push` `dev` 驗證合併後的結果。`release` 的提交雖然在 `dev` 跑過，但 push `release` 會在 `release` 名下留一筆 run，發佈時用 `gh run list -b release` 就查得到，不必回頭找 `dev` 的紀錄。`main` 只從 `release` 快轉，同一個提交已有 `release` 名下的紀錄，不再重跑。
 24. MUST NOT 在 `ci.yml` 使用 `paths:` / `paths-ignore:` 過濾。
     為什麼：`dev` 的 branch protection 把這些 job 設為 required check；被路徑過濾掉的 workflow 不會回報狀態，PR 會永遠卡在 "Expected — Waiting for status"。
 25. MUST NOT 改 job 的 `name:`（`web (lint · types · tests · build)`、`e2e (browser)`）。若真的要改，同一個 PR 必須同步改 branch protection 的 required checks。

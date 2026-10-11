@@ -6,7 +6,7 @@ description: |
   ANTHROPIC_API_KEY、調整審查 prompt、Dependabot 或 bot PR 審查失敗、AI 審查 job 報
   is_error 卻看不到原因，或設定 branch protection 要求 AI 審查通過時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 

@@ -67,6 +67,8 @@ metadata:
     為什麼：tag 打在沒測過的 `dev` 提交上、或版號忘了改，都會發出一個名不符實的版本；在 verify 擋下，比發出去再撤回便宜。
 17. `verify` 的 checkout MUST 用 `fetch-depth: 0`。為什麼：淺 clone 沒有 `origin/release` 的歷史，`merge-base --is-ancestor` 會一律失敗。
 18. 所有 job 的 checkout MUST 用 `ref: ${{ inputs.tag || github.ref }}`，tag 名稱 MUST 用 `${{ inputs.tag || github.ref_name }}`（兩種觸發共用）。
+19. 需要 secret 的 job MUST 在建置前先檢查 secret 非空，空的就 `exit 1`（範例見 elf-cicd-desktop 規則 13）。
+    為什麼：空的 secret 常在建置十分鐘後才以看似格式錯誤的訊息失敗，fail fast 才看得出是沒設定。
 
 ## 3. 標準範本
 
@@ -168,7 +170,16 @@ jobs:
 3. 確認 repo 有 `dev`、`release` 分支（elf-team-rule 第 3 種 A 節）。
 4. branch protection 中為 `github-actions[bot]` 開的繞過權限一併移除。
 
-## 4. 檢查清單
+## 4. 禁止簡化
+
+- MUST NOT 拿掉 `verify` job，或讓任何 job 不經 `needs: verify` 就建置、發佈。
+- MUST NOT 把 `verify` 的 checkout 改回淺 clone（拿掉 `fetch-depth: 0`）。
+- MUST NOT 改用 lightweight tag，或讓 workflow 用 `GITHUB_TOKEN` 推 tag。
+- MUST NOT 讓 bot 或 workflow 提交到 `dev`、`release`、`main`（包括「只是改版號」）。
+- MUST NOT 手改任何版號欄位而略過 `scripts/version.mjs`。
+- MUST NOT 拿掉 secret 的 fail-fast 檢查。
+
+## 5. 檢查清單
 
 - [ ] `scripts/version.mjs` 的 `TARGETS` 涵蓋 repo 內**所有**版號欄位，路徑正確
 - [ ] 本機 `node scripts/version.mjs patch` 後 `git diff` 顯示每個版號檔都改到同一個值（驗完 `git checkout .` 還原）
@@ -179,12 +190,12 @@ jobs:
 - [ ] 版號 PR 標題為 `chore(release): vX.Y.Z`，只改版號
 - [ ] tag 打在 `origin/release` 上、用 `git tag -a`、由人推送
 
-## 5. 常見錯誤
+## 6. 常見錯誤
 
 | 症狀 | 原因 | 修正 |
 |------|------|------|
 | tag 已推上去，Release workflow 沒跑 | tag 是 workflow 用 `GITHUB_TOKEN` 推的，不觸發 `push: tags` | 由人推送 tag（規則 12） |
-| verify 報 `does not match package.json version` | 忘了先合版號 PR，或 tag 打錯版號 | 刪掉錯的 tag（`git push origin :refs/tags/vX.Y.Z`，先回報），改版號後重來 |
+| verify 報 `does not match package.json version` | 忘了先合版號 PR，或 tag 打錯版號 | 先回報，同意後刪掉本機與遠端的錯 tag（`git tag -d vX.Y.Z`、`git push origin :refs/tags/vX.Y.Z`），改版號後重來 |
 | verify 報 `is not on release` | tag 打在 `dev` 或開發分支上，或 `release` 還沒快轉 | 先快轉 `release`，在 `origin/release` 上打 tag |
 | verify 一律報 `is not on release` | checkout 沒有 `fetch-depth: 0` | 加 `fetch-depth: 0`（規則 17） |
 | `release` 快轉時 `--ff-only` 失敗 | 舊的 `version.yml` 還在，bot 直接提交到分支上 | 依 3.4 遷移，再依 elf-team-rule 回報處理 |
@@ -192,9 +203,11 @@ jobs:
 | `cargo build --locked` 失敗 | `Cargo.lock` 的自身版本沒跟著改 | `Cargo.lock` 列入 `TARGETS`（規則 5） |
 | release 裡簽章步驟報 "Missing comment in secret key" | secret 沒設定，或設在別的 environment | 檢查 repo secrets；release 端保留 fail-fast 檢查（elf-cicd-desktop） |
 
-## 6. 待確認
+## 7. 待確認
 
 - tag 訊息格式 `<AppName> vX.Y.Z` 與 release 名稱格式，待與 elf-cicd-desktop 統一。
 - 是否需要支援 pre-release 版號（`1.2.0-beta.1`）：目前 `version.mjs` 只接受純 `X.Y.Z`，待確認。
 - 3.2 的 `verify` job 以 `package.json` 為版號來源。純 .NET 專案（沒有根 `package.json`，例如 ELF.Modules 用 `Directory.Build.props`）的對應寫法尚未統一；ELF.Modules 目前在 CI 的 tag 步驟以 `sed` 讀 `<Version>` 比對。
-- 是否用 ruleset 限制「只有維護者能建立 `v*` tag」，尚未實測。
+- 是否用 ruleset 限制「只有維護者能建立 `v*` tag」，尚未實測。`verify` 只檢查「在 `release` 上、版號相符」，有 write 權限的人都能發版，建議優先處理。
+- 3.2 的 `verify` job 只在本機 repo 驗證過判斷邏輯（在 release 上／不在 release 上／版號不符三種結果），尚未在真實 GitHub Actions 跑過 push tag 與 `workflow_dispatch` 兩條路徑，包括 checkout 後 `origin/release` 是否存在。第一個採用的專案要回報結果。
+- `verify` 是否加「tag 必須是 annotated」的檢查（`git cat-file -t "$TAG"` 應為 `tag`）：`actions/checkout` 取回 tag 時是否保留 annotated 物件未實測，貿然加上可能誤擋。

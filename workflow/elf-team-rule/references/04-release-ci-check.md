@@ -17,12 +17,13 @@ gh api repos/$R/branches --jq '.[] | "\(.name) \(.commit.sha[0:8])"'
 ## 2. 查這個提交上的 check runs（主要證據）
 
 ```bash
-gh api repos/$R/commits/release/check-runs \
+gh api "repos/$R/commits/release/check-runs?filter=all&per_page=100" --paginate \
   --jq '.check_runs[] | "\(.id) \(.name) \(.status) \(.conclusion) \(.completed_at)"'
 ```
 
-- 同一個檢查名稱可能有好幾筆（重跑過）。看 `completed_at` 最新的一筆判斷「現在」的狀態，但舊的失敗仍會讓 GitHub 頁面顯示紅叉。
-- **不要只用 `gh run list -b release`**。workflow run 記在觸發它的分支名下（通常是 `dev`），快轉後的 `release` 查不到，會誤判成「沒有失敗」。
+- MUST 帶 `filter=all`。預設 `filter=latest` 只回每個檢查最新的一筆，重跑前失敗的那筆會被藏起來（ELF.Modules v0.8.0 的提交：預設 7 筆、`filter=all` 9 筆，多出來的兩筆正是失敗的 `build`，2026-10-11 實測）。
+- 同一個檢查名稱有好幾筆時（重跑過），看 `completed_at` 最新的一筆判斷「現在」的狀態，較早的失敗照樣列入回報。
+- **不要只用 `gh run list -b release`**。workflow run 記在觸發它的分支名下（通常是 `dev`），CI 沒有設 push `release` 觸發的 repo，快轉後的 `release` 查不到任何 run，會誤判成「沒有失敗」。
 
 要看 run 層級的資訊，用提交 SHA 查：
 
@@ -60,7 +61,7 @@ gh api repos/$R/check-runs/<check run id>/annotations \
 ## 4. 查一直卡住的檢查
 
 ```bash
-gh api repos/$R/commits/release/check-suites \
+gh api "repos/$R/commits/release/check-suites?per_page=100" --paginate \
   --jq '.check_suites[] | "\(.app.slug) \(.status) \(.conclusion) \(.created_at)"'
 gh api repos/$R/commits/release/status --jq '.state, (.statuses[] | "\(.context) \(.state)")'
 ```
@@ -72,10 +73,11 @@ gh api repos/$R/commits/release/status --jq '.state, (.statuses[] | "\(.context)
 ```bash
 gh api repos/$R/actions/workflows --jq '.workflows[] | "\(.id) \(.name) \(.path) \(.state)"'
 gh run list --repo $R -w <workflow 檔名> -L 10 \
-  --json createdAt,headBranch,conclusion --jq '.[] | "\(.createdAt) \(.headBranch) \(.conclusion)"'
+  --json createdAt,headBranch,event,conclusion --jq '.[] | "\(.createdAt) \(.headBranch) \(.event) \(.conclusion)"'
 ```
 
-- 部署 workflow 的觸發分支 MUST 是 `release`（規則 7、8）。觸發分支是 `main`，就算 CI 全綠也違反規範，一併回報。
+- 部署 MUST 由打在 `release` 上的 `v*` tag 觸發（elf-cicd-versioning）：tag 觸發的 run，`event` 是 `push`、`headBranch` 是 tag 名（例如 `v0.8.0`），而且 `verify` job 成功。用 `git merge-base --is-ancestor <tag> origin/release` 確認 tag 在 `release` 上。
+- 由 push `main`、push 開發分支觸發部署，才是違反規範（規則 7、8），就算 CI 全綠也要一併回報。
 - 同一個 workflow 從建立以來全部失敗，代表從沒成功過，問題在 workflow 本身或 repo 設定，不在這次發版。
 
 ## 6. 重跑

@@ -7,7 +7,7 @@ description: |
   的桌面建置、tauri-apps/tauri-action、TAURI_SIGNING_PRIVATE_KEY、APPLE_* secrets、
   latest.json / updater manifest、draft release 發佈，或排查桌面 release 失敗時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -44,8 +44,7 @@ metadata:
    WHY：tag 由人在 `release` 上推送，會直接觸發 `push: tags`；`verify` 擋下版號不符或不在 `release` 上的 tag。`workflow_call` 只是給已移除的 `version.yml` 用。
 2. **MUST** 所有 checkout / tagName 都寫 `${{ inputs.tag || github.ref }}` / `${{ inputs.tag || github.ref_name }}`。
    WHY：兩種觸發來源的 tag 放在不同欄位。
-3. **MUST** 保留「Require the signing key」等 secret 檢查 step，secret 為空就 `exit 1`。
-   WHY：secret 為空時 Tauri 報 "Missing comment in secret key"，看起來像金鑰格式錯，不像沒設定。TypingTrainer 因此連掛三次 release。
+3. （併入規則 13，編號保留）secret 檢查見規則 13。
 
 ### 矩陣
 
@@ -69,7 +68,7 @@ metadata:
 ### 簽章與憑證
 
 13. **MUST** 在 `tauri-action` 前放「Require the signing key」step：`TAURI_SIGNING_PRIVATE_KEY` 為空就 `exit 1`。
-    WHY：空金鑰會先編譯十分鐘，最後報 `Missing comment in secret key`，看起來像金鑰格式錯，其實是沒傳進來。
+    WHY：空金鑰會先編譯十分鐘，最後報 `Missing comment in secret key`，看起來像金鑰格式錯，其實是沒傳進來。TypingTrainer 當時是 `workflow_call` 的呼叫端沒寫 `secrets: inherit`，金鑰以空字串送進來，連掛三次 release；現行流程（人推 tag 直接觸發）下等價的原因是 secret 沒設定或名稱不符。
 14. **MUST** macOS 放「Check the Apple credentials」step，缺憑證時只 `::warning::`，**不** fail。
     WHY：未簽章的 macOS 版仍可右鍵 → 打開使用；但必須在建置前就讓人看到警告，而不是等使用者回報打不開。
 15. **MUST** `tauri-action` 的 `env` 帶入全部簽章變數（見下方 Secrets 表）。WHY：tauri-action 只從環境變數讀取。
@@ -188,7 +187,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 | 症狀 | 原因 | 修正 |
 |---|---|---|
 | CI 報 `Missing comment in secret key` | 金鑰**是空的**（Tauri 先 base64 解碼再驗證，空字串當成格式錯） | 確認 `gh secret list` 有 `TAURI_SIGNING_PRIVATE_KEY`（名稱完全一致） |
-| Docker job 成功、desktop job 金鑰錯誤 | 同上 — `GITHUB_TOKEN` 是唯一自動傳遞的 secret | 同上 |
+| Docker job 成功、desktop job 金鑰錯誤 | docker job 只用自動提供的 `GITHUB_TOKEN`；桌面簽章金鑰的 secret 沒設定或名稱不符 | 同上 |
 | 三個 job 都綠，但部分平台收不到更新 | 平行寫 `latest.json`，後寫覆蓋先寫 | `max-parallel: 1`；靠 `updater-manifest` job 抓 |
 | `updater-manifest` 報 `release not found`，資產明明在 | 權限 `contents: read` 看不到 draft | 改 `contents: write` |
 | App 顯示 `Could not fetch a valid release JSON from the remote` | release 仍是 draft | `gh release edit vX.Y.Z --draft=false --latest` |

@@ -34,7 +34,7 @@ metadata:
 
 **Skill 載入（Superpower 開發方式）**
 
-1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，MUST 接著載入 `linear-superpowers`。
+1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，接著載入 `linear-superpowers`（Claude 的個人 skill，不在本 repo、不經 skillshare 同步；沒有安裝的工具就照 Linear 團隊文件「開發流程規範：Spec／Plan × superpowers」操作）。
    為什麼：superpowers 決定「先設計、再計畫、再實作、再驗證」的順序，沒先載入就會直接動手寫，跳過設計與兩道驗證。
 2. 之後 MUST 依任務再載入本 skill 與對應的領域 skill（例如 `backend__elf-dotnet`、`cicd__elf-cicd-versioning`）。
 3. MUST 在動手前確認必要的 skill 都已載入；不確定需要哪些時，先列出來給使用者看。
@@ -62,7 +62,7 @@ metadata:
 13. 遇到以下任何一種，MUST 停止操作、說明現況、等使用者決定：
     - `git merge --ff-only` 失敗（`main` 或 `release` 被直接提交過，或上游改寫了歷史）
     - 任何合併、cherry-pick、rebase 出現衝突
-    - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支以外的破壞性操作
+    - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支（規則 19 的清理除外）等破壞性操作
     - 工作目錄有未提交的變更，而接下來的操作會切換分支
     - 無法確定 repo 類型，或 `BRANCHING.md` 與 remote 設定不一致
     - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外
@@ -74,25 +74,25 @@ metadata:
 16. 單一 Plan 的 Task MUST 控制在 3–5 個；超過 5 個，或預估總工時超過團隊標準容量時，MUST 停止新增 Task 並提議拆分。
     為什麼：Task 太多時上下文切換成本高、審查與測試會塞車，整個 Plan 的進度一起被拖慢。
 17. 拆分原則：優先按模組（不同業務領域分開）；其次按依賴（前置任務獨立成一個 Plan，完成並測試後再啟動後續）；拆完每份都要能獨立開發、測試、交付，太小不能獨立交付的就當 Sub-task。
-    依 `linear-superpowers`「一個 Spec 對應一個 Plan」，拆 Plan 就是拆 Spec：新開 `[Spec]`＋`[Plan]` 一組，不在同一個 Spec 底下開第二個 Plan。
+    依開發流程規範「一個 Spec 對應一個 Plan」，拆 Plan 就是拆 Spec：新開 `[Spec]`＋`[Plan]` 一組，不在同一個 Spec 底下開第二個 Plan。
     提問範本：「目前此 Plan 下已有 X 個 Tasks，為避免開發進度延宕與上下文切換，建議將其拆分為 [Plan A] 與 [Plan B]。請問是否同意拆分？」
 
 **衝突處理與分支清理**
 
 18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理，經 PR 合回 `dev`。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
-19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。
+19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支（`git branch -d <分支>`、`git push origin --delete <分支>`）；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。
 
 **分支保護**
 
 20. `main`、`release` MUST 設定：禁止 force push、禁止刪除、只允許維護者 push。MUST NOT 設定「必須經過 PR」。
     為什麼：這兩條分支是在本機 `merge --ff-only` 後直接 push 更新的；GitHub 的 PR 合併（merge commit／squash／rebase）都會產生新提交或新 SHA，無法快轉，設了「必須 PR」之後同步與發佈就推不上去。
-21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併。
+21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併。`dev` 設了 required status checks（elf-cicd-review 規則 17）時，維護者 MUST 列在 bypass 名單：本機做出的同步合併提交沒有任何 check，不 bypass 就推不上去（見待確認 2）。
 
 **核對 CI/CD 與對齊**
 
-22. 判斷某個分支的 CI/CD 狀態，MUST 以該分支**目前指向的提交**上的 check runs 為準（`gh api repos/<owner>/<repo>/commits/<branch>/check-runs`），MUST NOT 只看 `gh run list -b <branch>`。
-    為什麼：`release` 是快轉過來的，它的提交通常是在 `dev` 上被 CI 跑過的，那些 run 的分支欄位寫的是 `dev`；`gh run list -b release` 會回「沒有任何 run」，紅叉卻照樣掛在提交上。完整步驟見 `references/04-release-ci-check.md`。
+22. 判斷某個分支的 CI/CD 狀態，MUST 以該分支**目前指向的提交**上的 check runs 為準（`gh api "repos/<owner>/<repo>/commits/<branch>/check-runs?filter=all"`），MUST NOT 只看 `gh run list -b <branch>`。
+    為什麼：`release` 是快轉過來的，它的提交通常是在 `dev` 上被 CI 跑過的，那些 run 的分支欄位寫的是 `dev`。CI 沒有設 push `release` 觸發的 repo，`gh run list -b release` 會回「沒有任何 run」，失敗的 check run 卻照樣掛在提交上（skillshare-source 2026-10-11 實測）。完整步驟見 `references/04-release-ci-check.md`。
 23. MUST NOT 用推測取代查證：失敗原因以 check run 的 annotations 或 log 原文為準，查不到就回報「查不到」，不要寫成結論。
 24. 快轉 `release` 或 `main` 前，MUST 依 `references/05-alignment-check.md` 確認來源與目標的關係，並用 `git log --oneline <目標>..<來源>` 列出會帶進去的提交給使用者看過。
 
@@ -168,7 +168,7 @@ git branch -a
 
 ## 5. 檢查清單
 
-- [ ] 已載入 `using-superpowers`（Linear 工作單另載 `linear-superpowers`）與本 skill
+- [ ] 已載入 `using-superpowers`（Linear 工作單另依開發流程規範）與本 skill
 - [ ] 已確認 repo 類型（`BRANCHING.md` 或使用者確認）
 - [ ] 工作目錄乾淨、已 `git fetch --all --prune`
 - [ ] 提交在開發分支上，分支名稱符合 `<類型>/e-<編號>-<短名>`
@@ -183,7 +183,7 @@ git branch -a
 
 | 現象 | 原因 | 正確做法 |
 | -- | -- | -- |
-| `gh run list -b release` 沒有任何 run，GitHub 頁面卻顯示紅叉 | `release` 快轉自 `dev`，CI 是在 `dev` 上跑的，run 記在 `dev` 名下 | 查提交上的 check runs（規則 22、`references/04`） |
+| `gh run list -b release` 沒有任何 run，提交上卻有失敗的 check run | `release` 快轉自 `dev`，CI 是在 `dev` 上跑的，run 記在 `dev` 名下 | 查提交上的 check runs（規則 22、`references/04`） |
 | 失敗的 run 沒有 log（`log not found`） | log 已過保存期限 | 讀 check run 的 annotations，常有失敗原因原文 |
 | `gh run rerun` 回 `This workflow run cannot be retried` | run 太舊，無法重跑 | 下一個提交會重新觸發；不要為了清紅叉而做空提交，先回報 |
 | 第 2 種初次建立時 `fatal: a branch named 'main' already exists` | 從第 1 種 clone，本地已有預設分支 `main` | 改用 `git init` 再加 remote（`references/02` A 節） |
@@ -194,6 +194,7 @@ git branch -a
 ## 7. 待確認
 
 1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8。
-2. **status checks 對直接 push 的效果**：GitHub ruleset 的「Require status checks to pass」在直接 push（非 PR）時是否生效、是否會擋快轉推送，尚未實測。
+2. **status checks 對直接 push 的效果**：GitHub ruleset 的「Require status checks to pass」在直接 push（非 PR）時是否生效、是否會擋快轉推送，尚未實測。最可能出事的組合是 `dev` 設了 required checks（elf-cicd-review 規則 17），而規則 18 的同步合併由維護者直接 push：本機新做的合併提交沒有任何 check。實測前先把維護者加進 bypass 名單（規則 21）。
+5. **XiHan.Framework fork 的例外**：它是第 1 種，但只有 `main`、`dev`、`gh-pages`，沒有 `release`；工作分支用 `bug/` 而不是 `fix/`。要在它的 `BRANCHING.md` 記錄為例外，還是改成符合本規範，待決定。
 3. **主線叫 `master` 的 repo**：例如 skillshare-source 本身用 `master`，而且 `master` 從 `dev` 快轉（規範是 `main` 從 `release` 快轉），也沒有 `BRANCHING.md`。要改名為 `main`，還是在 `BRANCHING.md` 記錄例外，待決定。
 4. **團隊標準容量**：規則 16 的「預估總工時超過團隊標準容量」沒有具體數字。
