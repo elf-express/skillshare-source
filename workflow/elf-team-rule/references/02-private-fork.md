@@ -17,7 +17,7 @@
 | -- | -- | -- | -- | -- |
 | `main` | 第 1 種 `release` 的鏡像 | **否** | `upstream/release` | `--ff-only` |
 | `dev` | 私有版本的整合測試 | 只經由開發分支 | `main`、開發分支 | merge |
-| `feat/xxx`、`fix/xxx` | 開發 | 是 | 從 `dev` 開出 | — |
+| `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發 | 是 | 從 `dev` 開出 | — |
 | `release` | 唯一的穩定版，部署用 | **否** | `dev` | `--ff-only` |
 
 第 2 種**沒有** `pr/` 分支。
@@ -29,32 +29,30 @@
 GitHub 上用 Fork 按鈕 fork 一個公開 repo，得到的 fork 必須是公開的，而且同一個帳號或組織對同一個來源只能有一個 fork。所以私有 fork **不要用 Fork 按鈕**，改為：
 
 1. 請使用者在 GitHub 的 `elf-express` 組織建立一個新的**私有**空 repo（不要勾選 README、.gitignore、License）。建立 repo 屬於帳號層級的操作，由使用者自己做。
-2. 從第 1 種 clone，把原本的 `origin` 改名為 `upstream`，再接上新的私有 repo：
+2. 建立空的本地 repo，接上兩個 remote：
 
 ```
-git clone https://github.com/elf-express/<第1種repo>.git <私有repo>
+git init <私有repo>
 cd <私有repo>
-git remote rename origin upstream
+git remote add upstream https://github.com/elf-express/<第1種repo>.git
 git remote add origin https://github.com/elf-express/<私有repo>.git
 git fetch upstream
 ```
+
+不要用 `git clone` 第 1 種再改 remote：clone 會先建立本地的預設分支（通常就是 `main`），下一步的 `git switch -c main upstream/release` 會失敗（`fatal: a branch named 'main' already exists`），而且那條 `main` 追蹤的是第 1 種的 `main`，不是 `release`。
 
 3. 以第 1 種的 `release` 為起點建立三條分支：
 
 ```
 git switch -c main upstream/release
-git push -u origin main
-
 git switch -c dev main
-git push -u origin dev
-
 git switch -c release main
-git push -u origin release
+git push -u origin main dev release
 ```
 
-4. 刪掉從第 1 種帶過來、但第 2 種不需要的本地分支（例如 clone 時預設建立的追蹤分支），並把 GitHub 上的預設分支設為 `dev` 或 `main`（問使用者）。
-5. 複製 `assets/BRANCHING-type2-private-fork.md` 為 `BRANCHING.md`，填好資訊，經由 `feat/branching-doc` 合進 `dev`。
-6. 建議使用者在 GitHub 設定分支保護：`main`、`release` 禁止直接 push 和 force push。
+4. 確認三條分支都追蹤 `origin`（`git branch -vv`），並把 GitHub 上的預設分支設為 `dev` 或 `main`（問使用者）。
+5. 複製 `assets/BRANCHING-type2-private-fork.md` 為 `BRANCHING.md`，填好資訊，經由 `docs/branching-doc` 合進 `dev`。
+6. 建議使用者依 SKILL.md 規則 20、21 設定分支保護：`main`、`release` 禁止 force push、禁止刪除、只允許維護者 push，不要設「必須經過 PR」。
 
 ---
 
@@ -85,21 +83,21 @@ git push origin dev
 
 * 這是整條鏈上**唯一可能出現衝突的地方**：上游的改動和我們私有的改動在這裡相遇。
 * 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），說明每個檔案兩邊各改了什麼，不要自行解。
-* 使用者可能會要求在獨立分支上處理衝突，做法是：
+* 使用者可能會要求在獨立分支上處理衝突，做法是先放棄 `dev` 上這次合併，再開衝突處理分支：
 
 ```
-git switch -c merge/sync-<日期> dev
+git merge --abort
+git switch -c merge/conflict-<YYYYMMDD> dev
 git merge main
 # 解衝突、測試
 # 經 PR 合回 dev
 ```
 
-### B3. 開發（`dev` → `feat/xxx` → 合回 `dev`）
+### B3. 開發（`dev` → `feat/e-<編號>-<短名>` → 合回 `dev`）
 
 ```
-git switch dev
-git pull origin dev
-git switch -c feat/xxx
+git fetch origin
+git switch -c feat/e-<編號>-<短名> origin/dev
 ```
 
 開發、提交、測試。合回 `dev` 之前先吸收最新 `dev`：
@@ -108,11 +106,11 @@ git switch -c feat/xxx
 git fetch origin
 git merge origin/dev
 # 跑測試
-git push -u origin feat/xxx
-gh pr create --repo elf-express/<私有repo> --base dev --head feat/xxx
+git push -u origin feat/e-<編號>-<短名>
+gh pr create --repo elf-express/<私有repo> --base dev --head feat/e-<編號>-<短名>
 ```
 
-合併後刪除 `feat/xxx`。
+合併後刪除 `feat/e-<編號>-<短名>`。
 
 ### B4. 發佈（`dev` → `release`）
 
@@ -128,6 +126,7 @@ git push origin release
 ```
 
 * 部署一律使用 `release`。
+* 發佈後依 `references/04-release-ci-check.md` 核對 `release` 指向的提交在 GitHub 上的 check runs 與部署結果，依 `references/05-alignment-check.md` 確認分支對齊。
 * `release` 不 force push。
 
 ---

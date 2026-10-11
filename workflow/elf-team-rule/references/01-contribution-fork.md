@@ -15,7 +15,7 @@ fork 原作者的開源專案，自己使用，同時把改動整理成 PR 回�
 | ------------------------- | --------------------------------- | ---------------------- | ------------------ | ------------- |
 | `main`                  | 原作者 `main` 的鏡像            | **否**           | `upstream/main`  | `--ff-only` |
 | `dev`                   | 自己使用、整合測試                | 只經由開發分支         | `main`、開發分支 | merge         |
-| `feat/xxx`、`fix/xxx` | 開發                              | 是                     | 從 `dev` 開出    | —            |
+| `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發                              | 是                     | 從 `dev` 開出    | —            |
 | `pr/xxx`                | 送給原作者的 PR，一個分支一個主題 | 是（只放 cherry-pick） | 從 `main` 開出   | —            |
 | `release`               | 唯一的穩定版，給第 2 種同步       | **否**           | `dev`            | `--ff-only` |
 
@@ -49,8 +49,8 @@ git switch -c release main
 git push -u origin release
 ```
 
-4. 複製 `assets/BRANCHING-type1-contribution-fork.md` 為 `BRANCHING.md`，填好資訊，經由 `feat/branching-doc` 合進 `dev`。
-5. 建議使用者在 GitHub 設定分支保護：`main`、`release` 禁止直接 push 和 force push。
+4. 複製 `assets/BRANCHING-type1-contribution-fork.md` 為 `BRANCHING.md`，填好資訊，經由 `docs/branching-doc` 合進 `dev`。
+5. 建議使用者依 SKILL.md 規則 20、21 設定分支保護：`main`、`release` 禁止 force push、禁止刪除、只允許維護者 push，不要設「必須經過 PR」。
 
 ---
 
@@ -75,15 +75,14 @@ git merge main
 git push origin dev
 ```
 
-* 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），不要自行解。
+* 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），不要自行解。使用者同意在獨立分支處理時，先 `git merge --abort`，再從 `dev` 開 `merge/conflict-<YYYYMMDD>`，合併 `main`、解衝突、測試後經 PR 合回 `dev`。
 * 建議每次 B1 之後都接著做 B2，讓 `dev` 不要落後上游太多。
 
-### B3. 開發（`dev` → `feat/xxx` → 合回 `dev`）
+### B3. 開發（`dev` → `feat/e-<編號>-<短名>` → 合回 `dev`）
 
 ```
-git switch dev
-git pull origin dev
-git switch -c feat/xxx
+git fetch origin
+git switch -c feat/e-<編號>-<短名> origin/dev
 ```
 
 開發、提交、測試。合回 `dev` 之前：
@@ -92,16 +91,16 @@ git switch -c feat/xxx
 git fetch origin
 git merge origin/dev        # 在開發分支上先吸收最新 dev，衝突在這裡處理（有衝突先回報）
 # 跑測試
-git push -u origin feat/xxx
+git push -u origin feat/e-<編號>-<短名>
 ```
 
-然後開 PR：`feat/xxx` → 我們自己 repo 的 `dev`（**不是**原作者的 repo）：
+然後開 PR：`feat/e-<編號>-<短名>` → 我們自己 repo 的 `dev`（**不是**原作者的 repo）：
 
 ```
-gh pr create --repo elf-express/<repo> --base dev --head feat/xxx
+gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名>
 ```
 
-合併後刪除 `feat/xxx`（本地與遠端）。
+合併後刪除 `feat/e-<編號>-<短名>`（本地與遠端）。
 
 ### B4. 發佈給下游（`dev` → `release`）
 
@@ -119,10 +118,11 @@ git push origin release
 * `release` 只從 `dev` 快轉，正常情況一定成功。失敗代表有人直接動過 `release` → **停下來回報**。
 * `release` **絕對不能 force push**。下游第 2 種的 `main` 是用 `--ff-only` 從我們的 `release` 同步，一旦改寫歷史，下游會全部同步失敗。
 * 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
+* 發佈後依 `references/04-release-ci-check.md` 核對 `release` 指向的提交在 GitHub 上的 check runs 與部署結果，依 `references/05-alignment-check.md` 確認分支對齊。
 
 ### B5. 送 PR 給原作者（`main` → `pr/xxx`）
 
-前提：這個功能已經在 `feat/xxx` 開發完成，並在 `dev` 測試過。
+前提：這個功能已經在 `feat/e-<編號>-<短名>` 開發完成，並在 `dev` 測試過。
 
 1. 先做一次 B1，讓 `main` 是原作者最新的版本。
 2. 從 `main` 開出 `pr/` 分支，只 cherry-pick 這個主題的提交：
@@ -136,7 +136,7 @@ git cherry-pick -x <提交1> <提交2> ...
 * 用 `git log --oneline main..dev` 找出這個主題的提交，**把要 cherry-pick 的清單給使用者確認**。
 * 不要 cherry-pick 合併提交（merge commit），也不要帶入其他主題的提交。
 * cherry-pick 有衝突 → **停下來回報**。
-* **衝突處理標準路徑**：若需手動解決衝突，建議回到原始開發分支（如 `feat/xxx`）解決衝突並提交新的 commit，然後重新在 `pr/xxx` 分支進行 cherry-pick，或重新基於 `main` 建立新的 `pr/xxx` 分支。確保 `dev` 與 `pr/xxx` 的實質改動邏輯完全一致，不要讓兩邊內容分歧。
+* **衝突處理標準路徑**：若需手動解決衝突，建議回到原始開發分支（如 `feat/e-<編號>-<短名>`）解決衝突並提交新的 commit，然後重新在 `pr/xxx` 分支進行 cherry-pick，或重新基於 `main` 建立新的 `pr/xxx` 分支。確保 `dev` 與 `pr/xxx` 的實質改動邏輯完全一致，不要讓兩邊內容分歧。
 
 3. 推到我們的 fork，對原作者開 PR：
 
@@ -172,7 +172,7 @@ gh pr create --repo <作者>/<repo> --base main --head elf-express:pr/xxx
 不行。`main` 只是原作者的鏡像，沒有我們的改動，也不是我們測過的版本。部署一律用 `release`。
 
 **上游有 bug，作者還沒修，我們急著要？**
-照一般流程在 `fix/xxx` 修好、合進 `dev`、測過後發佈到 `release`。之後依 B5 把修正送給作者。
+照一般流程在 `fix/e-<編號>-<短名>` 修好、合進 `dev`、測過後發佈到 `release`。之後依 B5 把修正送給作者。
 
 ## D. 禁止事項
 

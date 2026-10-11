@@ -26,7 +26,7 @@ git remote -v
 | ------------------------- | ---------------------------------- | ------------------------ | ----------------- |
 | `main`                  | 原作者 `main` 的鏡像，只用來同步 | **不提交，只快轉** | `upstream/main` |
 | `dev`                   | 整合測試                           | 只能經由開發分支合併     | `main`          |
-| `feat/xxx`、`fix/xxx` | 開發                               | 可以                     | 從 `dev` 開出   |
+| `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發                               | 可以                     | 從 `dev` 開出   |
 | `pr/xxx`                | 送給原作者的 PR，一個分支一個主題  | 可以                     | 從 `main` 開出  |
 | `release`               | 唯一的穩定版，給下游私有 fork 同步 | **不提交，只快轉** | 測過的 `dev`    |
 
@@ -52,14 +52,17 @@ git push origin dev
 開發：
 
 ```
-git switch -c feat/xxx dev
+git fetch origin
+git switch -c feat/e-<編號>-<短名> origin/dev
 ```
 
 發佈給下游（`dev` 測試通過後）：
 
 ```
+git fetch origin
+git log --oneline origin/release..origin/dev   # 先列出會帶進去的提交，給使用者確認
 git switch release
-git merge --ff-only dev
+git merge --ff-only origin/dev
 git push origin release
 ```
 
@@ -71,12 +74,12 @@ git cherry-pick <該主題的提交>
 gh pr create --repo {{作者帳號}}/{{repo 名稱}} --base main
 ```
 
-## 分支保護與 CI/CD 設定建議
+## 分支保護設定建議
 
-建議在 GitHub 設定分支保護規則（Branch Protection Rules）：
+建議在 GitHub 設定分支保護規則（Branch Protection Rules 或 Ruleset）：
 
-* **`main` 與 `release`**：禁止直接 push 與 force push；必須經過 Pull Request，且至少需要 1 位 reviewer 批准，CI/CD 狀態必須為成功（Status checks must pass）才能合併。
-* **`dev`**：禁止直接 push；必須由開發分支（`feat/*`、`fix/*` 或 `merge/*`）建立 PR 才能合併。
+* **`main` 與 `release`**：禁止 force push、禁止刪除、只允許維護者 push。**不要**設「必須經過 Pull Request」：這兩條分支是在本機 `merge --ff-only` 後直接 push 的，GitHub 的 PR 合併會產生新提交或新 SHA，無法快轉。
+* **`dev`**：禁止 force push、禁止刪除；開發分支（`feat/*`、`fix/*`、`docs/*`、`chore/*`、`test/*`、`merge/*`）一律經 PR 合併，維護者保留直接 push 權限，給沒有衝突的 `main` → `dev` 同步合併使用。
 
 ## 禁止事項
 

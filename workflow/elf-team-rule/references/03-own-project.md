@@ -16,7 +16,7 @@
 | -- | -- | -- | -- | -- |
 | `main` | 主庫，只用來同步 | **否** | `release` | `--ff-only` |
 | `dev` | 整合測試 | 只經由開發分支 | 開發分支 | merge |
-| `feat/xxx`、`fix/xxx` | 開發 | 是 | 從 `dev` 開出 | — |
+| `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發 | 是 | 從 `dev` 開出 | — |
 | `release` | 唯一的穩定版，部署用 | **否** | `dev` | `--ff-only` |
 
 `main` 除了從 `release` 快轉之外沒有其他用途。
@@ -38,18 +38,17 @@ git switch -c release main
 git push -u origin release
 ```
 
-複製 `assets/BRANCHING-type3-own-project.md` 為 `BRANCHING.md`，填好資訊，經由 `feat/branching-doc` 合進 `dev`。建議使用者在 GitHub 設定分支保護：`main`、`release` 禁止直接 push 和 force push。
+複製 `assets/BRANCHING-type3-own-project.md` 為 `BRANCHING.md`，填好資訊，經由 `docs/branching-doc` 合進 `dev`。建議使用者依 SKILL.md 規則 20、21 設定分支保護：`main`、`release` 禁止 force push、禁止刪除、只允許維護者 push，不要設「必須經過 PR」。
 
 ---
 
 ## B. 日常流程
 
-### B1. 開發（`dev` → `feat/xxx` → 合回 `dev`）
+### B1. 開發（`dev` → `feat/e-<編號>-<短名>` → 合回 `dev`）
 
 ```
-git switch dev
-git pull origin dev
-git switch -c feat/xxx
+git fetch origin
+git switch -c feat/e-<編號>-<短名> origin/dev
 ```
 
 開發、提交、測試。合回 `dev` 之前先吸收最新 `dev`：
@@ -58,11 +57,11 @@ git switch -c feat/xxx
 git fetch origin
 git merge origin/dev
 # 跑測試
-git push -u origin feat/xxx
-gh pr create --repo elf-express/<repo> --base dev --head feat/xxx
+git push -u origin feat/e-<編號>-<短名>
+gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名>
 ```
 
-合併後刪除 `feat/xxx`。
+合併後刪除 `feat/e-<編號>-<短名>`。
 
 ### B2. 發佈（`dev` → `release`）
 
@@ -78,6 +77,8 @@ git push origin release
 ```
 
 部署一律使用 `release`。
+
+* 發佈後依 `references/04-release-ci-check.md` 核對 `release` 指向的提交在 GitHub 上的 check runs 與部署結果，依 `references/05-alignment-check.md` 確認分支對齊。
 
 ### B3. 更新主庫（`release` → `main`）
 

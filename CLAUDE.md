@@ -18,7 +18,7 @@ and agents (AI helpers that apply those rules) — fanned out by the
 
 ```
 <category>/elf-<name>/SKILL.md     team skills (stack, frontend, frontend/design, api, backend,
-                                   desktop, cicd, testing, mcp)
+                                   desktop, cicd, testing, mcp, workflow)
 <category>/<name>/                 third-party skills (not elf-*)
 tools/                             third-party tooling skills
 agents/*.md                        team agents (copied to ~/.claude/agents by scripts/sync-agents.sh)
