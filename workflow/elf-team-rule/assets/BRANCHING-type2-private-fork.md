@@ -74,9 +74,10 @@ git push origin release
 git fetch origin
 git switch -c hotfix/e-<編號>-<短名> origin/release      # 我們自己的 release，不是 upstream/release
 # 修改、測試、提交後 git push -u origin hotfix/e-<編號>-<短名>
+gh pr create --draft --base release --head hotfix/e-<編號>-<短名> --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）"   # 讓 CI 在這個提交上執行
 git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>   # 先列出會帶進去的提交，確認 check runs 全部通過，給使用者確認
 git switch release && git merge --ff-only origin/hotfix/e-<編號>-<短名> && git push origin release
-git switch dev && git merge origin/release && git push origin dev   # 立刻合回 dev；有衝突停下來回報
+git switch dev && git merge --ff-only origin/dev && git merge origin/release && git push origin dev   # 立刻合回 dev；任何一步失敗或衝突 → 停下來回報
 ```
 
 ## 分支保護設定建議

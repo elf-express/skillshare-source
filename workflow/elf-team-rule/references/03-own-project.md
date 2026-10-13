@@ -101,17 +101,19 @@ git push origin main
 git fetch origin
 git switch -c hotfix/e-<編號>-<短名> origin/release    # 從 release 開出，不是 dev
 # 修改、測試、提交
-git push -u origin hotfix/e-<編號>-<短名>             # 讓 CI 在這個提交上執行
+git push -u origin hotfix/e-<編號>-<短名>
+gh pr create --repo elf-express/<repo> --draft --base release --head hotfix/e-<編號>-<短名> \
+  --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 規則 25：讓 CI 在這個提交上執行
 ```
 
 發佈前**停下**，給使用者看會帶進去的提交，並依 `references/04-release-ci-check.md` 第 0 節判斷 check runs（規則 28）：
 
 ```
 git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
-gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=all" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
+gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
 ```
 
-使用者同意後發佈，**立刻**把 `release` 合回 `dev`（規則 26），再依 B3 更新主庫：
+使用者同意後發佈，**立刻**把 `release` 合回 `dev`（規則 26），再依 B3 更新主庫（`main` 只依賴 `release`，合回卡在衝突走 PR 時也可以先快轉 `main`）：
 
 ```
 git switch release
@@ -119,7 +121,8 @@ git merge --ff-only origin/hotfix/e-<編號>-<短名>
 git push origin release
 
 git switch dev
-git merge origin/release        # 有衝突 → 停下來回報
+git merge --ff-only origin/dev   # 先把本機 dev 更新到最新；失敗 → 停下來回報
+git merge origin/release        # 有衝突 → git merge --abort，停下來回報
 git push origin dev
 
 git switch main
@@ -128,6 +131,8 @@ git push origin main
 ```
 
 * 快轉失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後把最新 `origin/release` 合進 hotfix 分支、重跑 CI 再發佈。
+* 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`，合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`。
+* draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。
 * 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
 
 ---

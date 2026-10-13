@@ -6,20 +6,22 @@
 
 ## 0. 發佈前判斷（快轉 `release` 之前，規則 28）
 
-快轉 `release` 前，查**要發佈的那個提交**（`origin/dev` 或 `origin/hotfix/*` 指向的提交）上的 check runs：
+快轉 `release` 前，查**要發佈的那個提交**（`origin/dev` 或 `origin/hotfix/*` 指向的提交）上的 check runs，**每個 check 只看最新一次結果**（`filter=latest`）。曾經失敗後重跑成功的 check，用 `filter=all` 會連舊的失敗一起列出來，所以發佈前判斷不要用 `filter=all`（它只用在第 2 節之後的排查）：
 
 ```bash
 SHA=$(git rev-parse origin/dev)        # hotfix 時改成 origin/hotfix/e-<編號>-<短名>
-gh api "repos/$R/commits/$SHA/check-runs?filter=all" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
+gh api "repos/$R/commits/$SHA/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
+ls .github/workflows 2>/dev/null || echo "沒有任何 workflow"   # 沒有 check runs 時用來分辨兩種情況
 ```
 
 | 查到的結果 | 判斷 | 處理 |
 | -- | -- | -- |
 | 每個 check run 的 status 都是 `completed`，conclusion 都是 `success`、`neutral` 或 `skipped` | **全部通過** | 列出要發佈的提交與檢查結果，使用者同意後快轉 |
-| 任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`，或 status 不是 `completed` | **有失敗或執行中** | 不發佈；失敗依第 3 節讀原文說明原因（規則 23），執行中就等完成再判斷 |
-| 一個 check run 都沒有 | **專案沒有 CI** | 停下，回報「發佈內容未經自動測試」；使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI |
+| 任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` | **有失敗或執行中** | 不發佈；失敗依第 3 節讀原文說明原因（規則 23），執行中就等完成再判斷 |
+| 一個 check run 都沒有，但 repo 有 `.github/workflows/` | **這個提交沒有觸發 CI** | 不是「沒有 CI」。hotfix 時確認已依規則 25 開 draft PR，等 CI 跑完再判斷 |
+| 一個 check run 都沒有，repo 也沒有任何 workflow | **專案沒有 CI** | 停下，回報「發佈內容未經自動測試」；使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI |
 
-發現 CI 不合規（例如 push 觸發缺 `dev`、`release`、`hotfix/**`）時，回報並建議用 `chore/` 分支修正；不自行修改 CI 設定，也不因此跳過上面的判斷（規則 29）。
+發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`）時，回報並建議用 `chore/` 分支修正；不自行修改 CI 設定，也不因此跳過上面的判斷（規則 29）。
 
 以下第 1–7 節用在發佈之後的核對與排查。
 
