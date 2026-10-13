@@ -28,7 +28,8 @@ git fetch --all --prune
 | -- | -- | -- | -- |
 | `main` 是上游的鏡像 | `origin/main` | `upstream/main` | `0 y`（`y` > 0 代表還沒同步；`x` > 0 代表有人在 `main` 提交過 → 回報） |
 | `dev` 已吸收 `main` | `origin/dev` | `origin/main` | `x 0`（`main` 的提交都已在 `dev`） |
-| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y`（`x` > 0 代表有人直接動過 `release` → 回報） |
+| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y`（`x` > 0 代表有人直接動過 `release` → 回報；hotfix 發佈後、合回 `dev` 完成前，`x` > 0 是預期狀態，先確認那幾個提交就是 hotfix 的提交，不要回報成違規） |
+| hotfix 可快轉進 `release` | `origin/release` | `origin/hotfix/e-<編號>-<短名>` | `0 y`（`x` > 0 代表開出 hotfix 後 `release` 又被更新 → 回報，見規則 25） |
 
 **第 2 種：私有 fork**
 
@@ -36,7 +37,8 @@ git fetch --all --prune
 | -- | -- | -- | -- |
 | `main` 是第 1 種 `release` 的鏡像 | `origin/main` | `upstream/release` | `0 y` |
 | `dev` 已吸收 `main` | `origin/dev` | `origin/main` | `x 0` |
-| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y` |
+| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y`（hotfix 發佈後、合回 `dev` 完成前，`x` > 0 是預期狀態，先確認那幾個提交就是 hotfix 的提交，不要回報成違規） |
+| hotfix 可快轉進 `release` | `origin/release` | `origin/hotfix/e-<編號>-<短名>` | `0 y`（`x` > 0 代表開出 hotfix 後 `release` 又被更新 → 回報，見規則 25） |
 
 `git diff --stat origin/main origin/dev` 就是「我們私有版本跟上游差在哪裡」。
 
@@ -44,14 +46,15 @@ git fetch --all --prune
 
 | 檢查 | 目標 | 來源 | 應該是 |
 | -- | -- | -- | -- |
-| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y` |
+| `release` 是測過的 `dev` | `origin/release` | `origin/dev` | `0 y`（hotfix 發佈後、合回 `dev` 完成前，`x` > 0 是預期狀態，先確認那幾個提交就是 hotfix 的提交，不要回報成違規） |
+| hotfix 可快轉進 `release` | `origin/release` | `origin/hotfix/e-<編號>-<短名>` | `0 y`（`x` > 0 代表開出 hotfix 後 `release` 又被更新 → 回報，見規則 25） |
 | `main` 跟上 `release` | `origin/main` | `origin/release` | `0 y`（發佈後應為 `0 0`） |
 
 **三種共通**
 
 | 檢查 | 目標 | 來源 | 應該是 |
 | -- | -- | -- | -- |
-| 本地分支沒落後遠端 | `<分支>` | `origin/<分支>` | `0 0`；`x` > 0 代表本地有沒推的提交 |
+| 本地分支沒落後遠端 | `<分支>` | `origin/<分支>` | `0 0`；`x` > 0 代表本地有沒推的提交（`dev`、`release`、`main` 上出現就違反規則，回報）；`y` > 0 代表本地落後，用 `git merge --ff-only origin/<分支>` 更新 |
 
 ## 3. pr 分支與 dev 的改動一致（第 1 種）
 
