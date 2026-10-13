@@ -17,7 +17,8 @@
 | `main` | 主庫，只用來同步 | **否** | `release` | `--ff-only` |
 | `dev` | 整合測試 | 只經由開發分支 | 開發分支 | merge |
 | `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發 | 是 | 從 `dev` 開出 | — |
-| `release` | 唯一的穩定版，部署用 | **否** | `dev` | `--ff-only` |
+| `release` | 唯一的穩定版，部署用 | **否** | `dev`（緊急修正時 `hotfix/`） | `--ff-only` |
+| `hotfix/xxx` | 緊急修正正式版 | 是 | 從 `origin/release` 開出 | — |
 
 `main` 除了從 `release` 快轉之外沒有其他用途。
 
@@ -92,11 +93,49 @@ git merge --ff-only origin/release
 git push origin main
 ```
 
+### 緊急修正（hotfix）
+
+正式版（`release`）出問題、而 `dev` 上有未測完的內容時（規則 25–27）：
+
+```
+git fetch origin
+git switch -c hotfix/e-<編號>-<短名> origin/release    # 從 release 開出，不是 dev
+# 修改、測試、提交
+git push -u origin hotfix/e-<編號>-<短名>             # 讓 CI 在這個提交上執行
+```
+
+發佈前**停下**，給使用者看會帶進去的提交，並依 `references/04-release-ci-check.md` 第 0 節判斷 check runs（規則 28）：
+
+```
+git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
+gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=all" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
+```
+
+使用者同意後發佈，**立刻**把 `release` 合回 `dev`（規則 26），再依 B3 更新主庫：
+
+```
+git switch release
+git merge --ff-only origin/hotfix/e-<編號>-<短名>
+git push origin release
+
+git switch dev
+git merge origin/release        # 有衝突 → 停下來回報
+git push origin dev
+
+git switch main
+git merge --ff-only origin/release
+git push origin main
+```
+
+* 快轉失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後把最新 `origin/release` 合進 hotfix 分支、重跑 CI 再發佈。
+* 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
+
 ---
 
 ## C. 禁止事項
 
-* 不在 `main`、`release` 上提交，也不 force push。
+* 不在 `main`、`release` 上提交，也不 force push。緊急修正一律走 hotfix，不直接改 `release`／`main`。
 * 不把 `main` 當穩定版或部署來源；部署一律用 `release`。
 * 不直接在 `dev` 上開發。
+* 不在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`。
 * `--ff-only` 失敗或合併有衝突時，停下來回報。

@@ -17,7 +17,8 @@ fork 原作者的開源專案，自己使用，同時把改動整理成 PR 回�
 | `dev`                   | 自己使用、整合測試                | 只經由開發分支         | `main`、開發分支 | merge         |
 | `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發                              | 是                     | 從 `dev` 開出    | —            |
 | `pr/xxx`                | 送給原作者的 PR，一個分支一個主題 | 是（只放 cherry-pick） | 從 `main` 開出   | —            |
-| `release`               | 唯一的穩定版，給第 2 種同步       | **否**           | `dev`            | `--ff-only` |
+| `release`               | 唯一的穩定版，給第 2 種同步       | **否**           | `dev`（緊急修正時 `hotfix/`） | `--ff-only` |
+| `hotfix/xxx`            | 緊急修正正式版                    | 是                     | 從 `origin/release` 開出 | —            |
 
 > 如果原作者的主線不叫 `main`（例如 `master`），同步指令裡的 `upstream/main` 改成實際名稱，我們這邊的分支仍叫 `main`。這個差異要寫進 `BRANCHING.md`。
 
@@ -121,6 +122,41 @@ git push origin release
 * 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
 * 發佈後依 `references/04-release-ci-check.md` 核對 `release` 指向的提交在 GitHub 上的 check runs 與部署結果，依 `references/05-alignment-check.md` 確認分支對齊。
 
+### 緊急修正（hotfix）
+
+正式版（`release`）出問題、而 `dev` 上有未測完的內容時（規則 25–27）：
+
+```
+git fetch origin
+git switch -c hotfix/e-<編號>-<短名> origin/release    # 從我們的 release 開出，不是 dev
+# 修改、測試、提交
+git push -u origin hotfix/e-<編號>-<短名>             # 讓 CI 在這個提交上執行
+```
+
+發佈前**停下**，給使用者看會帶進去的提交，並依 `references/04-release-ci-check.md` 第 0 節判斷 check runs（規則 28）：
+
+```
+git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
+gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=all" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
+```
+
+使用者同意後發佈，**立刻**把 `release` 合回 `dev`（規則 26）：
+
+```
+git switch release
+git merge --ff-only origin/hotfix/e-<編號>-<短名>
+git push origin release
+
+git switch dev
+git merge origin/release        # 有衝突 → 停下來回報
+git push origin dev
+```
+
+* 快轉失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後把最新 `origin/release` 合進 hotfix 分支、重跑 CI 再發佈。
+* 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
+* 修正如果也適用原作者，另依 B5 用 `pr/` 送 PR。
+* 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
+
 ### B5. 送 PR 給原作者（`main` → `pr/xxx`）
 
 前提：這個功能已經在 `feat/e-<編號>-<短名>` 開發完成，並在 `dev` 測試過。
@@ -174,12 +210,14 @@ gh pr create --repo <作者>/<repo> --base main --head elf-express:pr/xxx
 
 **上游有 bug，作者還沒修，我們急著要？**
 照一般流程在 `fix/e-<編號>-<短名>` 修好、合進 `dev`、測過後發佈到 `release`。之後依 B5 把修正送給作者。
+`dev` 上有未測完的內容、不能整包發佈時，改走上面的「緊急修正（hotfix）」。
 
 ## D. 禁止事項
 
-* 不在 `main`、`release` 上提交，也不 force push。
+* 不在 `main`、`release` 上提交，也不 force push。緊急修正一律走 hotfix，不直接改 `release`／`main`。
 * 不把 `main` 當穩定版或部署來源。
 * 不直接在 `dev` 上開發。
+* 不在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`。
 * 不從 `dev` 或 `feat/` 分支直接對原作者開 PR。
 * 一個 `pr/` 分支只放一個主題，只放 cherry-pick 的提交。
 * 未經使用者明確同意，不對原作者的 repo 開 PR、留言或推送任何東西。
