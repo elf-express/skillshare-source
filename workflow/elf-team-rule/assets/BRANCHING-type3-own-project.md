@@ -38,6 +38,7 @@ git switch -c feat/e-<編號>-<短名> origin/dev
 git fetch origin
 git log --oneline origin/release..origin/dev   # 先列出會帶進去的提交，給使用者確認
 git switch release
+git merge --ff-only origin/release   # 先把本機 release 更新到最新
 git merge --ff-only origin/dev
 git push origin release
 ```
@@ -58,11 +59,15 @@ git push origin main
 git fetch origin
 git switch -c hotfix/e-<編號>-<短名> origin/release
 # 修改、測試、提交後 git push -u origin hotfix/e-<編號>-<短名>
-gh pr create --draft --base release --head hotfix/e-<編號>-<短名> --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）"   # 讓 CI 在這個提交上執行
-git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>   # 先列出會帶進去的提交，確認 check runs 全部通過，給使用者確認
-git switch release && git merge --ff-only origin/hotfix/e-<編號>-<短名> && git push origin release
-git switch dev && git merge --ff-only origin/dev && git merge origin/release && git push origin dev   # 立刻合回 dev；任何一步失敗或衝突 → 停下來回報
-git switch main && git merge --ff-only origin/release && git push origin main
+gh pr create --repo elf-express/{{repo 名稱}} --draft --base release --head hotfix/e-<編號>-<短名> --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 讓 CI 在這個提交上執行；repo 沒有任何 workflow 時省略
+git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>   # 先列出會帶進去的提交，給使用者確認
+gh api "repos/elf-express/{{repo 名稱}}/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'   # 全部通過才發佈（判斷方式見 elf-team-rule references/04 第 0 節）
+git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/e-<編號>-<短名> && git push origin release   # 任何一步失敗 → 停下來回報
+git fetch origin && git switch dev && git merge --ff-only origin/dev   # 立刻合回 dev；失敗 → 停下來回報
+git log --oneline origin/dev..dev   # 必須是空的；有輸出 → 本機 dev 有沒推的提交，停下來回報
+git merge --no-edit origin/release   # 有衝突 → git merge --abort，停下來回報
+git push origin dev
+git switch main && git merge --ff-only origin/main && git merge --ff-only origin/release && git push origin main
 ```
 
 ## 分支保護設定建議

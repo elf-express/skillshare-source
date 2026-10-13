@@ -77,7 +77,7 @@ git merge main
 git push origin dev
 ```
 
-* 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），不要自行解。使用者同意在獨立分支處理時，先 `git merge --abort`，再從 `dev` 開 `merge/conflict-<YYYYMMDD>`，合併 `main`、解衝突、測試後經 PR 合回 `dev`。
+* 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），不要自行解。使用者同意在獨立分支處理時，先 `git merge --abort`，再從 `dev` 開 `merge/conflict-<YYYYMMDD>`，合併 `main`、解衝突、測試後經 PR 合回 `dev`（MUST 用「Create a merge commit」，不可 squash 或 rebase）。
 * 建議每次 B1 之後都接著做 B2，讓 `dev` 不要落後上游太多。
 
 ### B3. 開發（`dev` → `feat/e-<編號>-<短名>` → 合回 `dev`）
@@ -113,6 +113,7 @@ git fetch origin
 git log --oneline origin/release..origin/dev    # 先列出這次會帶給下游的提交，給使用者確認
 
 git switch release
+git merge --ff-only origin/release   # 先把本機 release 更新到最新
 git merge --ff-only origin/dev
 git push origin release
 ```
@@ -145,19 +146,24 @@ gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號
 使用者同意後發佈，**立刻**把 `release` 合回 `dev`（規則 26）：
 
 ```
+git fetch origin                 # 等待同意期間 release／dev 可能被更新
 git switch release
-git merge --ff-only origin/hotfix/e-<編號>-<短名>
+git merge --ff-only origin/release   # 先把本機 release 更新到最新
+git merge --ff-only origin/hotfix/e-<編號>-<短名>   # 失敗 → 停下來回報
 git push origin release
 
+git fetch origin
 git switch dev
 git merge --ff-only origin/dev   # 先把本機 dev 更新到最新；失敗 → 停下來回報
-git merge origin/release        # 有衝突 → git merge --abort，停下來回報
-git push origin dev
+git log --oneline origin/dev..dev   # 必須是空的；有輸出 → 本機 dev 有沒推的提交，停下來回報
+git merge --no-edit origin/release   # 有衝突 → git merge --abort，停下來回報
+git push origin dev              # 被拒 → 停下來回報，不要 pull --rebase 或 force push
 ```
 
-* 快轉失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後把最新 `origin/release` 合進 hotfix 分支、重跑 CI 再發佈。
-* 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`，合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`。
-* draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。
+* 快轉 hotfix 失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`（draft PR 會跟著更新，CI 在新提交上重新執行，不是在舊提交上重跑），再從頭判斷 check runs 後發佈。
+* `git merge --ff-only origin/dev` 失敗或 `git log origin/dev..dev` 有輸出，代表本機 `dev` 有沒推的提交（違反規則 9）→ **停下來回報**。使用者決定先保留那些提交時，可以改用不依賴本機 `dev` 的做法合回：`git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`。
+* 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`（同一天已有就加 `-2`），合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`，**MUST 用「Create a merge commit」合併**，不可 squash 或 rebase，否則 `release` 不再是 `dev` 的祖先，下次發佈無法快轉。
+* draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
 * 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
 * 修正如果也適用原作者，另依 B5 用 `pr/` 送 PR。
 * 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。

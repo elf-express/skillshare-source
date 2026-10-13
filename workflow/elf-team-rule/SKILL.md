@@ -88,7 +88,8 @@ metadata:
 
 **衝突處理與分支清理**
 
-18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理，經 PR 合回 `dev`。
+18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理（同一天已有就加 `-2`），經 PR 合回 `dev`；這個 PR MUST 用「Create a merge commit」合併，MUST NOT squash 或 rebase。
+    為什麼（merge commit）：squash 或 rebase 會產生新提交，`main`（或 hotfix 的 `release`）就不再是 `dev` 的祖先，下次同步又衝突、下次發佈無法快轉。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
 19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支（`git branch -d <分支>`、`git push origin --delete <分支>`）；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。
 
@@ -109,19 +110,19 @@ metadata:
 
 25. 正式版要緊急修正、而 `dev` 上有未測完的內容時，MUST 走 hotfix（第 1、2、3 種皆同）：
     - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送。
-    - 推送後 MUST 對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。
+    - 推送後 MUST 對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
       為什麼：依 `elf-cicd-*` 現行規定，CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run（E-244 完成後另行調整）。
-    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後才 `git switch release && git merge --ff-only origin/hotfix/<名> && git push origin release`。
-    - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後把最新 `origin/release` 合進 hotfix 分支，重跑 CI 再發佈。
+    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後才 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
+    - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`，讓 CI 在新提交上執行，再依規則 28 重新判斷後發佈。
     為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
-26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新（失敗依規則 13 停下），再 `git merge origin/release`，沒有衝突時由維護者直接 `git push origin dev`（規則 9 的例外）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。最後依規則 19 刪除 hotfix 分支。
+26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git fetch origin && git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新，並確認 `git log --oneline origin/dev..dev` 是空的（快轉失敗或有輸出，代表本機 `dev` 有沒推的提交，依規則 13 停下；使用者要保留那些提交時，改用 `git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`），再 `git merge --no-edit origin/release`，沒有衝突時由維護者直接 `git push origin dev`（規則 9 的例外）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`（依規則 18 用 merge commit）。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。最後依規則 19 刪除 hotfix 分支。
     為什麼：不合回 `dev`，下一次 `dev → release` 會無法快轉，修正也會在下一版消失。
 27. MUST NOT 在 `release`、`main` 上直接修改或提交，即使是緊急修正。使用者要求「直接改 release」時，依規則 13 說明違反規則 8、27，並引導改走規則 25。
 28. 快轉 `release`（來源是 `origin/dev` 或 `origin/hotfix/*`）前，MUST 查要發佈那個提交的 check runs，**每個 check 只看最新一次結果**（`check-runs?filter=latest&per_page=100`；規則 22 的 `filter=all` 只用在排查），步驟見 `references/04-release-ci-check.md` 第 0 節：
     - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意後快轉。
-    - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。
+    - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。`stale` 沒有可讀的 log，告訴使用者後重跑該 check（`gh run rerun`），再重新判斷。
     - **完全沒有 check runs**，先分兩種情況：
-      - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 hotfix 忘了開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」。
+      - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 hotfix 忘了開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
       - repo 沒有任何 workflow（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
 29. 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
 
