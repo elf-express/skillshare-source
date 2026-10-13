@@ -4,9 +4,10 @@ description: |
   ELF EXPRESS 團隊 git 分支規範（貢獻型 fork／私有 fork／自有專案）與 Superpower 開發方式的 skill 載入、Plan 容量規則。
   當任務涉及在任何 repo 開分支、合併、同步上游、發佈 release、送 PR 給原作者、建立新 repo 或新 fork、補 BRANCHING.md、
   設定分支保護、核對 release 分支 CI/CD 為什麼沒過、檢查分支與來源（上游／dev／release／main）是否對齊、
+  正式版出問題要緊急修正（hotfix）、使用者要求「直接改 release／main」、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -29,6 +30,7 @@ metadata:
 - 「release 的 CI/CD 為什麼沒過」「發版後部署失敗」→ `references/04-release-ci-check.md`
 - 「main 跟上游有沒有對齊」「release 是不是 dev 測過的版本」「pr 分支跟 dev 改的一不一樣」→ `references/05-alignment-check.md`
 - 要建立或接手一個 Task 很多的 Plan
+- 正式版出問題要緊急修正，或有人要求「直接改 release／main」→ 規則 25–27
 
 ## 2. 固定規則
 
@@ -49,10 +51,11 @@ metadata:
 **分支**
 
 7. `main` 只用來同步：只快轉（`--ff-only`），MUST NOT 在上面提交，MUST NOT 當穩定版或部署來源。
-8. `release` 是唯一的穩定版：給下游同步、給部署使用，MUST 只從測過的 `origin/dev` 快轉，MUST NOT 提交、MUST NOT force push。
+8. `release` 是唯一的穩定版：給下游同步、給部署使用，MUST 只從測過的 `origin/dev` 快轉（緊急修正例外：從 `origin/hotfix/*` 快轉，見規則 25），MUST NOT 提交、MUST NOT force push。
    為什麼：第 2 種的 `main` 用 `--ff-only` 從第 1 種的 `release` 同步，`release` 一旦改寫歷史，所有下游同步都會失敗。
-9. `dev` 是整合測試：只能經由開發分支的 PR 合併進來，MUST NOT 直接在 `dev` 上開發。唯一例外是第 1、2 種的「`main` → `dev` 同步合併」（見規則 18）。
-10. 開發分支命名 MUST 為 `<類型>/e-<Linear 編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`。短名用英文小寫加連字號。
+9. `dev` 是整合測試：只能經由開發分支的 PR 合併進來，MUST NOT 直接在 `dev` 上開發。例外只有兩種，都由維護者直接推送：第 1、2 種的「`main` → `dev` 同步合併」（見規則 18），以及 hotfix 發佈後的「`release` → `dev` 合回」（見規則 26）。
+10. 開發分支命名 MUST 為 `<類型>/e-<編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`、`hotfix/e-250-login-crash`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`。短名用英文小寫加連字號。
+    編號：有 `[Spec]`＋`[Plan]` 時用 **Plan 編號**；沒有 Spec／Plan 的單一工作單（例如緊急修正）用**該單編號**。本規則是團隊唯一的分支命名，Linear「開發流程規範」引用本規則，不另外定義。
     為什麼：Linear 的 PR 自動化（開 PR → 進行中、merge → 已完成）靠分支名稱裡的 `e-<編號>` 對應工作單；分支名稱 MUST NOT 含中文或全形符號，Linear 自動產生的 `gitBranchName` 常帶中文標題，不要直接用。
 11. 開發分支 MUST 從 `origin/dev` 開出，合回 `dev` 前先在開發分支上 `git merge origin/dev` 並跑完測試。
 12. 第 1 種送原作者的 PR MUST 用 `pr/<英文短名>`，從 `main` 開出，只放 cherry-pick 的提交，一個分支一個主題。
@@ -76,6 +79,11 @@ metadata:
 17. 拆分原則：優先按模組（不同業務領域分開）；其次按依賴（前置任務獨立成一個 Plan，完成並測試後再啟動後續）；拆完每份都要能獨立開發、測試、交付，太小不能獨立交付的就當 Sub-task。
     依開發流程規範「一個 Spec 對應一個 Plan」，拆 Plan 就是拆 Spec：新開 `[Spec]`＋`[Plan]` 一組，不在同一個 Spec 底下開第二個 Plan。
     提問範本：「目前此 Plan 下已有 X 個 Tasks，為避免開發進度延宕與上下文切換，建議將其拆分為 [Plan A] 與 [Plan B]。請問是否同意拆分？」
+    拆成**兩組以上** `[Spec]`＋`[Plan]` 時，MUST：(1) 在該專案建立里程碑，名稱用這件事的主題；(2) 把每一組 Spec 與 Plan 都放進這個里程碑；(3) 有先後順序的，用 blocked by 標出依賴。只有一組時不建里程碑。
+    為什麼：拆開後的工作單散在專案裡，沒有里程碑就看不出哪幾張是同一件事。
+    工作單結構 MUST 最多兩層：`[Spec]` → `[Plan]`，一張 Spec 只有一張 Plan；**Plan 底下不開子工作單**，Task 一律是 Plan 描述裡的打勾清單。不需要設計的小單（單純維運、明確的錯誤修正、緊急修正）維持單一工作單，不套 Spec＋Plan。
+    Label：階段 `Spec`／`Plan` 單選；「工作類型」群組單選一個（`新功能`／`改善`／`錯誤`／`維運`）；`稽核` 可另外加。
+    為什麼：AI 依 label 與層級判斷流程走到哪一步；Task 拆成子工作單後要讀十幾張單才知道進度，最容易接不上。
 
 **衝突處理與分支清理**
 
@@ -96,6 +104,22 @@ metadata:
 23. MUST NOT 用推測取代查證：失敗原因以 check run 的 annotations 或 log 原文為準，查不到就回報「查不到」，不要寫成結論。
 24. 快轉 `release` 或 `main` 前，MUST 依 `references/05-alignment-check.md` 確認來源與目標的關係，並用 `git log --oneline <目標>..<來源>` 列出會帶進去的提交給使用者看過。
 
+**hotfix 與發佈前 CI**
+
+25. 正式版要緊急修正、而 `dev` 上有未測完的內容時，MUST 走 hotfix（第 1、2、3 種皆同）：
+    - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送，讓 CI 在該提交上執行。
+    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後才 `git switch release && git merge --ff-only origin/hotfix/<名> && git push origin release`。
+    - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後把最新 `origin/release` 合進 hotfix 分支，重跑 CI 再發佈。
+    為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
+26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：`git switch dev && git merge origin/release`，沒有衝突時由維護者直接 `git push origin dev`（規則 9 的例外）；有衝突依規則 13 停下回報，使用者同意後在 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`。接著第 3 種把 `main` 從 `release` 快轉；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。最後依規則 19 刪除 hotfix 分支。
+    為什麼：不合回 `dev`，下一次 `dev → release` 會無法快轉，修正也會在下一版消失。
+27. MUST NOT 在 `release`、`main` 上直接修改或提交，即使是緊急修正。使用者要求「直接改 release」時，依規則 13 說明違反規則 8、27，並引導改走規則 25。
+28. 快轉 `release`（來源是 `origin/dev` 或 `origin/hotfix/*`）前，MUST 查要發佈那個提交的 check runs（查法同規則 22，步驟見 `references/04-release-ci-check.md` 第 0 節）：
+    - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意後快轉。
+    - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。
+    - **完全沒有 check runs**（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
+29. 發現 CI 不合規（例如 push 觸發缺 `dev`、`release`、`hotfix/**`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
+
 ## 3. 標準範本
 
 ### 每次操作前
@@ -107,7 +131,7 @@ git fetch --all --prune     # 遠端狀態是最新的嗎？
 ```
 
 - 目前在 `main`、`release`、`dev`，而使用者要求「提交程式碼」或「修改內容」：立刻停止並回報。
-- 要提交時，確認在開發分支（`feat/`、`fix/`、`docs/`、`chore/`、`test/`）上。
+- 要提交時，確認在開發分支（`feat/`、`fix/`、`docs/`、`chore/`、`test/`、`hotfix/`）上。
 
 ### 第 0 步：判斷類型
 
@@ -141,6 +165,9 @@ git branch -a
                               第2種 release ◀──快轉── 第2種 dev ◀──合併── 第2種 main
 
 第3種：feat/xxx ──合併──▶ dev ──快轉──▶ release ──快轉──▶ main
+
+緊急修正（三種皆同，規則 25、26）：
+origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ release ──合回──▶ dev
 ```
 
 ### 新 repo 補上 BRANCHING.md
@@ -165,6 +192,8 @@ git branch -a
 - MUST NOT 把 `release` 的來源改成本地 `dev`；一律 `origin/dev`（本地 `dev` 可能沒更新）。
 - MUST NOT 只用 `gh run list -b release` 判斷 release 的 CI 狀態（見規則 22）。
 - MUST NOT 刪掉「一定要停下來回報」的任何一項。
+- MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
+- MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
 
 ## 5. 檢查清單
 
@@ -174,7 +203,10 @@ git branch -a
 - [ ] 提交在開發分支上，分支名稱符合 `<類型>/e-<編號>-<短名>`
 - [ ] 合回 `dev` 前已吸收最新 `origin/dev` 並跑過測試
 - [ ] 快轉 `release`／`main` 前已列出會帶進去的提交，使用者看過
+- [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
+- [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
+- [ ] 拆成兩組以上 Spec＋Plan 時已建里程碑（規則 17）
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
 - [ ] 合併完成的開發分支、`pr/`、`merge/conflict-*` 已刪除
 - [ ] Plan 的 Task 數 ≤ 5
