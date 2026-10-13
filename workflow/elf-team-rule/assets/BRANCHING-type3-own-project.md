@@ -18,7 +18,10 @@
 | `main`                  | 主庫，只用來同步     | **不提交，只快轉** | `release`     |
 | `dev`                   | 整合測試             | 只能經由開發分支合併     | —              |
 | `feat/`、`fix/`、`docs/`、`chore/`、`test/` | 開發                 | 可以                     | 從 `dev` 開出 |
-| `release`               | 唯一的穩定版，部署用 | **不提交，只快轉** | 測過的 `dev`  |
+| `release`               | 唯一的穩定版，部署用 | **不提交，只快轉** | 測過的 `dev`（緊急修正時 `hotfix/`） |
+| `hotfix/`               | 緊急修正正式版       | 可以                     | 從 `origin/release` 開出 |
+
+開發分支命名 `<類型>/e-<編號>-<英文短名>`（類型：`feat`、`fix`、`docs`、`chore`、`test`、`hotfix`；有 Spec／Plan 用 Plan 編號，單一工作單用該單編號）。
 
 ## 常用指令
 
@@ -49,6 +52,18 @@ git merge --ff-only origin/release
 git push origin main
 ```
 
+緊急修正（hotfix，`dev` 有未測完的內容時；完整步驟見 elf-team-rule `references/03-own-project.md`）：
+
+```
+git fetch origin
+git switch -c hotfix/e-<編號>-<短名> origin/release
+# 修改、測試、提交後 git push -u origin hotfix/e-<編號>-<短名>
+git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>   # 先列出會帶進去的提交，確認 check runs 全部通過，給使用者確認
+git switch release && git merge --ff-only origin/hotfix/e-<編號>-<短名> && git push origin release
+git switch dev && git merge origin/release && git push origin dev   # 立刻合回 dev；有衝突停下來回報
+git switch main && git merge --ff-only origin/release && git push origin main
+```
+
 ## 分支保護設定建議
 
 建議在 GitHub 設定分支保護規則（Branch Protection Rules 或 Ruleset）：
@@ -58,7 +73,8 @@ git push origin main
 
 ## 禁止事項
 
-* 不在 `main`、`release` 上提交，也不 force push。
+* 不在 `main`、`release` 上提交，也不 force push。緊急修正一律走 hotfix，不直接改 `release`／`main`。
+* 不在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`。
 * 不把 `main` 當穩定版或部署來源；部署一律用 `release`。
 * 不直接在 `dev` 上開發。
 * `--ff-only` 失敗或合併有衝突時，停下來回報，不要自行處理。

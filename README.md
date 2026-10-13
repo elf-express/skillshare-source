@@ -24,6 +24,10 @@ cd ~/.config/skillshare/skills     # source 目錄；實際路徑看 `skillshare
 git switch release
 skillshare pull                    # 之後更新也是這一行，只會拿到 release 上的內容
 
+# 2-1. 安裝 superpowers（開發流程 skill；本 repo 以 .gitignore 排除，每台電腦要自己裝）
+#      一定要加 --name _superpowers：不加會裝成 _obra-superpowers，skill 名稱和規範不符，還會改到團隊的 .gitignore／.metadata.json
+skillshare install https://github.com/obra/superpowers.git --track --branch main --name _superpowers
+
 # 3. 加入你有在用的 AI 工具（例：codex、qwen、grok、trae）
 skillshare init --discover --select "codex,qwen"
 
@@ -178,8 +182,8 @@ skillshare-source/
 | `skillshare sync` | 同步 skills 到所有 AI 工具 |
 | `bash scripts/sync-agents.sh` | 把 `agents/` 複製到 Claude Code（改完 agent 後執行；`--dry-run` 預覽） |
 | `skillshare pull` | 從 GitHub 拉最新規範並同步 skills（agents 另跑 `sync-agents.sh`） |
-| `skillshare update _superpowers` | 更新 superpowers |
-| `skillshare upgrade` | 升級 skillshare CLI 與內建 skill |
+| `skillshare update _superpowers` | 更新 superpowers（首次安裝見上方第 2-1 步） |
+| `skillshare upgrade --cli` | 只升級 skillshare CLI。內建 skill（`skillshare/`）由團隊在開發分支用 PR 升級；不要在 source 目錄跑 `skillshare upgrade` 或 `--skill`，會改到團隊檔案 |
 | `skillshare audit` | 安全稽核（prompt injection、外洩） |
 | `skillshare ui` | 開網頁儀表板 `http://127.0.0.1:19420` |
 | `skillshare doctor` | 診斷設定問題 |
