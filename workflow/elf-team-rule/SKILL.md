@@ -57,7 +57,7 @@ metadata:
 10. 開發分支命名 MUST 為 `<類型>/e-<編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`、`hotfix/e-250-login-crash`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`。短名用英文小寫加連字號。
     編號：有 `[Spec]`＋`[Plan]` 時用 **Plan 編號**；沒有 Spec／Plan 的單一工作單（例如緊急修正）用**該單編號**。本規則是團隊唯一的分支命名，Linear「開發流程規範」引用本規則，不另外定義。
     為什麼：Linear 的 PR 自動化（開 PR → 進行中、merge → 已完成）靠分支名稱裡的 `e-<編號>` 對應工作單；分支名稱 MUST NOT 含中文或全形符號，Linear 自動產生的 `gitBranchName` 常帶中文標題，不要直接用。
-11. 開發分支 MUST 從 `origin/dev` 開出，合回 `dev` 前先在開發分支上 `git merge origin/dev` 並跑完測試。
+11. 開發分支 MUST 從 `origin/dev` 開出，合回 `dev` 前先在開發分支上 `git merge origin/dev` 並跑完測試。唯一例外是 `hotfix/`：從 `origin/release` 開出、不經 PR 合回 `dev`，見規則 25、26。
 12. 第 1 種送原作者的 PR MUST 用 `pr/<英文短名>`，從 `main` 開出，只放 cherry-pick 的提交，一個分支一個主題。
 
 **一定要停下來回報**
