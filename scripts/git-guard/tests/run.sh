@@ -14,6 +14,10 @@ FAILED=""
 
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
 export GIT_CONFIG_NOSYSTEM=1
+# Never read or write the real user's global git config.
+export HOME="$ROOT/home"
+mkdir -p "$HOME"
+INSTALL="$GG_DIR/install.sh"
 unset ELF_ALLOW
 
 # Fake gh: prints $FAKE_CHECKS (one "status conclusion name" per line), records args, exits $FAKE_GH_EXIT.
@@ -340,6 +344,129 @@ t_ci_url_forms() {
 		echo "    unparsable URL was allowed" >&2
 		return 1
 	fi
+}
+
+# --- Task 3 ---------------------------------------------------------------
+
+GH_HOOK_NAMES="applypatch-msg pre-applypatch post-applypatch pre-commit pre-merge-commit prepare-commit-msg commit-msg post-commit pre-rebase post-checkout post-merge pre-push post-rewrite pre-auto-gc reference-transaction push-to-checkout sendemail-validate"
+
+fresh_home() {
+	export HOME="$ROOT/home-$CASE"
+	rm -rf "$HOME" && mkdir -p "$HOME"
+	IH="$HOME/.elf-git-guard"
+}
+
+# mkrepo, but hooks come from the global install instead of the test hook dir.
+mkrepo_installed() {
+	mkrepo "$@"
+	git config --unset core.hooksPath
+}
+
+t_install_sets_hookspath() {
+	fresh_home
+	sh "$INSTALL" > /dev/null || return 1
+	_hp=$(git config --global --get core.hooksPath)
+	case "$_hp" in
+		*/.elf-git-guard/hooks) ;;
+		*)
+			echo "    core.hooksPath=$_hp" >&2
+			return 1
+			;;
+	esac
+	for _n in $GH_HOOK_NAMES; do
+		[ -x "$IH/hooks/$_n" ] || {
+			echo "    missing hook $_n" >&2
+			return 1
+		}
+	done
+	[ -f "$IH/git-guard.sh" ]
+}
+
+t_install_idempotent() {
+	fresh_home
+	sh "$INSTALL" > /dev/null && _a=$(ls -l "$IH/hooks" | wc -l) && _h1=$(git config --global --get core.hooksPath)
+	sh "$INSTALL" > /dev/null && _b=$(ls -l "$IH/hooks" | wc -l) && _h2=$(git config --global --get core.hooksPath)
+	[ "$_a" = "$_b" ] && [ "$_h1" = "$_h2" ] && [ "$(git config --global --get-all core.hooksPath | wc -l)" -eq 1 ]
+}
+
+t_check_ok() {
+	fresh_home
+	sh "$INSTALL" > /dev/null && sh "$INSTALL" --check > /dev/null
+}
+
+t_check_missing() {
+	fresh_home
+	if sh "$INSTALL" --check > /dev/null 2>&1; then return 1; fi
+}
+
+t_check_old_version() {
+	fresh_home
+	sh "$INSTALL" > /dev/null && echo 0 > "$IH/VERSION"
+	_out=$(sh "$INSTALL" --check 2>&1) && return 1
+	case "$_out" in *版本*) return 0 ;; esac
+	echo "    $_out" >&2
+	return 1
+}
+
+t_check_repo_override() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkrepo_installed 3
+	git config core.hooksPath .husky/_
+	_out=$(sh "$INSTALL" --check . 2>&1) && return 1
+	case "$_out" in *--repo*) return 0 ;; esac
+	echo "    $_out" >&2
+	return 1
+}
+
+t_chain_runs_repo_precommit() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkrepo_installed 3
+	printf '#!/bin/sh\ntouch "%s/precommit.ran"\n' "$D" > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+	commit f x
+	[ -f "$D/precommit.ran" ]
+}
+
+t_chain_passes_stdin() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkrepo_installed 3
+	printf '#!/bin/sh\ncat > "%s/stdin.txt"\n' "$D" > .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+	git switch -q -c feat/e-1-x && commit f x
+	push_expect allow - -- origin feat/e-1-x || return 1
+	_want="refs/heads/feat/e-1-x $(git rev-parse HEAD) refs/heads/feat/e-1-x 0000000000000000000000000000000000000000"
+	[ "$(cat "$D/stdin.txt")" = "$_want" ] || {
+		echo "    got: $(cat "$D/stdin.txt")" >&2
+		return 1
+	}
+}
+
+t_repo_mode_husky() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkrepo_installed 3
+	mkdir -p .husky/_
+	printf '#!/bin/sh\ncat >> "%s/husky.txt"\n' "$D" > .husky/_/pre-push && chmod +x .husky/_/pre-push
+	git config core.hooksPath .husky/_
+	sh "$INSTALL" --repo . > /dev/null || return 1
+	sh "$INSTALL" --check . > /dev/null || return 1
+	git switch -q release && commit f direct
+	push_expect block "git-guard" -- origin release || return 1
+	git switch -q -c feat/e-1-x origin/dev && commit g y
+	push_expect allow - -- origin feat/e-1-x || return 1
+	grep -q "refs/heads/feat/e-1-x $(git rev-parse HEAD) " "$D/husky.txt"
+}
+
+t_guard_failure_closed() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	rm -f "$IH/git-guard.sh"
+	mkrepo_installed 3
+	dev_ahead d1
+	push_expect block "git-guard" -- origin origin/dev:release || return 1
+	git switch -q -c feat/e-1-x && commit g y
+	push_expect allow - -- origin feat/e-1-x
 }
 
 # --- runner ---------------------------------------------------------------
