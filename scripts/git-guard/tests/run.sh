@@ -402,6 +402,22 @@ t_install_removes_stale_hooks() {
 	[ ! -e "$IH/hooks/push-to-checkout" ] && [ ! -e "$IH/hooks/reference-transaction" ]
 }
 
+t_check_tampered_hook() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	printf '#!/bin/sh\ncd "frontend" || exit 1\nnpx --no -- lint-staged\n' > "$IH/hooks/pre-commit"
+	_out=$(sh "$INSTALL" --check 2>&1) && {
+		echo "    --check passed with a tampered hook" >&2
+		return 1
+	}
+	case "$_out" in *pre-commit*) ;; *)
+		echo "    $_out" >&2
+		return 1
+		;;
+	esac
+	sh "$INSTALL" > /dev/null && sh "$INSTALL" --check > /dev/null
+}
+
 t_check_ok() {
 	fresh_home
 	sh "$INSTALL" > /dev/null && sh "$INSTALL" --check > /dev/null

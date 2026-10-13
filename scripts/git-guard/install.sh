@@ -19,7 +19,7 @@ HOOKS_CFG=$(cfg_path "$H/hooks")
 do_install() {
 	mkdir -p "$H/hooks" || exit 1
 	rm -f "$H/hooks/"* # drop hook names an older version installed
-	cp "$SRC/git-guard.sh" "$SRC/VERSION" "$H/" || exit 1
+	cp "$SRC/git-guard.sh" "$SRC/VERSION" "$SRC/chain" "$H/" || exit 1
 	for _n in $HOOK_NAMES; do
 		cp "$SRC/chain" "$H/hooks/$_n" && chmod +x "$H/hooks/$_n" || exit 1
 	done
@@ -41,6 +41,15 @@ do_check() { # do_check [repo]
 	_have=$(cat "$H/VERSION")
 	if [ "${_have}" != "$WANT" ]; then
 		echo "git-guard 版本 ${_have} 不是最新的 ${WANT}：重新執行 install.sh" >&2
+		_bad=1
+	fi
+	# Tools that write hooks to `git rev-parse --git-path hooks` overwrite ours once core.hooksPath is global.
+	_changed=""
+	for _n in $HOOK_NAMES; do
+		cmp -s "$H/hooks/$_n" "$H/chain" 2> /dev/null || _changed="${_changed} ${_n}"
+	done
+	if [ -n "${_changed}" ]; then
+		echo "git-guard 的 hook 被改過或不見了：${_changed# }。重新執行 install.sh 還原；常見原因是某個 repo 的 postinstall／hook 安裝腳本把 hook 寫進了 git rev-parse --git-path hooks，請找出並修正那個 repo。" >&2
 		_bad=1
 	fi
 	if [ "$(git config --global --get core.hooksPath)" != "$HOOKS_CFG" ]; then

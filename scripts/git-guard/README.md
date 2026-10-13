@@ -52,6 +52,7 @@ sh scripts/git-guard/tests/run.sh
   pre-commit install                    # 裝進 .git/hooks/，git-guard 會接著執行它
   sh scripts/git-guard/install.sh       # 再把全機設定改回 git-guard
   ```
+- **repo 自己的 hook 安裝腳本**（例如 `postinstall` 執行的 `install-git-hooks.mjs`、simple-git-hooks）：它們把 hook 寫進 `git rev-parse --git-path hooks`，裝了 git-guard 之後那就是全機目錄，會蓋掉 git-guard 的 hook，讓所有 repo 都受影響。`install.sh --check` 會報出「hook 被改過」；先重跑 `install.sh` 還原，再修那個腳本：repo 沒有自己設定 `core.hooksPath` 時，改寫到 `$(git rev-parse --git-common-dir)/hooks`，git-guard 會照常串接執行。
 - **原本的全機 hooks 目錄**：安裝前若已設定全機 `core.hooksPath`，原路徑記在 `elfguard.previousHooksPath`；repo 沒有自己的同名 hook 時，git-guard 會改執行那裡的 hook。
 
 ## 已知限制
