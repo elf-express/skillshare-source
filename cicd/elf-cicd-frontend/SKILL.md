@@ -78,8 +78,8 @@ metadata:
 
 **Workflow 本身**
 
-23. MUST 只有一個 `.github/workflows/ci.yml`，觸發條件固定 `push: branches: [dev, release]` + `pull_request`。
-    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule），`pull_request` 擋住合併前，`push` `dev` 驗證合併後的結果。`release` 的提交雖然在 `dev` 跑過，但 push `release` 會在 `release` 名下留一筆 run，發佈時用 `gh run list -b release` 就查得到，不必回頭找 `dev` 的紀錄。`main` 只從 `release` 快轉，同一個提交已有 `release` 名下的紀錄，不再重跑。
+23. MUST 只有一個 `.github/workflows/ci.yml`，觸發條件固定 `push: branches: [dev, release, 'hotfix/**']` + `pull_request`，並保留彙總 job `ci`（`needs:` 列出所有其他 job）。
+    為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule），`pull_request` 擋住合併前，`push` `dev` 驗證合併後的結果。`release` 的提交雖然在 `dev` 跑過，但 push `release` 會在 `release` 名下留一筆 run，發佈時用 `gh run list -b release` 就查得到，不必回頭找 `dev` 的紀錄。`main` 只從 `release` 快轉，同一個提交已有 `release` 名下的紀錄，不再重跑。`hotfix/**` 讓緊急修正推送後就有 check run，`release` 才能快轉過去（elf-team-rule 規則 25、28）。GitHub 組織 ruleset `elf-require-ci` 只要求 `ci` 這一個檢查，各 repo job 名稱不同也不影響。
 24. MUST NOT 在 `ci.yml` 使用 `paths:` / `paths-ignore:` 過濾。
     為什麼：`dev` 的 branch protection 把這些 job 設為 required check；被路徑過濾掉的 workflow 不會回報狀態，PR 會永遠卡在 "Expected — Waiting for status"。
 25. MUST NOT 改 job 的 `name:`（`web (lint · types · tests · build)`、`e2e (browser)`）。若真的要改，同一個 PR 必須同步改 branch protection 的 required checks。
@@ -167,6 +167,8 @@ export default defineConfig({
 - [ ] CI 上 Playwright reporter 含 `github` 與 `html`
 - [ ] `ci.yml` 沒有 `paths:` 過濾、沒有 `continue-on-error`
 - [ ] job `name:` 未變更（或已同步更新 branch protection）
+- [ ] push 觸發含 `'hotfix/**'`；有 `ci` job，`needs:` 列出所有其他 job
+- [ ] 有 `ci` job 後，請管理員把 repo 的 custom property `has_ci` 設為 `true`
 - [ ] 本機 `pnpm verify` 全綠、`pnpm test:e2e` 全綠
 - [ ] 刻意把一個被測函式改壞，確認對應測試會變紅，再改回來（綠燈不等於有測到）
 

@@ -4,6 +4,7 @@ name: CI
 #   web     → owned by elf-cicd-frontend
 #   e2e     → owned by elf-cicd-frontend
 #   server  → owned by elf-cicd-backend (paste templates/ci-server-job.yml under `jobs:`)
+#   ci      → aggregate; the only check the org ruleset `elf-require-ci` requires (elf-team-rule E-244)
 #
 # Job `name:` values are what branch protection lists as required checks.
 # Renaming one silently leaves the old name "expected" forever and blocks every PR.
@@ -11,7 +12,7 @@ name: CI
 on:
   # PRs target dev (elf-team-rule); release is fast-forwarded from a tested dev.
   push:
-    branches: [dev, release]
+    branches: [dev, release, 'hotfix/**']
   pull_request:
 
 jobs:
@@ -115,3 +116,21 @@ jobs:
           retention-days: 7
 
   # server: paste elf-cicd-backend/templates/ci-server-job.yml here
+
+  # Keep `needs:` listing every job above (add `server` when pasted); a job left out is not enforced.
+  ci:
+    name: ci
+    if: always()
+    needs: [web, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every required job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for r in $RESULTS; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::a job in needs ended with '$r'"; exit 1 ;;
+            esac
+          done

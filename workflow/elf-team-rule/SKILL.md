@@ -97,7 +97,7 @@ metadata:
 
 20. `main`、`release` MUST 設定：禁止 force push、禁止刪除、只允許維護者 push。MUST NOT 設定「必須經過 PR」。
     為什麼：這兩條分支是在本機 `merge --ff-only` 後直接 push 更新的；GitHub 的 PR 合併（merge commit／squash／rebase）都會產生新提交或新 SHA，無法快轉，設了「必須 PR」之後同步與發佈就推不上去。
-21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併與規則 26 的 hotfix 合回。`dev` 設了 required status checks（elf-cicd-review 規則 17）時，維護者 MUST 列在 bypass 名單：本機做出的同步合併提交沒有任何 check，不 bypass 就推不上去（見待確認 2）。
+21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併與規則 26 的 hotfix 合回。`dev` 設了 required status checks（elf-cicd-review 規則 17）時，維護者 MUST 列在 bypass 名單：本機做出的同步合併提交沒有任何 check，不 bypass 就推不上去（2026-10-13 沙盒實測：required status checks 對直接推送也生效，admin 列入 bypass 後才推得上去；E-244）。
 
 **核對 CI/CD 與對齊**
 
@@ -110,8 +110,8 @@ metadata:
 
 25. 正式版要緊急修正、而 `dev` 上有未測完的內容時，MUST 走 hotfix（第 1、2、3 種皆同）：
     - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送。
-    - 推送後 MUST 對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
-      為什麼：依 `elf-cicd-*` 現行規定，CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run（E-244 完成後另行調整）。
+    - 推送後 CI MUST 在該提交上執行：依 `elf-cicd-*`，CI 在 push `hotfix/**` 時就會觸發；repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
+      為什麼：`release` 只能快轉到 CI 通過的提交（規則 28）；舊版 `elf-cicd-*` 的 CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run，draft PR 是給還沒更新 CI 的 repo 用的。
     - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後才 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
     - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`，讓 CI 在新提交上執行，再依規則 28 重新判斷後發佈。
     為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
@@ -122,9 +122,14 @@ metadata:
     - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意後快轉。
     - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。`stale` 沒有可讀的 log，告訴使用者後重跑該 check（`gh run rerun`），再重新判斷。
     - **完全沒有 check runs**，先分兩種情況：
-      - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 hotfix 忘了開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
+      - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 CI 沒有 `hotfix/**` 觸發、也沒開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
       - repo 沒有任何 workflow（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
 29. 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
+
+**本機防護（git-guard）**
+
+30. 每台電腦 MUST 安裝 git-guard（skillshare-source 的 `scripts/git-guard/install.sh`），每次操作前用 `install.sh --check .` 確認（§3）。git-guard 擋下推送時，MUST 照訊息改正做法；MUST NOT 用 `--no-verify`、改 `core.hooksPath`、刪除或修改 hook 等方式繞過。放行值 `ELF_ALLOW=<SHA 前 8 碼以上>` 只能在使用者對**那一個提交**明確同意例外後使用（例如專案沒有 CI，規則 28），回報時 MUST 寫明用了放行值與原因。
+    為什麼：規則寫在文件裡擋不住 AI 判斷錯誤；git-guard 在推送當下檢查 `release`、`main`、`dev` 的來源與形狀，GitHub 組織 ruleset（`elf-protect-branches`、`elf-require-ci`）再擋沒測過的內容（E-244）。繞過它就等於回到沒有防護的狀態。
 
 ## 3. 標準範本
 
@@ -134,7 +139,10 @@ metadata:
 git status                  # 工作目錄乾淨嗎？
 git branch --show-current   # 現在在哪個分支？
 git fetch --all --prune     # 遠端狀態是最新的嗎？
+sh <skillshare source>/scripts/git-guard/install.sh --check .   # git-guard 已安裝、沒被蓋掉？（規則 30）
 ```
+
+- `--check` 失敗：停下，把訊息給使用者看，請使用者照訊息安裝或更新；repo 被 husky 等蓋掉時，經使用者同意後執行 `install.sh --repo .`。`<skillshare source>` 是 `skillshare status` 的 Source 路徑。
 
 - 目前在 `main`、`release`、`dev`，而使用者要求「提交程式碼」或「修改內容」：立刻停止並回報。
 - 要提交時，確認在開發分支（`feat/`、`fix/`、`docs/`、`chore/`、`test/`、`hotfix/`）上。
@@ -199,6 +207,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 只用 `gh run list -b release` 判斷 release 的 CI 狀態（見規則 22）。
 - MUST NOT 刪掉「一定要停下來回報」的任何一項。
 - MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
+- MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
 
 ## 5. 檢查清單
@@ -233,7 +242,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 ## 7. 待確認
 
 1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8。
-2. **status checks 對直接 push 的效果**：GitHub ruleset 的「Require status checks to pass」在直接 push（非 PR）時是否生效、是否會擋快轉推送，尚未實測。最可能出事的組合是 `dev` 設了 required checks（elf-cicd-review 規則 17），而規則 18 的同步合併由維護者直接 push：本機新做的合併提交沒有任何 check。實測前先把維護者加進 bypass 名單（規則 21）。
+2. （已決議 2026-10-13，E-244 沙盒實測）**status checks 對直接 push 的效果**：「Require status checks to pass」對直接 push 也生效：沒有 check 的新提交推不上去；已通過 CI 的提交快轉放行；合併提交依被併進來那個提交的 check 判斷，所以擋不住「用合併代替快轉」，這部分由 git-guard 擋（規則 30）。`dev` 的維護者 MUST 列入 bypass（規則 21）。
 5. **XiHan.Framework fork 的例外**：它是第 1 種，但只有 `main`、`dev`、`gh-pages`，沒有 `release`；工作分支用 `bug/` 而不是 `fix/`。要在它的 `BRANCHING.md` 記錄為例外，還是改成符合本規範，待決定。
 3. （已決議 2026-10-11）skillshare-source 的 `master` 已改名為 `main`，改由 `release` 快轉，並補上 `BRANCHING.md`。其他主線叫 `master` 的 repo，一律比照改名，不記為例外。
 4. **團隊標準容量**：規則 16 的「預估總工時超過團隊標準容量」沒有具體數字。
