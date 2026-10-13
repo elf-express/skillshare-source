@@ -216,6 +216,132 @@ t_allow_value() {
 	ELF_ALLOW=$_short push_expect allow "已使用 ELF_ALLOW 放行" -- origin release
 }
 
+# --- Task 2 ---------------------------------------------------------------
+
+nohook_push() { git -c core.hooksPath=/dev/null push -q "$@"; }
+
+t_dev_sync_merge() {
+	# Type 1: dev has its own commit, upstream moves, main fast-forwards, dev merges main.
+	mkrepo 1
+	git switch -q dev && commit f d1 && nohook_push origin dev
+	(cd "$D/seed" && commit u up1 && git push -q "$D/upstream.git" main:main)
+	git fetch -q upstream && nohook_push origin upstream/main:main && git fetch -q origin
+	git merge -q --no-edit origin/main
+	push_expect allow - -- origin dev || return 1
+	# Plain fast-forward sync (dev had nothing of its own) is also allowed.
+	mkrepo 1
+	(cd "$D/seed" && commit u up2 && git push -q "$D/upstream.git" main:main)
+	git fetch -q upstream && git switch -q dev && git merge -q --ff-only upstream/main
+	push_expect allow - -- origin dev || return 1
+	# Type 2: merging upstream/release directly.
+	mkrepo 2
+	git switch -q dev && commit f d1 && nohook_push origin dev
+	(cd "$D/seed" && commit u up1 && git push -q "$D/upstream.git" main:release)
+	git fetch -q upstream && git merge -q --no-edit upstream/release
+	push_expect allow - -- origin dev
+}
+
+t_dev_hotfix_mergeback() {
+	mkrepo 3
+	git switch -q dev && commit f d1 && nohook_push origin dev
+	git switch -q -c hotfix/e-1-x origin/release && commit h fix && nohook_push origin hotfix/e-1-x:release
+	git fetch -q origin && git switch -q dev && git merge -q --no-edit origin/release
+	push_expect allow - -- origin dev
+}
+
+t_dev_direct_commit() {
+	mkrepo 3
+	git switch -q dev && commit f direct
+	push_expect block "規則 9" -- origin dev
+}
+
+t_dev_local_feature_merge() {
+	mkrepo 3
+	git switch -q -c feat/e-1-x origin/dev && commit f feat && nohook_push origin feat/e-1-x
+	git switch -q dev && git merge -q --ff-only feat/e-1-x
+	push_expect block "規則 9" -- origin dev || return 1
+	git reset -q --hard origin/dev && commit g own && nohook_push origin dev && git fetch -q origin
+	git merge -q --no-ff --no-edit feat/e-1-x
+	push_expect block "規則 9" -- origin dev
+}
+
+t_dev_merge_plus_commit() {
+	mkrepo 3
+	git switch -q dev && commit f d1 && nohook_push origin dev
+	git switch -q -c hotfix/e-1-x origin/release && commit h fix && nohook_push origin hotfix/e-1-x:release
+	git fetch -q origin && git switch -q dev && git merge -q --no-edit origin/release && commit f extra
+	push_expect block "規則 9" -- origin dev
+}
+
+# Moves origin/dev one commit ahead (hooks off) and fetches it.
+dev_ahead() {
+	git switch -q dev && commit f "$1" && nohook_push origin dev && git fetch -q origin
+}
+
+t_ci_pass() {
+	mkrepo 3
+	dev_ahead d1
+	FAKE_CHECKS="completed success build
+completed skipped deploy
+completed neutral lint" push_expect allow - -- origin origin/dev:release || return 1
+	_want="api repos/o/r/commits/$(git rev-parse origin/dev)/check-runs?filter=latest&per_page=100"
+	case "$(cat "$FAKE_GH_ARGS")" in
+		"$_want"*) return 0 ;;
+	esac
+	echo "    gh args: $(cat "$FAKE_GH_ARGS")" >&2
+	return 1
+}
+
+t_ci_fail() {
+	mkrepo 3
+	dev_ahead d1
+	FAKE_CHECKS="completed success ok
+completed failure build" push_expect block "build" -- origin origin/dev:release || return 1
+	FAKE_CHECKS="completed stale lint" push_expect block "lint" -- origin origin/dev:release || return 1
+	FAKE_CHECKS="in_progress null e2e" push_expect block "e2e" -- origin origin/dev:release || return 1
+	FAKE_CHECKS="" push_expect block "沒有任何 check run" -- origin origin/dev:release
+}
+
+t_ci_gh_error() {
+	mkrepo 3
+	dev_ahead d1
+	FAKE_GH_EXIT=1 push_expect block "gh" -- origin origin/dev:release
+}
+
+t_ci_no_workflows() {
+	mkrepo 3
+	git switch -q dev && git rm -q -r .github && git commit -q -m noci && nohook_push origin dev && git fetch -q origin
+	push_expect block "ELF_ALLOW" -- origin origin/dev:release || return 1
+	ELF_ALLOW=$(git rev-parse origin/dev | cut -c1-8) push_expect allow - -- origin origin/dev:release
+}
+
+t_ci_url_forms() {
+	mkrepo 3
+	dev_ahead d1
+	_new=$(git rev-parse origin/dev)
+	_old=$(git rev-parse origin/release)
+	for _u in https://github.com/o/r https://github.com/o/r.git git@github.com:o/r.git ssh://git@github.com/o/r.git; do
+		git remote set-url origin "$_u"
+		rm -f "$FAKE_GH_ARGS"
+		echo "refs/heads/release $_new refs/heads/release $_old" | sh "$GUARD" origin "$_u" 2>/dev/null || {
+			echo "    blocked for $_u" >&2
+			return 1
+		}
+		case "$(cat "$FAKE_GH_ARGS" 2>/dev/null)" in
+			"api repos/o/r/commits/$_new/"*) ;;
+			*)
+				echo "    $_u -> $(cat "$FAKE_GH_ARGS" 2>/dev/null)" >&2
+				return 1
+				;;
+		esac
+	done
+	git remote set-url origin /some/local/path.git
+	if echo "refs/heads/release $_new refs/heads/release $_old" | sh "$GUARD" origin /some/local/path.git 2>/dev/null; then
+		echo "    unparsable URL was allowed" >&2
+		return 1
+	fi
+}
+
 # --- runner ---------------------------------------------------------------
 
 ALL=$(grep -o '^t_[a-z0-9_]*()' "$0" | tr -d '()')
