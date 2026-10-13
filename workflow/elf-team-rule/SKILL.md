@@ -124,12 +124,14 @@ metadata:
     - **完全沒有 check runs**，先分兩種情況：
       - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 CI 沒有 `hotfix/**` 觸發、也沒開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
       - repo 沒有任何 workflow（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
-29. 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
+29. 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`、`hotfix/**`，或沒有彙總 job `ci`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
 
 **本機防護（git-guard）**
 
 30. 每台電腦 MUST 安裝 git-guard（skillshare-source 的 `scripts/git-guard/install.sh`），每次操作前用 `install.sh --check .` 確認（§3）。git-guard 擋下推送時，MUST 照訊息改正做法；MUST NOT 用 `--no-verify`、改 `core.hooksPath`、刪除或修改 hook 等方式繞過。放行值 `ELF_ALLOW=<SHA 前 8 碼以上>` 只能在使用者對**那一個提交**明確同意例外後使用（例如專案沒有 CI，規則 28），回報時 MUST 寫明用了放行值與原因。
     為什麼：規則寫在文件裡擋不住 AI 判斷錯誤；git-guard 在推送當下檢查 `release`、`main`、`dev` 的來源與形狀，GitHub 組織 ruleset（`elf-protect-branches`、`elf-require-ci`）再擋沒測過的內容（E-244）。繞過它就等於回到沒有防護的狀態。
+    - husky repo 執行 `pnpm install` 後，husky 會把 `core.hooksPath` 改回 `.husky/_`，git-guard 隨之失效；`--check .` 會報出來，經使用者同意後重跑 `install.sh --repo .`。
+    - Git LFS 的 hook 由 git-guard 代為執行，不需要（也不要）`git lfs install --force`。Python 的 `pre-commit install` 遇到全機 `core.hooksPath` 會拒絕安裝，做法見 `scripts/git-guard/README.md`。
 
 ## 3. 標準範本
 

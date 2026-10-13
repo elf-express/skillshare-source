@@ -6,11 +6,6 @@ set -u
 ZERO=0000000000000000000000000000000000000000
 STATUS=0
 
-# Only pushes to origin are checked; drain stdin so git does not see a broken pipe.
-if [ "${1:-}" != origin ]; then
-	cat > /dev/null
-	exit 0
-fi
 
 block() { # block <remote ref> <line>...
 	printf 'git-guard: 擋下推送 %s\n' "$1" >&2
@@ -93,13 +88,19 @@ check_dev() { # check_dev <remote ref> <new sha> <old sha>
 		"如果是同步合併被擋，先 git fetch --all 確認 origin/dev、origin/main 是最新的。"
 }
 
-repo_slug() { # prints owner/repo for the GitHub remote, fails otherwise
+repo_slug() { # prints owner/repo for the origin remote, fails otherwise
 	_u=$(git config --get remote.origin.url 2>/dev/null) || _u=${1:-}
-	case "${_u}" in
-		https://github.com/* | http://github.com/*) _p=${_u#*://github.com/} ;;
-		https://*@github.com/*) _p=${_u#*@github.com/} ;;
-		git@github.com:*) _p=${_u#git@github.com:} ;;
-		ssh://git@github.com/*) _p=${_u#ssh://git@github.com/} ;;
+	slug_of "${_u}"
+}
+
+slug_of() { # owner/repo from https, ssh:// (any port) or scp-style URLs, including ssh host aliases
+	case "${1:-}" in
+		*://*)
+			_p=${1#*://}
+			_p=${_p#*/}
+			;;
+		/* | ./* | ../*) return 1 ;;
+		*:*) _p=${1#*:} ;;
 		*) return 1 ;;
 	esac
 	_p=${_p%/}
@@ -138,6 +139,21 @@ check_ci() { # check_ci <remote ref> <sha> <url>
 	block "$1" "$2 的 CI 還沒全部通過（規則 28），不能發佈。未通過的 check（status conclusion name）：" ${_bad:+"${_bad}"} \
 		"失敗就依 references/04 讀原因；stale 告訴 Eddie 後重跑；執行中就等完成。"
 }
+
+# True when the push goes to origin, even by URL or through another remote with the same URL.
+target_is_origin() { # target_is_origin <remote name> <url>
+	[ "$1" = origin ] && return 0
+	_o=$(git ls-remote --get-url origin 2>/dev/null)
+	[ -n "${_o}" ] && [ "${_o}" != origin ] && [ "$2" = "${_o}" ] && return 0
+	_a=$(slug_of "$2") || return 1
+	_b=$(repo_slug "") || return 1
+	[ "${_a}" = "${_b}" ]
+}
+
+if ! target_is_origin "${1:-}" "${2:-}"; then
+	cat > /dev/null
+	exit 0
+fi
 
 while read -r _lref _lsha _rref _rsha; do
 	case "$_rref" in

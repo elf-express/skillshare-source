@@ -20,7 +20,7 @@ fork 原作者的開源專案，自己使用，同時把改動整理成 PR 回�
 | `release`               | 唯一的穩定版，給第 2 種同步       | **否**           | `dev`（緊急修正時 `hotfix/`） | `--ff-only` |
 | `hotfix/xxx`            | 緊急修正正式版                    | 是                     | 從 `origin/release` 開出 | —            |
 
-> 如果原作者的主線不叫 `main`（例如 `master`），同步指令裡的 `upstream/main` 改成實際名稱，我們這邊的分支仍叫 `main`。這個差異要寫進 `BRANCHING.md`。
+> 如果原作者的主線不叫 `main`（例如 `master`），同步指令裡的 `upstream/main` 改成實際名稱，我們這邊的分支仍叫 `main`。這個差異要寫進 `BRANCHING.md`，格式固定為單獨一行 ``上游主線：`master` ``（範本已有這一行），git-guard 依它檢查 `main` 的來源。
 
 ---
 

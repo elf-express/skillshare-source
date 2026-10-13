@@ -324,7 +324,7 @@ t_ci_url_forms() {
 	dev_ahead d1
 	_new=$(git rev-parse origin/dev)
 	_old=$(git rev-parse origin/release)
-	for _u in https://github.com/o/r https://github.com/o/r.git git@github.com:o/r.git ssh://git@github.com/o/r.git; do
+	for _u in https://github.com/o/r https://github.com/o/r.git git@github.com:o/r.git ssh://git@github.com/o/r.git git@github-elf:o/r.git ssh://git@github.com:22/o/r.git; do
 		git remote set-url origin "$_u"
 		rm -f "$FAKE_GH_ARGS"
 		echo "refs/heads/release $_new refs/heads/release $_old" | sh "$GUARD" origin "$_u" 2>/dev/null || {
@@ -348,7 +348,7 @@ t_ci_url_forms() {
 
 # --- Task 3 ---------------------------------------------------------------
 
-GH_HOOK_NAMES="applypatch-msg pre-applypatch post-applypatch pre-commit pre-merge-commit prepare-commit-msg commit-msg post-commit pre-rebase post-checkout post-merge pre-push post-rewrite pre-auto-gc reference-transaction push-to-checkout sendemail-validate"
+GH_HOOK_NAMES="applypatch-msg pre-applypatch post-applypatch pre-commit pre-merge-commit prepare-commit-msg commit-msg post-commit pre-rebase post-checkout post-merge pre-push post-rewrite pre-auto-gc post-index-change sendemail-validate pre-receive update proc-receive post-receive post-update p4-changelist p4-prepare-changelist p4-post-changelist p4-pre-submit"
 
 fresh_home() {
 	export HOME="$ROOT/home-$CASE"
@@ -379,6 +379,12 @@ t_install_sets_hookspath() {
 			return 1
 		}
 	done
+	for _n in push-to-checkout reference-transaction; do
+		[ -e "$IH/hooks/$_n" ] && {
+			echo "    $_n must not be installed" >&2
+			return 1
+		}
+	done
 	[ -f "$IH/git-guard.sh" ]
 }
 
@@ -387,6 +393,13 @@ t_install_idempotent() {
 	sh "$INSTALL" > /dev/null && _a=$(ls -l "$IH/hooks" | wc -l) && _h1=$(git config --global --get core.hooksPath)
 	sh "$INSTALL" > /dev/null && _b=$(ls -l "$IH/hooks" | wc -l) && _h2=$(git config --global --get core.hooksPath)
 	[ "$_a" = "$_b" ] && [ "$_h1" = "$_h2" ] && [ "$(git config --global --get-all core.hooksPath | wc -l)" -eq 1 ]
+}
+
+t_install_removes_stale_hooks() {
+	fresh_home
+	mkdir -p "$IH/hooks" && touch "$IH/hooks/push-to-checkout" "$IH/hooks/reference-transaction"
+	sh "$INSTALL" > /dev/null
+	[ ! -e "$IH/hooks/push-to-checkout" ] && [ ! -e "$IH/hooks/reference-transaction" ]
 }
 
 t_check_ok() {
@@ -467,6 +480,47 @@ t_guard_failure_closed() {
 	push_expect block "git-guard" -- origin origin/dev:release || return 1
 	git switch -q -c feat/e-1-x && commit g y
 	push_expect allow - -- origin feat/e-1-x
+}
+
+# --- review fixes -----------------------------------------------------------
+
+t_push_other_remote_name() {
+	mkrepo 3
+	git remote add gh https://github.com/o/r.git
+	git switch -q release && commit f direct
+	push_expect block "git-guard: 擋下推送" -- gh release
+}
+
+t_push_by_url() {
+	mkrepo 3
+	git switch -q release && commit f direct
+	push_expect block "git-guard: 擋下推送" -- https://github.com/o/r.git release
+}
+
+t_chain_previous_hookspath() {
+	fresh_home
+	mkdir -p "$HOME/old-hooks"
+	printf '#!/bin/sh\ntouch "%s/old.ran"\n' "$HOME" > "$HOME/old-hooks/pre-commit" && chmod +x "$HOME/old-hooks/pre-commit"
+	git config --global core.hooksPath "$HOME/old-hooks"
+	sh "$INSTALL" > /dev/null 2>&1
+	mkrepo_installed 3
+	commit f x
+	[ -f "$HOME/old.ran" ]
+}
+
+t_chain_git_lfs() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkdir -p "$HOME/bin"
+	printf '#!/bin/sh\necho "$*" >> "%s/lfs.log"\ncat > /dev/null\n' "$HOME" > "$HOME/bin/git-lfs" && chmod +x "$HOME/bin/git-lfs"
+	mkrepo_installed 3
+	echo '*.bin filter=lfs diff=lfs merge=lfs -text' > .gitattributes && git add .gitattributes && git commit -q -m lfs
+	git switch -q -c feat/e-1-x
+	PATH="$HOME/bin:$PATH" push_expect allow - -- origin feat/e-1-x || return 1
+	grep -q "^pre-push origin" "$HOME/lfs.log" || {
+		echo "    lfs.log: $(cat "$HOME/lfs.log" 2>/dev/null)" >&2
+		return 1
+	}
 }
 
 # --- runner ---------------------------------------------------------------

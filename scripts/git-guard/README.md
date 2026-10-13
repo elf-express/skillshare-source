@@ -41,3 +41,20 @@ ELF_ALLOW=<要推送提交的 SHA 前 8 碼以上> git push origin <分支>
 ```bash
 sh scripts/git-guard/tests/run.sh
 ```
+
+## 和其他 hook 工具並用
+
+- **husky**：`pnpm install` 會把 repo 的 `core.hooksPath` 改回 `.husky/_`，git-guard 就不會執行。`install.sh --check .` 會報出來，重跑 `install.sh --repo .` 即可。
+- **Git LFS**：git-guard 佔用了全機 hooks 目錄，`git lfs install` 會說 hook 已存在而略過。不用處理：repo 的 `.gitattributes` 有 `filter=lfs` 時，git-guard 會代為執行 `git lfs pre-push` 等 hook。不要用 `git lfs install --force`，那會蓋掉 git-guard。
+- **Python pre-commit**：`pre-commit install` 看到 `core.hooksPath` 就拒絕安裝。做法：
+  ```bash
+  git config --global --unset core.hooksPath
+  pre-commit install                    # 裝進 .git/hooks/，git-guard 會接著執行它
+  sh scripts/git-guard/install.sh       # 再把全機設定改回 git-guard
+  ```
+- **原本的全機 hooks 目錄**：安裝前若已設定全機 `core.hooksPath`，原路徑記在 `elfguard.previousHooksPath`；repo 沒有自己的同名 hook 時，git-guard 會改執行那裡的 hook。
+
+## 已知限制
+
+- 第 3 種同時推 `release` 和 `main`（`git push origin release main`）時，`main` 會和推送前的 `origin/release` 比對而被擋；請分兩次推，先 `release` 再 `main`。
+- `dev` 的合併提交只檢查兩個 parent，不檢查合併時是否夾帶額外修改。

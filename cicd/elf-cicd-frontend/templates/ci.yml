@@ -6,8 +6,8 @@ name: CI
 #   server  → owned by elf-cicd-backend (paste templates/ci-server-job.yml under `jobs:`)
 #   ci      → aggregate; the only check the org ruleset `elf-require-ci` requires (elf-team-rule E-244)
 #
-# Job `name:` values are what branch protection lists as required checks.
-# Renaming one silently leaves the old name "expected" forever and blocks every PR.
+# The org ruleset requires only the `ci` job (by name). Keep `name: ci`, and keep its
+# `needs:` listing every other job id — a job left out of `needs:` is not enforced.
 
 on:
   # PRs target dev (elf-team-rule); release is fast-forwarded from a tested dev.

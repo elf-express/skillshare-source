@@ -7,7 +7,9 @@ set -u
 
 SRC=$(cd "$(dirname "$0")" && pwd)
 H=${ELF_GIT_GUARD_HOME:-$HOME/.elf-git-guard}
-HOOK_NAMES="applypatch-msg pre-applypatch post-applypatch pre-commit pre-merge-commit prepare-commit-msg commit-msg post-commit pre-rebase post-checkout post-merge pre-push post-rewrite pre-auto-gc reference-transaction push-to-checkout sendemail-validate"
+# push-to-checkout is left out: its mere presence replaces git's updateInstead behaviour.
+# reference-transaction is left out: it runs on every ref update and slows rebases on Windows.
+HOOK_NAMES="applypatch-msg pre-applypatch post-applypatch pre-commit pre-merge-commit prepare-commit-msg commit-msg post-commit pre-rebase post-checkout post-merge pre-push post-rewrite pre-auto-gc post-index-change sendemail-validate pre-receive update proc-receive post-receive post-update p4-changelist p4-prepare-changelist p4-post-changelist p4-pre-submit"
 WANT=$(cat "$SRC/VERSION")
 
 # Git for Windows needs a Windows path in config; cygpath exists only there.
@@ -16,6 +18,7 @@ HOOKS_CFG=$(cfg_path "$H/hooks")
 
 do_install() {
 	mkdir -p "$H/hooks" || exit 1
+	rm -f "$H/hooks/"* # drop hook names an older version installed
 	cp "$SRC/git-guard.sh" "$SRC/VERSION" "$H/" || exit 1
 	for _n in $HOOK_NAMES; do
 		cp "$SRC/chain" "$H/hooks/$_n" && chmod +x "$H/hooks/$_n" || exit 1

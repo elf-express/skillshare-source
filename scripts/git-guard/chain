@@ -23,13 +23,31 @@ next_hook() {
 		esac
 		_d="${_d}/hooks"
 	fi
-	[ -x "${_d}/${NAME}" ] && printf '%s\n' "${_d}/${NAME}"
+	if [ -x "${_d}/${NAME}" ]; then
+		printf '%s\n' "${_d}/${NAME}"
+		return 0
+	fi
+	# The global hooks dir that git-guard replaced.
+	_p=$(git config --global --get elfguard.previousHooksPath 2>/dev/null)
+	[ -n "${_p}" ] && [ -x "${_p}/${NAME}" ] && printf '%s\n' "${_p}/${NAME}"
+	return 0
+}
+
+# Git LFS cannot install its own hooks while ours occupy core.hooksPath, so run them here.
+uses_lfs() {
+	case "$NAME" in
+		pre-push | post-checkout | post-commit | post-merge) ;;
+		*) return 1 ;;
+	esac
+	command -v git-lfs > /dev/null 2>&1 || return 1
+	grep -q 'filter=lfs' "$(git rev-parse --show-toplevel 2>/dev/null)/.gitattributes" 2> /dev/null
 }
 
 NEXT=$(next_hook)
 
 if [ "$NAME" != pre-push ]; then
 	[ -n "$NEXT" ] && exec "$NEXT" "$@"
+	uses_lfs && exec git lfs "$NAME" "$@"
 	exit 0
 fi
 
@@ -56,5 +74,8 @@ elif [ "$_rc" -ne 0 ] && protected_in_push; then
 	exit 1
 fi
 
-[ -n "$NEXT" ] || exit 0
-"$NEXT" "$@" < "$TMP"
+if [ -n "$NEXT" ]; then
+	"$NEXT" "$@" < "$TMP"
+elif uses_lfs; then
+	git lfs pre-push "$@" < "$TMP"
+fi
