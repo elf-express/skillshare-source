@@ -76,6 +76,33 @@ else
   err ".metadata.json is malformed"
 fi
 
+# A tracked entry without a subdir pulls its whole upstream repo on update —
+# that is how ui-ux-pro-max became 1,925 files of oh-my-claudecode. Only the
+# entries listed here are meant to track a whole repo.
+WHOLE_REPO_ALLOWED=("_superpowers")
+# Any shape it cannot read fails the check — a guard that passes on a parse
+# error is no guard.
+whole_repo=$("$PY" - "${WHOLE_REPO_ALLOWED[@]}" <<'EOF' 2>&1
+import json, sys
+allowed = set(sys.argv[1:])
+entries = json.load(open('.metadata.json')).get('entries')
+if not isinstance(entries, dict) or not all(isinstance(e, dict) for e in entries.values()):
+    sys.exit("'entries' is missing or not a mapping of objects")
+for name, e in sorted(entries.items()):
+    if not e.get('subdir') and name not in allowed:
+        print(f"{name} ({e.get('source', '?')})")
+EOF
+)
+if [ $? -ne 0 ]; then
+  err "could not check tracked entries in .metadata.json: ${whole_repo##*$'\n'}"
+elif [ -n "$whole_repo" ]; then
+  while IFS= read -r line; do
+    err "tracked entry pulls a whole repo without a subdir: $line — reinstall from the skill's subdirectory, or add it to WHOLE_REPO_ALLOWED"
+  done <<< "$whole_repo"
+else
+  pass "every tracked entry has a subdir or is allowlisted"
+fi
+
 section ".gitignore enforcement"
 if git ls-files _superpowers/ 2>/dev/null | grep -q .; then
   err "_superpowers/ has tracked files — must stay gitignored (it's a separate repo)"
