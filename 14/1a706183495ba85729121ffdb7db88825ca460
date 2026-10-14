@@ -1,0 +1,21 @@
+README.md
+  s_5e1d12ee97a68a::t_3c2846df38605e 101-102
+workflow/elf-team-rule/SKILL.md
+  s_5e1d12ee97a68a::t_c527b6fe62966c 10,39,217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "141a706183495ba85729121ffdb7db88825ca460",
+  "prompts": {},
+  "sessions": {
+    "s_5e1d12ee97a68a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e56de2d5-155e-466c-8e84-8afb2a6ced81",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
