@@ -2,6 +2,8 @@
 
 **Description:** A two-state button that can be either on or off.
 
+**Links:** [Documentation](https://reka-ui.com/docs/components/toggle) | [API Reference](https://reka-ui.com/docs/components/toggle#api-reference)
+
 ---
 
 
@@ -14,9 +16,9 @@ description: A toggle component.
 
 ## Installation
 
-::code-tabs
+:::::code-tabs
 
-::tabs-list
+:::tabs-list
 
   ::tabs-trigger{value="cli"}
   CLI
@@ -26,7 +28,7 @@ description: A toggle component.
   Manual
   ::
 
-::
+:::
 
 ::tabs-content{value="cli"}
 
@@ -36,8 +38,8 @@ npx shadcn-vue@latest add toggle
 
 ::
 
-::tabs-content{value="manual"}
-  ::steps
+::::tabs-content{value="manual"}
+  :::steps
     ::step
     Install the following dependencies:
     ::
@@ -53,10 +55,10 @@ npx shadcn-vue@latest add toggle
     ::step
     Update the import paths to match your project setup.
     ::
-  ::
-::
+  :::
+::::
 
-::
+:::::
 
 ## Usage
 
@@ -67,6 +69,25 @@ import { Toggle } from '@/components/ui/toggle'
 
 <template>
   <Toggle>Toggle</Toggle>
+</template>
+```
+
+## Pressed State
+
+Use `default-value` for uncontrolled toggles, or `v-model` to control the state.
+
+```vue showLineNumbers
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Toggle } from '@/components/ui/toggle'
+
+const pressed = ref<boolean>(false)
+</script>
+
+<template>
+  <Toggle v-model="pressed">
+    Toggle
+  </Toggle>
 </template>
 ```
 

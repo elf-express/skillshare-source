@@ -42,7 +42,7 @@ Agent `skills:` lists use the flattened name.
 
 ## Tracked content — do not hand-edit
 
-Three paths are **not ours**: skillshare pulls them from upstream and records their commit plus
+Four paths are **not ours**: skillshare pulls them from upstream and records their commit plus
 per-file hashes in `.metadata.json` (`entries`). Local edits there are silently undone on the next
 update and make `skillshare status` report drift.
 
@@ -50,7 +50,12 @@ update and make `skillshare status` report drift.
 |---|---|---|
 | `_superpowers/` | `obra/superpowers` | `skillshare update _superpowers` |
 | `frontend/design/ui-ux-pro-max/` | `nextlevelbuilder/ui-ux-pro-max-skill`, subdir `.claude/skills/ui-ux-pro-max` | `skillshare update frontend/design/ui-ux-pro-max` |
+| `frontend/vue/shadcn-vue/` | `noartem/skills`, subdir `skills/shadcn-vue` | `skillshare update frontend/vue/shadcn-vue` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
+
+`frontend/vue/shadcn-vue/` was a hand copy of `noartem/skills@249519a` from 2026-05 until E-253 reinstalled
+it as a tracked subdir. Other third-party folders may still be hand copies — check `.metadata.json`
+before assuming a folder updates itself.
 
 `_elf-dev/` (the old `elf-express/org-skills` checkout) was removed on 2026-10-04 with
 `skillshare uninstall _elf-dev`: all 11 of its skills were disabled and superseded by the `elf-*` ones
