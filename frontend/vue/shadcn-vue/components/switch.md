@@ -2,6 +2,8 @@
 
 **Description:** A control that allows the user to toggle between checked and not checked.
 
+**Links:** [Documentation](https://reka-ui.com/docs/components/switch) | [API Reference](https://reka-ui.com/docs/components/switch#api-reference)
+
 ---
 
 
@@ -14,9 +16,9 @@ description: A switch component.
 
 ## Installation
 
-::code-tabs
+:::::code-tabs
 
-::tabs-list
+:::tabs-list
 
   ::tabs-trigger{value="cli"}
   CLI
@@ -26,7 +28,7 @@ description: A switch component.
   Manual
   ::
 
-::
+:::
 
 ::tabs-content{value="cli"}
 
@@ -36,8 +38,8 @@ npx shadcn-vue@latest add switch
 
 ::
 
-::tabs-content{value="manual"}
-  ::steps
+::::tabs-content{value="manual"}
+  :::steps
     ::step
     Install the following dependencies:
     ::
@@ -53,10 +55,10 @@ npx shadcn-vue@latest add switch
     ::step
     Update the import paths to match your project setup.
     ::
-  ::
-::
+  :::
+::::
 
-::
+:::::
 
 ## Usage
 
@@ -67,5 +69,22 @@ import { Switch } from '@/components/ui/switch'
 
 <template>
   <Switch />
+</template>
+```
+
+## Checked State
+
+Use `default-value` for uncontrolled switches, or `v-model` to control the state.
+
+```vue showLineNumbers
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Switch } from '@/components/ui/switch'
+
+const checked = ref<boolean>(false)
+</script>
+
+<template>
+  <Switch v-model="checked" />
 </template>
 ```
