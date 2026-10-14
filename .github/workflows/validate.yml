@@ -39,7 +39,7 @@ jobs:
 
       - name: Point skillshare at this checkout
         # validate.sh's sync/audit checks read the global config; without this
-        # they would have no source at all (CLAUDE.md, Validation caveats).
+        # they would have no source at all (AGENTS.md, Validation caveats).
         run: |
           cfg="$RUNNER_TEMP/xdg"
           mkdir -p "$cfg/skillshare"

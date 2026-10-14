@@ -134,7 +134,7 @@ metadata:
     WHY：審查的輸入是 `en/` ＋ `zh-TW/` ＋ `en+zh-TW/` 三者對照（規則 2），語料區只有一份、無法對照。
 17. **MUST NOT** 在啟動提示裡寫模型，也**MUST NOT** 把 `168-*` agent 改成 `elf-*` 的形狀（預載 skill、改 tools）。
     WHY：啟動提示原文——「提示裡不要寫模型，否則會蓋過定義檔中的 model 設定」；
-    skillshare 的 `CLAUDE.md` 明文：`168-*` 與 `elf-*` 慣例無關、不預載 skill，**不要**為了一致性去改它們。
+    skillshare 的 `AGENTS.md` 明文：`168-*` 與 `elf-*` 慣例無關、不預載 skill，**不要**為了一致性去改它們。
 
 ---
 
