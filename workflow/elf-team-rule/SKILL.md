@@ -7,7 +7,7 @@ description: |
   正式版出問題要緊急修正（hotfix）、使用者要求「直接改 release／main」、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.1.0
+  version: 1.1.1
   owner: Elf Express
 ---
 
@@ -36,7 +36,7 @@ metadata:
 
 **Skill 載入（Superpower 開發方式）**
 
-1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，接著載入 `linear-superpowers`（Claude 的個人 skill，不在本 repo、不經 skillshare 同步；沒有安裝的工具就照 Linear 團隊文件「開發流程規範：Spec／Plan × superpowers」操作）。
+1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，接著載入 `workflow__elf-linear-superpowers`（沒有安裝的工具就照 Linear 團隊文件「開發流程規範：Spec／Plan × superpowers」操作）。
    為什麼：superpowers 決定「先設計、再計畫、再實作、再驗證」的順序，沒先載入就會直接動手寫，跳過設計與兩道驗證。
 2. 之後 MUST 依任務再載入本 skill 與對應的領域 skill（例如 `backend__elf-dotnet`、`cicd__elf-cicd-versioning`）。
 3. MUST 在動手前確認必要的 skill 都已載入；不確定需要哪些時，先列出來給使用者看。
@@ -214,7 +214,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 
 ## 5. 檢查清單
 
-- [ ] 已載入 `using-superpowers`（Linear 工作單另依開發流程規範）與本 skill
+- [ ] 已載入 `using-superpowers`（Linear 工作單另載 `workflow__elf-linear-superpowers`）與本 skill
 - [ ] 已確認 repo 類型（`BRANCHING.md` 或使用者確認）
 - [ ] 工作目錄乾淨、已 `git fetch --all --prune`
 - [ ] 提交在開發分支上，分支名稱符合 `<類型>/e-<編號>-<短名>`
