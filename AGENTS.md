@@ -1,6 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file guides Claude Code (and other AI agents) working **in this repository**.
+This file guides AI agents (Claude Code, Codex, OpenCode, …) working **in this repository**.
+`CLAUDE.md` only imports this file — edit here, never there.
 
 ## What this repo is
 
