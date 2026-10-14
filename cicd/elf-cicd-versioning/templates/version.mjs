@@ -15,7 +15,7 @@
 // no src-tauri/. pnpm-lock.yaml does not record workspace package versions,
 // so it is not a target.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -88,11 +88,16 @@ const next = /^\d+\.\d+\.\d+$/.test(arg) ? arg : bump(previous, arg)
 
 let touched = 0
 for (const { file, find } of TARGETS) {
-  if (!existsSync(file)) {
+  // Read and treat ENOENT as "missing" instead of checking existsSync first:
+  // a check-then-read leaves a window where the file can change in between.
+  let before
+  try {
+    before = read(file)
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err
     console.warn(`skip (missing): ${file}`)
     continue
   }
-  const before = read(file)
   if (!find.test(before)) {
     // A missing <Version> in the csproj is the expected case on a fresh
     // scaffold — fail loudly rather than silently leaving it behind.

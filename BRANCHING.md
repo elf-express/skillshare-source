@@ -12,7 +12,7 @@
 | 部署位置              | 每位同事本機的 skillshare source 目錄，停在 `release` 分支，由 `skillshare pull` 更新並同步到各 AI 工具 |
 | GitHub 預設分支       | `dev`（PR 預設目標）                   |
 
-`.metadata.json` 與 `_superpowers/`、`frontend/design/ui-ux-pro-max/`、`skillshare/` 由 skillshare 管理，更新方式見 `CLAUDE.md`。
+`.metadata.json` 與 `_superpowers/`、`frontend/design/ui-ux-pro-max/`、`frontend/vue/shadcn-vue/`、`skillshare/` 由 skillshare 管理，更新方式見 `AGENTS.md`。
 
 ## 分支用途
 
