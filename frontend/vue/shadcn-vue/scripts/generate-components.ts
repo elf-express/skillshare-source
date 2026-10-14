@@ -8,7 +8,7 @@
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO = 'unovue/shadcn-vue'
@@ -103,15 +103,18 @@ function parseFrontmatter(content: string): { meta: any, content: string } {
 }
 
 async function fetchComponent(file: GitHubFile): Promise<ComponentMeta | null> {
+  const componentName = file.name.replace(/\.md$/, '')
+  if (!isSafeComponentName(componentName) || !isTrustedDownloadUrl(file.download_url)) {
+    console.warn(`Skipping unexpected entry: ${file.name}`)
+    return null
+  }
   try {
     const res = await fetch(file.download_url)
     if (!res.ok)
       return null
     const content = await res.text()
     const { meta, content: markdownContent } = parseFrontmatter(content)
-    
-    const componentName = file.name.replace('.md', '')
-    
+
     return {
       name: componentName,
       title: meta.title || componentName,
@@ -127,7 +130,29 @@ async function fetchComponent(file: GitHubFile): Promise<ComponentMeta | null> {
 }
 
 function escapeMarkdown(str: string): string {
-  return str.replace(/\|/g, '\\|').replace(/\n/g, ' ')
+  // Backslashes first, or an input "\|" becomes "\\|" and the pipe opens a new cell.
+  return str.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n/g, ' ')
+}
+
+// Component names come from the GitHub API and become file names: allow only
+// the slug shape shadcn-vue uses, so a crafted name cannot escape components/.
+const COMPONENT_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+function isSafeComponentName(name: string): boolean {
+  return COMPONENT_NAME.test(name)
+}
+
+// Only download docs from this repo's raw content, never from whatever URL the
+// listing response happens to carry.
+function isTrustedDownloadUrl(url: string): boolean {
+  return url.startsWith(`${BASE_RAW_URL}/`)
+}
+
+function writeInside(dir: string, filename: string, data: string): void {
+  const target = resolve(dir, filename)
+  if (relative(dir, target).startsWith('..') || isAbsolute(relative(dir, target)))
+    throw new Error(`refusing to write outside ${dir}: ${filename}`)
+  writeFileSync(target, data)
 }
 
 async function main() {
@@ -171,7 +196,7 @@ async function main() {
 
   index.push('')
 
-  writeFileSync(join(baseDir, 'references/components.md'), index.join('\n'))
+  writeInside(baseDir, 'references/components.md', index.join('\n'))
   console.log('✓ Generated references/components.md (index)')
 
   for (const comp of sortedComponents) {
@@ -198,7 +223,7 @@ async function main() {
     lines.push(comp.content)
     
     const filename = `${comp.name}.md`
-    writeFileSync(join(componentsDir, filename), lines.join('\n'))
+    writeInside(componentsDir, filename, lines.join('\n'))
     console.log(`✓ Generated components/${filename}`)
   }
 
