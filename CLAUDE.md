@@ -80,7 +80,7 @@ as the whole `Yeachan-Heo/oh-my-claudecode` repo from the start; the 2026-10-01 
 with 1,925 files and 43 unrelated skills (E-249).
 
 `.metadata.json` can also hold `audit_accepted` — hashes of `skillshare audit` findings already reviewed
-and accepted. It is currently empty (its only entries belonged to the removed oh-my-claudecode bundle), so
+and accepted. It is currently absent (its only entries belonged to the removed oh-my-claudecode bundle), so
 any finding is genuinely new.
 
 ## Writing or editing a team skill
