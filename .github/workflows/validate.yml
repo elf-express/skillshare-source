@@ -1,0 +1,53 @@
+# Runs scripts/validate.sh — the same check every commit must pass locally —
+# so a release fast-forward (elf-team-rule rule 28) has CI to judge by.
+name: validate
+
+on:
+  # PRs target dev (elf-team-rule); release is fast-forwarded from a tested dev.
+  push:
+    branches: [dev, release, 'hotfix/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate (scripts/validate.sh)
+    runs-on: ubuntu-latest
+    env:
+      # Keep in step with the team's skillshare version — .metadata.json is
+      # written by it. To upgrade, change this; the checksum comes from the
+      # release's own checksums.txt, so nothing else needs editing.
+      SKILLSHARE_VERSION: 0.25.10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install skillshare (pinned, checksum-verified)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tarball="skillshare_${SKILLSHARE_VERSION}_linux_amd64.tar.gz"
+          dir="$RUNNER_TEMP/skillshare"
+          mkdir -p "$dir"
+          gh release download "v${SKILLSHARE_VERSION}" --repo runkids/skillshare \
+            --pattern "$tarball" --pattern checksums.txt --dir "$dir"
+          (cd "$dir" && grep -F " $tarball" checksums.txt | sha256sum -c -)
+          tar -xzf "$dir/$tarball" -C "$dir" skillshare
+          echo "$dir" >> "$GITHUB_PATH"
+
+      - name: Point skillshare at this checkout
+        # validate.sh's sync/audit checks read the global config; without this
+        # they would have no source at all (CLAUDE.md, Validation caveats).
+        run: |
+          cfg="$RUNNER_TEMP/xdg"
+          mkdir -p "$cfg/skillshare"
+          printf 'sources:\n  skills: %s\nmode: merge\ntargets: {}\n' "$GITHUB_WORKSPACE" \
+            > "$cfg/skillshare/config.yaml"
+          echo "XDG_CONFIG_HOME=$cfg" >> "$GITHUB_ENV"
+
+      - name: Run validate.sh
+        run: |
+          skillshare --version
+          bash scripts/validate.sh

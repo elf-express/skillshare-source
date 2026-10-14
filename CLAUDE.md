@@ -120,6 +120,12 @@ included:
 - `skillshare sync --dry-run` and `skillshare audit --yes --no-tui --quiet` both succeed
   (skipped with a warning when the CLI is absent — a pass there is not proof)
 
+CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev`, `release` and
+`hotfix/**` and on every PR, so the commit a release fast-forwards to has a check run (elf-team-rule
+rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
+read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
+run there. CI has no `_superpowers/` checkout and reports 45 folders; that is expected.
+
 It does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
 no-guessing rule, or anything under `agents/`. Those are on the author and on PR review. There is no
 per-skill runner: to check one skill, read it against the section list above, then run
