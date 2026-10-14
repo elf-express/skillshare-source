@@ -73,7 +73,7 @@ metadata:
 
 **Job 本身**
 
-20. MUST 維持 job id `server`、`name: server (build · tests)`。為什麼：branch protection 的 required check 以 `name` 比對，改名會讓 PR 永遠等不到狀態。
+20. MUST 維持 job id `server`、`name: server (build · tests)`。為什麼：branch protection 的 required check 以 `name` 比對，改名會讓 PR 永遠等不到狀態。`server` MUST 加進 `ci.yml` 彙總 job `ci` 的 `needs:`（elf-cicd-frontend 規則 23）；組織 ruleset 只要求 `ci`，沒列進去的 job 失敗也擋不住發佈。
 21. MUST NOT 使用 `paths:` 過濾或 `continue-on-error: true`（理由同 elf-cicd-frontend 規則 24、26）。
 
 ## 3. 標準範本

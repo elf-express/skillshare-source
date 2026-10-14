@@ -105,7 +105,7 @@ git switch -c hotfix/e-<編號>-<短名> origin/release    # 從 release 開出�
 # 修改、測試、提交
 git push -u origin hotfix/e-<編號>-<短名>
 gh pr create --repo elf-express/<repo> --draft --base release --head hotfix/e-<編號>-<短名> \
-  --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 規則 25：讓 CI 在這個提交上執行
+  --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 規則 25：CI 沒有 hotfix/** 觸發時才需要
 ```
 
 發佈前**停下**，給使用者看會帶進去的提交，並依 `references/04-release-ci-check.md` 第 0 節判斷 check runs（規則 28）：
@@ -140,7 +140,7 @@ git push origin main
 * 快轉 hotfix 失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`（draft PR 會跟著更新，CI 在新提交上重新執行，不是在舊提交上重跑），再從頭判斷 check runs 後發佈。
 * `git merge --ff-only origin/dev` 失敗或 `git log origin/dev..dev` 有輸出，代表本機 `dev` 有沒推的提交（違反規則 9）→ **停下來回報**。使用者決定先保留那些提交時，可以改用不依賴本機 `dev` 的做法合回：`git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`。
 * 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`（同一天已有就加 `-2`），合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`，**MUST 用「Create a merge commit」合併**，不可 squash 或 rebase，否則 `release` 不再是 `dev` 的祖先，下次發佈無法快轉。
-* draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
+* CI 已有 `hotfix/**` 推送觸發時（`elf-cicd-*` 現行範本），推送後就會有 check run，不用開 draft PR。draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
 * 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
 
 ---

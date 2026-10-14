@@ -1,0 +1,81 @@
+#!/bin/sh
+# git-guard hook dispatcher, copied once per hook name into the global core.hooksPath.
+# pre-push runs git-guard.sh first; every hook then hands off to the repo's own hook
+# (elfguard.chainHooksPath, e.g. husky's .husky/_, or .git/hooks).
+set -u
+
+NAME=$(basename "$0")
+HERE=$(cd "$(dirname "$0")" && pwd)
+GUARD="$HERE/../git-guard.sh"
+
+next_hook() {
+	_c=$(git config --get elfguard.chainHooksPath 2>/dev/null)
+	if [ -n "${_c}" ]; then
+		case "${_c}" in
+			/* | [A-Za-z]:*) _d=${_c} ;;
+			*) _d="$(git rev-parse --show-toplevel 2>/dev/null)/${_c}" ;;
+		esac
+	else
+		_d=$(git rev-parse --git-common-dir 2>/dev/null) || return 0
+		case "${_d}" in
+			/* | [A-Za-z]:*) ;;
+			*) _d="$(pwd)/${_d}" ;;
+		esac
+		_d="${_d}/hooks"
+	fi
+	if [ -x "${_d}/${NAME}" ]; then
+		printf '%s\n' "${_d}/${NAME}"
+		return 0
+	fi
+	# The global hooks dir that git-guard replaced.
+	_p=$(git config --global --get elfguard.previousHooksPath 2>/dev/null)
+	[ -n "${_p}" ] && [ -x "${_p}/${NAME}" ] && printf '%s\n' "${_p}/${NAME}"
+	return 0
+}
+
+# Git LFS cannot install its own hooks while ours occupy core.hooksPath, so run them here.
+uses_lfs() {
+	case "$NAME" in
+		pre-push | post-checkout | post-commit | post-merge) ;;
+		*) return 1 ;;
+	esac
+	command -v git-lfs > /dev/null 2>&1 || return 1
+	grep -q 'filter=lfs' "$(git rev-parse --show-toplevel 2>/dev/null)/.gitattributes" 2> /dev/null
+}
+
+NEXT=$(next_hook)
+
+if [ "$NAME" != pre-push ]; then
+	[ -n "$NEXT" ] && exec "$NEXT" "$@"
+	uses_lfs && exec git lfs "$NAME" "$@"
+	exit 0
+fi
+
+TMP=$(mktemp "${TMPDIR:-/tmp}/git-guard.XXXXXX") || {
+	echo "git-guard: 無法建立暫存檔，擋下推送。" >&2
+	exit 1
+}
+trap 'rm -f "$TMP"' EXIT
+cat > "$TMP"
+
+protected_in_push() { grep -Eq ' refs/heads/(release|main|dev) [0-9a-f]+$' "$TMP"; }
+
+if [ -r "$GUARD" ]; then
+	sh "$GUARD" "$@" < "$TMP"
+	_rc=$?
+else
+	echo "git-guard: 找不到 ${GUARD}；重新執行 skillshare-source 的 scripts/git-guard/install.sh。" >&2
+	_rc=2
+fi
+if [ "$_rc" -eq 1 ]; then
+	exit 1
+elif [ "$_rc" -ne 0 ] && protected_in_push; then
+	echo "git-guard: 擋下推送：檢查程式本身出錯（exit ${_rc}），受保護分支一律擋下。" >&2
+	exit 1
+fi
+
+if [ -n "$NEXT" ]; then
+	"$NEXT" "$@" < "$TMP"
+elif uses_lfs; then
+	git lfs pre-push "$@" < "$TMP"
+fi

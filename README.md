@@ -36,6 +36,11 @@ skillshare sync
 
 # 5. 安裝團隊 agents 到 Claude Code（在 clone 下來的 repo 目錄執行）
 bash scripts/sync-agents.sh
+
+# 6. 安裝 git-guard（推錯 release／main／dev 時當場擋下；Windows 在 Git Bash 執行）
+sh scripts/git-guard/install.sh
+#    用 husky 的 repo（例如 Orca）另外執行：sh scripts/git-guard/install.sh --repo <repo 路徑>
+#    之後 `skillshare pull` 若更新了 git-guard，重新執行一次 install.sh
 ```
 
 > agents **不用** `skillshare sync agents`：Claude Code 不讀連結形式的 agent 檔（Windows 實測），

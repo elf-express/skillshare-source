@@ -18,7 +18,7 @@ ls .github/workflows 2>/dev/null || echo "沒有任何 workflow"   # 沒有 chec
 | -- | -- | -- |
 | 每個 check run 的 status 都是 `completed`，conclusion 都是 `success`、`neutral` 或 `skipped` | **全部通過** | 列出要發佈的提交與檢查結果，使用者同意後快轉 |
 | 任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` | **有失敗或執行中** | 不發佈；失敗依第 3 節讀原文說明原因（規則 23），執行中就等完成再判斷；`stale` 沒有 log 可讀，告訴使用者後依第 6 節重跑再判斷 |
-| 一個 check run 都沒有，但 repo 有 `.github/workflows/` | **這個提交沒有觸發 CI** | 不是「沒有 CI」。hotfix 時確認已依規則 25 開 draft PR，等 CI 跑完再判斷。開了 draft PR 仍沒有 check run（例如 `pull_request` 只篩 `main`、`dev`）→ CI 不合規：回報、建議 `chore/` 修正，這次發佈比照下一列需要使用者明確同意例外 |
+| 一個 check run 都沒有，但 repo 有 `.github/workflows/` | **這個提交沒有觸發 CI** | 不是「沒有 CI」。hotfix 時確認 CI 有 `hotfix/**` 推送觸發，或已依規則 25 開 draft PR，等 CI 跑完再判斷。開了 draft PR 仍沒有 check run（例如 `pull_request` 只篩 `main`、`dev`）→ CI 不合規：回報、建議 `chore/` 修正，這次發佈比照下一列需要使用者明確同意例外 |
 | 一個 check run 都沒有，repo 也沒有任何 workflow | **專案沒有 CI** | 停下，回報「發佈內容未經自動測試」；使用者**明確同意這次例外**才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI |
 
 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`）時，回報並建議用 `chore/` 分支修正；不自行修改 CI 設定，也不因此跳過上面的判斷（規則 29）。

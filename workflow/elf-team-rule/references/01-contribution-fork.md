@@ -20,7 +20,7 @@ fork 原作者的開源專案，自己使用，同時把改動整理成 PR 回�
 | `release`               | 唯一的穩定版，給第 2 種同步       | **否**           | `dev`（緊急修正時 `hotfix/`） | `--ff-only` |
 | `hotfix/xxx`            | 緊急修正正式版                    | 是                     | 從 `origin/release` 開出 | —            |
 
-> 如果原作者的主線不叫 `main`（例如 `master`），同步指令裡的 `upstream/main` 改成實際名稱，我們這邊的分支仍叫 `main`。這個差異要寫進 `BRANCHING.md`。
+> 如果原作者的主線不叫 `main`（例如 `master`），同步指令裡的 `upstream/main` 改成實際名稱，我們這邊的分支仍叫 `main`。這個差異要寫進 `BRANCHING.md`，格式固定為單獨一行 ``上游主線：`master` ``（範本已有這一行），git-guard 依它檢查 `main` 的來源。
 
 ---
 
@@ -133,7 +133,7 @@ git switch -c hotfix/e-<編號>-<短名> origin/release    # 從我們的 releas
 # 修改、測試、提交
 git push -u origin hotfix/e-<編號>-<短名>
 gh pr create --repo elf-express/<repo> --draft --base release --head hotfix/e-<編號>-<短名> \
-  --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 規則 25：讓 CI 在這個提交上執行
+  --title "hotfix(E-<編號>): <說明>（僅觸發 CI，不要合併）" --body "E-<編號>"   # 規則 25：CI 沒有 hotfix/** 觸發時才需要
 ```
 
 發佈前**停下**，給使用者看會帶進去的提交，並依 `references/04-release-ci-check.md` 第 0 節判斷 check runs（規則 28）：
@@ -163,7 +163,7 @@ git push origin dev              # 被拒 → 停下來回報，不要 pull --re
 * 快轉 hotfix 失敗代表開出 hotfix 後 `release` 又被更新 → **停下來回報**；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`（draft PR 會跟著更新，CI 在新提交上重新執行，不是在舊提交上重跑），再從頭判斷 check runs 後發佈。
 * `git merge --ff-only origin/dev` 失敗或 `git log origin/dev..dev` 有輸出，代表本機 `dev` 有沒推的提交（違反規則 9）→ **停下來回報**。使用者決定先保留那些提交時，可以改用不依賴本機 `dev` 的做法合回：`git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`。
 * 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`（同一天已有就加 `-2`），合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`，**MUST 用「Create a merge commit」合併**，不可 squash 或 rebase，否則 `release` 不再是 `dev` 的祖先，下次發佈無法快轉。
-* draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
+* CI 已有 `hotfix/**` 推送觸發時（`elf-cicd-*` 現行範本），推送後就會有 check run，不用開 draft PR。draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
 * 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
 * 修正如果也適用原作者，另依 B5 用 `pr/` 送 PR。
 * 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。

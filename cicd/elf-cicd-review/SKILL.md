@@ -69,7 +69,7 @@ metadata:
 
 **與 branch protection 的關係**
 
-17. MUST 在 `dev` 的 branch protection 把 `review` 設為 required check（連同 CI 的 `web` / `e2e` / `server`）。
+17. MUST 在 `dev` 的 repo 層 ruleset（或 branch protection）把 `review` 設為 required check。CI 的 `web` / `e2e` / `server` 不再逐一設定：組織 ruleset `elf-require-ci` 統一要求彙總 job `ci`（elf-team-rule E-244）。
     為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule）；`main`、`release` 只快轉、不經 PR，設在那裡永遠用不到。
 18. MUST 理解：`review` 綠燈只代表「審查跑完」，**不代表沒有問題**。PR 作者 MUST 逐條回應 AI 留言（修正或說明不修的理由）後才合併。
 
