@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "buildtransitive",
+    "contentfiles",
+    "msbuild",
+    "xunit"
+  ],
+  "ignorePaths": [
+    "_superpowers/**",
+    "frontend/design/ui-ux-pro-max/**",
+    "frontend/vue/shadcn-vue/**",
+    "skillshare/**",
+    ".metadata.json"
+  ]
+}

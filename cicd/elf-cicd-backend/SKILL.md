@@ -82,7 +82,7 @@ metadata:
 |------|------|------|
 | server job | [`templates/ci-server-job.yml`](templates/ci-server-job.yml) | 貼到 `.github/workflows/ci.yml` 的 `jobs:` 底下 |
 | SDK 釘版 | [`templates/global.json`](templates/global.json) | repo 根目錄 `global.json` |
-| 測試專案 | [`templates/Project.Tests.csproj`](templates/Project.Tests.csproj) | `server/tests/<Project>.Tests/<Project>.Tests.csproj` |
+| 測試專案 | [`templates/Project.Tests.csproj`](templates/Project.Tests.csproj)（`ProjectReference` 內的佔位字是 `{Project}`，因為 XML 屬性不能含 `<`） | `server/tests/<Project>.Tests/<Project>.Tests.csproj` |
 
 `coverlet.msbuild`、`Microsoft.NET.Test.Sdk`、xUnit、`Microsoft.AspNetCore.Mvc.Testing`、`Testcontainers.PostgreSql` 的版本統一寫在 `server/Directory.Packages.props`（見 elf-stack）。
 

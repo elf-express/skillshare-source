@@ -34,7 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\<Project>\<Project>.csproj" />
+    <!-- Replace {Project} with the project under test. ({Project}, not <Project>:
+         a '<' inside an attribute value is invalid XML — MSB4025.) -->
+    <ProjectReference Include="..\..\src\{Project}\{Project}.csproj" />
   </ItemGroup>
 
 </Project>
