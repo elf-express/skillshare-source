@@ -98,7 +98,8 @@ skillshare-source/
 │   ├── elf-mcp-server/            ★ 寫 MCP server
 │   └── elf-mcp-gateway/           ★ MCPJungle 註冊與部署
 ├── workflow/
-│   └── elf-team-rule/             ★ git 分支規範（三種 repo 類型）、release CI/CD 核對、分支對齊、Plan 容量
+│   ├── elf-team-rule/             ★ git 分支規範（三種 repo 類型）、release CI/CD 核對、分支對齊、Plan 容量
+│   └── elf-linear-superpowers/    ★ Linear [Spec]/[Plan]/[維運] 單 × superpowers 生命週期（正本在 Linear）
 ├── tools/                           第三方工具：agent-browser、find-skills、project-planner、audit-website
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）

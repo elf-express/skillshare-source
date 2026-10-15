@@ -125,7 +125,7 @@ CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev
 `hotfix/**` and on every PR, so the commit a release fast-forwards to has a check run (elf-team-rule
 rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
 read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
-run there. CI has no `_superpowers/` checkout and reports 45 folders; that is expected.
+run there. CI has no `_superpowers/` checkout and reports 46 folders; that is expected.
 
 It does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
 no-guessing rule, or anything under `agents/`. Those are on the author and on PR review. There is no
@@ -136,7 +136,7 @@ Three caveats before you treat a red result as your own doing:
 
 - Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
-  `_superpowers/` checked out it reports 60 folders, which matches what syncs.
+  `_superpowers/` checked out it reports 61 folders, which matches what syncs.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,
   run it as `XDG_CONFIG_HOME=<worktree config> bash scripts/validate.sh` (see Gotchas).
