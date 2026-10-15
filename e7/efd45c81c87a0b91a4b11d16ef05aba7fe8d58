@@ -1,0 +1,29 @@
+.github/workflows/validate.yml
+  s_5e1d12ee97a68a::t_9c79821e407911 22
+.metadata.json
+  s_5e1d12ee97a68a::t_2d82f768cc4e35 200,203-205,207-224
+skillshare/SKILL.md
+  s_5e1d12ee97a68a::t_b55a98ca231509 12
+skillshare/references/backup.md
+  s_5e1d12ee97a68a::t_3da0c349c3fb5d 15,23-24
+skillshare/references/install.md
+  s_5e1d12ee97a68a::t_eb43297a3606db 130
+skillshare/references/mcp.md
+  s_5e1d12ee97a68a::t_a5e1fbd75db5fa 14,24,26,49-50,52,58-63,99,410
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e7efd45c81c87a0b91a4b11d16ef05aba7fe8d58",
+  "prompts": {},
+  "sessions": {
+    "s_5e1d12ee97a68a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e56de2d5-155e-466c-8e84-8afb2a6ced81",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
