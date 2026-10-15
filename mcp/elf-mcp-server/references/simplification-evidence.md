@@ -19,6 +19,7 @@
 | E12 | `83cb805`（pin all actions to SHA） | `.github/workflows/npm-publish.yml` vs `ci.yml` | 同一 repo 不同 workflow 釘的版本不一致：npm-publish 用 `actions/checkout@df4cb1c… # v6`、`actions/setup-node@49933ea… # v4`；ci/docker-publish 用 checkout `# v7`、setup-node `# v6` | 未來 dependabot 只會各自 bump，版本持續分岔 |
 | E13 | 工作目錄（**仍未 commit**，實測 2026-10-04） | `mcp/docs-mcp-server/package.json` | 加了 `express-rate-limit ^8.5.2` 依賴，但 `src/` 沒有任何 import；`mcpjungle/nginx.example.conf` 註解寫「rate limit 放 nginx、不放應用層」 | 決策未定就半套落地，且這個改動從 `fb1d578` 起就一直掛在工作目錄。重現：`git show HEAD:mcp/docs-mcp-server/package.json \| grep -c express-rate-limit` → **0**；`git diff mcp/docs-mcp-server/package.json` 看得到該行；`grep -rn express-rate-limit mcp/docs-mcp-server/src/` 無 |
 | E14 | 工作目錄（**未納管**，實測 2026-10-04） | `mcpjungle/nginx.example.conf`、`AGENTS.md`、`.mcp.json`、`docs/superpowers/**` | 這些檔案只存在於本機工作目錄，從未 `git add`。其中 `nginx.example.conf` 是 `elf-mcp-gateway` 規則 16 與禁止簡化 5 的權威出處——重新 clone 的人拿不到它 | `git ls-files --error-unmatch mcpjungle/nginx.example.conf`（回非零＝未納管）；`git status --short \| grep '^??'` |
+| E15 | `f21c6f1`（mcp-library PR #123，`fix(E-250)`） | `mcpjungle/docs-mcp-server/src/http.ts` | 若被簡化掉會失去的東西：`/mcp*` 在驗證前限流、且只計 401（`skip` 與驗證共用 `isAuthorized()`）。之前完全沒有限流，CodeQL `js/missing-rate-limiting` 4 筆（#86–#89），合併後在 dev 上全部 fixed | `gh api "repos/elf-express/mcp-library/contents/mcpjungle/docs-mcp-server/src/http.ts?ref=f21c6f16b9eb5e22fe8e311f00e984185443765f" -q .content \| base64 -d \| grep -n mcpLimiter`（預期 7 行：定義 1 + 6 條 `/mcp*` 路由） |
 
 ## 不是退化、但常被誤判為「簡化」的變更（保留原樣）
 

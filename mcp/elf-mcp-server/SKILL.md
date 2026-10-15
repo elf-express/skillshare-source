@@ -6,7 +6,7 @@ description: |
   /health、stderr 日誌、測試、Dockerfile，以及「禁止簡化」清單。當任務涉及新建 MCP server、修改 src/index.ts 的 registerTool、
   tool description / inputSchema、http.ts transport、MCP 相關測試或 Dockerfile，或重構 / 精簡既有 MCP server 程式碼時觸發。
 metadata:
-  version: 1.1.0
+  version: 1.2.0
   owner: Elf Express
 ---
 
@@ -71,21 +71,24 @@ metadata:
 14. **MUST** 同一份程式支援兩種 transport：`TRANSPORT` 未設 = stdio（本機 `.mcp.json` / npx），`TRANSPORT=http` = Streamable HTTP（Docker / gateway）。Dockerfile 內建 `ENV TRANSPORT=http`。
 15. **MUST** HTTP 模式：每 session 一個 transport（以 `mcp-session-id` 為鍵、`onclose` 刪除）；`POST /mcp` 非 initialize 又無 session → 400；`GET`/`DELETE` 以 session 找 transport；`GET /health` **免驗證**並回載入數量。
 16. **MUST** `MCP_AUTH_TOKEN` 有設就要求 `Authorization: Bearer <token>`（401 + JSON-RPC `-32001`）；`/health` 永遠公開。
-17. **MUST** 所有日誌走 `console.error`（stderr），前綴 `[<server-name>]`。**MUST NOT** 在任何路徑 `console.log`。
+17. **MUST** `/mcp*` 路由在驗證前限流：`express-rate-limit` 掛在每條 `/mcp*` 路由的第一個 middleware，且只計驗證失敗——`skip: (req) => isAuthorized(req)`，`skip` 與驗證共用同一個 `isAuthorized()`。
+    `trust proxy` 設 false；`standardHeaders: 'draft-8'`；預設 15 分鐘 20 次，用 `MCP_RATE_LIMIT_MAX`／`MCP_RATE_LIMIT_WINDOW_MS` 覆寫；每次回 429 寫 stderr 日誌（IP、次數／上限、時間窗）；`/health` 不限流（證據 E15）。
+    WHY：Bearer token 不能被無限次嘗試；經 gateway 部署時所有請求的來源 IP 都是 gateway，只計 401 才不會讓正常流量共用額度；限流只拖慢猜測並留下日誌，不能取代長的隨機 `MCP_AUTH_TOKEN`。
+18. **MUST** 所有日誌走 `console.error`（stderr），前綴 `[<server-name>]`。**MUST NOT** 在任何路徑 `console.log`。
     WHY：stdio 模式 stdout 就是 JSON-RPC 串流，一行 log 就讓用戶端解析失敗。
-18. **MUST** 環境變數一覽寫進 README：`TRANSPORT`、`PORT`、`MCP_AUTH_TOKEN`、資料目錄覆寫（如 `DOCS_CORPORA_DIR`）、scope（如 `DOCS_SCOPE`）。
-19. **MUST** 啟動時印出：資料目錄、載入數量、找不到資料時的警告、HTTP 監聽位址、驗證是否啟用（`logStartupInfo` 模式）。
-20. `express.json({ limit: "8mb" })` 與 nginx `client_max_body_size 8m` 保持一致（`mcpjungle/nginx.example.conf` 註明對齊）。
+19. **MUST** 環境變數一覽寫進 README：`TRANSPORT`、`PORT`、`MCP_AUTH_TOKEN`、`MCP_RATE_LIMIT_MAX`、`MCP_RATE_LIMIT_WINDOW_MS`、資料目錄覆寫（如 `DOCS_CORPORA_DIR`）、scope（如 `DOCS_SCOPE`）。
+20. **MUST** 啟動時印出：資料目錄、載入數量、找不到資料時的警告、HTTP 監聽位址、驗證是否啟用（`logStartupInfo` 模式）。
+21. `express.json({ limit: "8mb" })` 與 nginx `client_max_body_size 8m` 保持一致（`mcpjungle/nginx.example.conf` 註明對齊）。
 
 ### 時區
 
-21. 容器設 `TZ=${TZ:-Asia/Taipei}`（`bafd8e8`，gateway / docs-mcp / registrar 三者一致）。本 repo 的 server 不寫 DB；**若 server 會讀寫 PostgreSQL，時間一律以 UTC `timestamptz` 儲存（`elf-postgresql`），只在輸出給人看時轉台北時間**——TZ 只影響日誌與顯示。
+22. 容器設 `TZ=${TZ:-Asia/Taipei}`（`bafd8e8`，gateway / docs-mcp / registrar 三者一致）。本 repo 的 server 不寫 DB；**若 server 會讀寫 PostgreSQL，時間一律以 UTC `timestamptz` 儲存（`elf-postgresql`），只在輸出給人看時轉台北時間**——TZ 只影響日誌與顯示。
 
 ### 測試
 
-22. **MUST** 純邏輯每個 `do*` 至少測：命中、未命中（回提示且含下一步）、邊界（空輸入、上限截斷）、gating（若有）、路徑穿越。
-23. **MUST** fixture 用 `fs.mkdtempSync` 臨時目錄＋環境變數覆寫資料根（`corpus.test.ts` 模式），`afterAll` 還原 env 並刪目錄；快取模組要匯出 `_clearCaches()` 在 `beforeEach` 呼叫。
-24. **MUST** 另做一次 stdio 冒煙：build 後送 `initialize` → `tools/list` → `tools/call`（見第 3 節），確認工具數與描述正確。
+23. **MUST** 純邏輯每個 `do*` 至少測：命中、未命中（回提示且含下一步）、邊界（空輸入、上限截斷）、gating（若有）、路徑穿越。
+24. **MUST** fixture 用 `fs.mkdtempSync` 臨時目錄＋環境變數覆寫資料根（`corpus.test.ts` 模式），`afterAll` 還原 env 並刪目錄；快取模組要匯出 `_clearCaches()` 在 `beforeEach` 呼叫。
+25. **MUST** 另做一次 stdio 冒煙：build 後送 `initialize` → `tools/list` → `tools/call`（見第 3 節），確認工具數與描述正確。
 
 ---
 
@@ -99,7 +102,7 @@ metadata:
 | `tsconfig.json` | 與 docs-mcp-server 相同（ES2022 / Node16 / strict），排除 `*.test.ts` |
 | `vitest.config.ts` | colocated 測試、v8 覆蓋率 lines 55 |
 | `src/index.ts` | 3 個唯讀工具（list/search/read）、模組層級 strict schema、完整四段描述、雙 transport 啟動 |
-| `src/http.ts` | Streamable HTTP（session map、/mcp 與 /mcp/:scope、401/404/400/500、/health） |
+| `src/http.ts` | Streamable HTTP（session map、/mcp 與 /mcp/:scope、401/404/400/500、`/mcp*` 驗證前限流（只計驗證失敗、回 429）、/health） |
 | `src/knowledge.ts` | 純邏輯：資料根解析、列舉、mtime 快取、去 BOM、模糊比對、AND 搜尋、截斷 |
 | `src/knowledge.test.ts` | 9 個測試：排序、AND、未命中提示、空查詢、讀檔、巢狀、路徑穿越、過濾、截斷 |
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` / `.env.example` | 多階段 build、prod-only deps、`TRANSPORT=http`、healthcheck、TZ |
@@ -149,6 +152,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 9. **MUST NOT** 用 `console.log`。WHY：stdio 串流污染。
 10. **MUST NOT** 只改程式不改檔頭註解 / README / servers/*.json 描述。WHY：證據 E8、E9、E10。
 11. **MUST NOT** 讓 dependabot 或「順手升級」跨主版本（zod、express、typescript、@types/node、SDK）而不經人工評估。WHY：證據 E3——拿掉 `semver-major` ignore 後三個 server 主版本分岔。
+12. **MUST NOT** 移除 `/mcp*` 限流、把它移到驗證之後、或改成計數所有請求。WHY：證據 E15——限流是 Bearer token 在應用層的防暴力猜測閘；移到驗證後等於沒擋，計數所有請求會讓 gateway 後的正常流量共用同一個 IP 額度。
 
 ---
 
@@ -160,6 +164,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 - [ ] 輸出經 `truncateIfNeeded`；列表有 `limit`
 - [ ] 讀檔只從列舉結果比對；有路徑穿越測試
 - [ ] stdio 與 HTTP 都能跑；`/health` 免驗證；設 token 後未帶 → 401
+- [ ] /mcp* 有限流，且在驗證之前、只計驗證失敗；/health 不受限流影響；trust proxy 為 false
 - [ ] 全部日誌 `console.error`；`grep -rn "console.log" src/` 無結果
 - [ ] 測試 colocated、覆蓋率 ≥ 55%（新專案）；第 4 節基準值未下降（既有專案）
 - [ ] stdio 冒煙輸出（tools/list 工具數、一次 tools/call）貼到 PR
@@ -180,6 +185,8 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 | 測試在 CI 綠、在本機紅（或反之） | 測試依賴打包語料且另一測試改了 `DOCS_CORPORA_DIR` 未還原 | `afterAll` 還原 env ＋ `_clearCaches()` |
 | 模板測試檔無法被 vitest 轉譯 | JSDoc 註解內寫了 `src/**/*.test.ts`，`*/` 提前關閉註解 | 註解內避免 `*/` 字元序列 |
 | `npm run clean` 在 PowerShell 失敗 | `rm -rf` 是 bash 指令 | 用 `Remove-Item -Recurse -Force dist` 或改 `rimraf` |
+| 限流用 `skipSuccessfulRequests` + `requestWasSuccessful` 只計 401，累積後 gateway 被鎖住 | express-rate-limit 8.7.1 是請求進來先 +1、finish 後才 -1，進行中與中斷的請求會佔額度 | 改用 `skip: (req) => isAuthorized(req)` 略過驗證成功的請求 |
+| 限流被繞過：用戶端每次換 IP 就不受限 | `trust proxy` 設成信任（如 `1`、`true`），用戶端可偽造 `X-Forwarded-For` | `trust proxy` 設 false |
 
 ---
 
@@ -190,7 +197,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻。是否搬移並加門檻。
 4. .NET 10 MCP server：repo 內**沒有**任何 C# MCP server（`.cs` 檔都是 SqlSugar 範例 / 效能測試資料），本 skill 不提供 .NET 範本；若要用官方 C# SDK，需另立規範。
 5. zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
-6. `express-rate-limit`（`^8.5.2`）加在 `mcp/docs-mcp-server/package.json` 但**從未 commit**（`git show HEAD:mcp/docs-mcp-server/package.json | grep -c express-rate-limit` → 0，實測 2026-10-04），`src/` 也無任何 import；nginx 範例說 rate limit 放邊界。應用層要不要限流；不限流就該把這行從工作目錄拿掉，別讓它一直掛著。
+6. 應用層限流已落地（`f21c6f1`，證據 E15）；仍待確認：nginx 邊界是否也要限流、gateway 之後的多副本部署是否需要共用儲存（目前為單程序記憶體計數）。
 7. Bearer token 比對用 `===`（非 constant-time）；是否改 `crypto.timingSafeEqual`。
 8. 工具層逾時：現有工具都是同步檔案讀取、沒有 per-tool timeout；若新 server 會呼叫外部 API，逾時值與重試策略待定（gateway 端 `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30` 只管初始化）。
 9. 工具描述語言：現況繁中描述＋英文工具名；給 gateway 後多語系用戶是否要中英並列。

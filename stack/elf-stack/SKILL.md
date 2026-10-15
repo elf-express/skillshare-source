@@ -91,6 +91,12 @@ dotnet test server/<App>.slnx -c Release \
   -p:CollectCoverage=true -p:Threshold=55 -p:ThresholdType=line -p:ThresholdStat=total
 ```
 
+### 3.4 MCP server（Node / TypeScript，elf-mcp-server 範本）
+
+| 項目 | 版本（range） | lockfile 實際解析 | 釘選方式 |
+|------|---------------|-------------------|----------|
+| express-rate-limit | `^8.7.1` | 8.7.1 | `elf-mcp-server` 範本 `templates/package.json` dependencies ＋ lockfile |
+
 ## 4. 標準範本
 
 ### 4.1 repo 根目錄檔案
