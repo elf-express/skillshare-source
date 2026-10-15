@@ -6,6 +6,11 @@ workflow/elf-linear-superpowers/SKILL.md
   "git_ai_version": "1.7.5",
   "base_commit_sha": "a3360988415d0b7273c0638aaa022f9d6f19ada9",
   "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  },
   "sessions": {
     "s_5e1d12ee97a68a": {
       "agent_id": {
