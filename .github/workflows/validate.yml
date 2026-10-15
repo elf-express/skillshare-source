@@ -19,7 +19,7 @@ jobs:
       # Keep in step with the team's skillshare version — .metadata.json is
       # written by it. To upgrade, change this; the checksum comes from the
       # release's own checksums.txt, so nothing else needs editing.
-      SKILLSHARE_VERSION: 0.25.10
+      SKILLSHARE_VERSION: 0.25.12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
