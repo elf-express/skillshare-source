@@ -8,6 +8,10 @@
  *   - DELETE /mcp[/:scope]   → end session
  *   - GET    /health         → NO auth, for docker healthcheck / gateway / cloud probes
  *
+ * Rate limiting: /mcp* counts only failed-auth requests per source IP; over the limit → 429 until the window expires.
+ * Requests with a correct token (or with auth disabled) are not counted. X-Forwarded-For is not trusted.
+ * /health is never rate limited.
+ *
  * If the server has no notion of scope, delete the /mcp/:scope routes and the hasScope dep — keep everything else.
  * Compatible with MCP remote connectors (Claude Desktop / claude.ai custom connectors) and MCPJungle streamable_http.
  */
@@ -15,6 +19,7 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import express, { type Request, type Response } from "express";
+import { rateLimit, type AugmentedRequest } from "express-rate-limit";
 import { randomUUID } from "node:crypto";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -27,14 +32,24 @@ export interface HttpDeps {
   hasScope: (id: string) => boolean;
 }
 
+/** Read a positive-integer env var; fall back to the default when unset or invalid. */
+function envInt(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
 export async function runHttp(
   createServer: (scope?: string) => McpServer,
   deps: HttpDeps
 ): Promise<void> {
   const port = parseInt(process.env.PORT || "<PORT>", 10);
   const authToken = process.env.MCP_AUTH_TOKEN?.trim();
+  const rateLimitMax = envInt("MCP_RATE_LIMIT_MAX", 20);
+  const rateLimitWindowMs = envInt("MCP_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000);
 
   const app = express();
+  // Count by connection source IP; do not trust X-Forwarded-For.
+  app.set("trust proxy", false);
   // Keep in sync with nginx client_max_body_size (mcpjungle/nginx.example.conf uses 8m).
   app.use(express.json({ limit: "8mb" }));
 
@@ -45,9 +60,13 @@ export async function runHttp(
     res.json({ status: "ok", ...deps.healthInfo() });
   });
 
-  function checkAuth(req: Request, res: Response): boolean {
+  function isAuthorized(req: Request): boolean {
     if (!authToken) return true;
-    if ((req.headers.authorization || "") === "Bearer " + authToken) return true;
+    return (req.headers.authorization || "") === "Bearer " + authToken;
+  }
+
+  function checkAuth(req: Request, res: Response): boolean {
+    if (isAuthorized(req)) return true;
     res.status(401).json({
       jsonrpc: "2.0",
       error: { code: -32001, message: "Unauthorized: missing or invalid bearer token" },
@@ -55,6 +74,28 @@ export async function runHttp(
     });
     return false;
   }
+
+  // Counts only failed-auth requests: authorized requests are skipped and use no quota.
+  const mcpLimiter = rateLimit({
+    windowMs: rateLimitWindowMs,
+    limit: rateLimitMax,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    skip: (req) => isAuthorized(req),
+    validate: { xForwardedForHeader: false },
+    handler: (req, res, _next, options) => {
+      const info = (req as AugmentedRequest).rateLimit;
+      console.error(
+        LOG + " failed-auth limit exceeded, returning 429: ip=" + req.ip +
+        " used " + info.used + "/" + info.limit + ", window " + rateLimitWindowMs + "ms"
+      );
+      res.status(options.statusCode).json({
+        jsonrpc: "2.0",
+        error: { code: -32029, message: "Too many failed authentication attempts, retry later" },
+        id: null,
+      });
+    },
+  });
 
   async function handlePost(scope: string | undefined, req: Request, res: Response): Promise<void> {
     if (!checkAuth(req, res)) return;
@@ -115,18 +156,19 @@ export async function runHttp(
     await transports[sessionId].handleRequest(req, res);
   };
 
-  app.post("/mcp", (req, res) => handlePost(undefined, req, res));
-  app.get("/mcp", handleSessionRequest);
-  app.delete("/mcp", handleSessionRequest);
+  app.post("/mcp", mcpLimiter, (req, res) => handlePost(undefined, req, res));
+  app.get("/mcp", mcpLimiter, handleSessionRequest);
+  app.delete("/mcp", mcpLimiter, handleSessionRequest);
 
-  app.post("/mcp/:scope", (req, res) => handlePost(req.params.scope, req, res));
-  app.get("/mcp/:scope", handleSessionRequest);
-  app.delete("/mcp/:scope", handleSessionRequest);
+  app.post("/mcp/:scope", mcpLimiter, (req, res) => handlePost(req.params.scope, req, res));
+  app.get("/mcp/:scope", mcpLimiter, handleSessionRequest);
+  app.delete("/mcp/:scope", mcpLimiter, handleSessionRequest);
 
   app.listen(port, () => {
     // stderr only — see SKILL.md rule: never write logs to stdout.
     console.error(LOG + " HTTP server listening on http://0.0.0.0:" + port + " (/mcp, /mcp/<scope>)");
     console.error(LOG + " health: " + JSON.stringify(deps.healthInfo()));
     console.error(LOG + " auth: " + (authToken ? "Bearer token enabled" : "DISABLED (public access)"));
+    console.error(LOG + " rate limit: " + rateLimitMax + " failed auths per " + rateLimitWindowMs + "ms, then 429");
   });
 }
