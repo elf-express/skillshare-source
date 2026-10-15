@@ -102,7 +102,7 @@ metadata:
 | `tsconfig.json` | 與 docs-mcp-server 相同（ES2022 / Node16 / strict），排除 `*.test.ts` |
 | `vitest.config.ts` | colocated 測試、v8 覆蓋率 lines 55 |
 | `src/index.ts` | 3 個唯讀工具（list/search/read）、模組層級 strict schema、完整四段描述、雙 transport 啟動 |
-| `src/http.ts` | Streamable HTTP（session map、/mcp 與 /mcp/:scope、401/404/400/500、/health） |
+| `src/http.ts` | Streamable HTTP（session map、/mcp 與 /mcp/:scope、401/404/400/500、`/mcp*` 驗證前限流（只計驗證失敗、回 429）、/health） |
 | `src/knowledge.ts` | 純邏輯：資料根解析、列舉、mtime 快取、去 BOM、模糊比對、AND 搜尋、截斷 |
 | `src/knowledge.test.ts` | 9 個測試：排序、AND、未命中提示、空查詢、讀檔、巢狀、路徑穿越、過濾、截斷 |
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` / `.env.example` | 多階段 build、prod-only deps、`TRANSPORT=http`、healthcheck、TZ |
