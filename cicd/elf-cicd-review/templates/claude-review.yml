@@ -20,7 +20,7 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 1
 
@@ -28,7 +28,7 @@ jobs:
       # ANTHROPIC_API_KEY secret to bill an API account instead — pass exactly
       # one of the two; passing both only earns a warning for whichever secret
       # does not exist.
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@f27be6b65a4652f08a2ba3cff79114829b588967 # v1.0.252
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |

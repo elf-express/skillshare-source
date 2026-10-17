@@ -69,6 +69,7 @@ metadata:
 18. 所有 job 的 checkout MUST 用 `ref: ${{ inputs.tag || github.ref }}`，tag 名稱 MUST 用 `${{ inputs.tag || github.ref_name }}`（兩種觸發共用）。
 19. 需要**必要** secret（例如 `TAURI_SIGNING_PRIVATE_KEY`）的 job MUST 在建置前先檢查 secret 非空，空的就 `exit 1`（範例見 elf-cicd-desktop 規則 13）；選用的 secret 依各 skill 規定，例如 Apple 憑證缺少時只發警告（elf-cicd-desktop 規則 14）。
     為什麼：空的 secret 常在建置十分鐘後才以看似格式錯誤的訊息失敗，fail fast 才看得出是沒設定。
+20. MUST `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；MUST NOT 改回 `@vN`、`@stable` 或分支名。為什麼：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -130,7 +131,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.tag || github.ref }}
           # Full history, so origin/release is there to compare against.
@@ -189,6 +190,7 @@ jobs:
 - [ ] `release.yml` 有 `verify` job（`fetch-depth: 0`），其他 job 都 `needs: verify`
 - [ ] 版號 PR 標題為 `chore(release): vX.Y.Z`，只改版號
 - [ ] tag 打在 `origin/release` 上、用 `git tag -a`、由人推送
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 6. 常見錯誤
 

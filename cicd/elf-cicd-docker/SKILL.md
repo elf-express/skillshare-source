@@ -101,13 +101,14 @@ metadata:
 22. **MUST** 映像名稱：`ghcr.io/<owner>/<repo>/api`、`ghcr.io/<owner>/<repo>/web`，前綴以 `${GITHUB_REPOSITORY,,}` 轉**小寫**。
     WHY：GHCR 拒絕大寫，而 repo slug 常含大寫（例：`TW199501/TypingTrainer`）。
 23. **MUST** 每個映像推兩個 tag：release tag（`${{ inputs.tag || github.ref_name }}`，例 `v1.2.3`）與 `latest`。
-24. **MUST** job 權限 `contents: read`、`packages: write`；登入用 `docker/login-action@v3` + `secrets.GITHUB_TOKEN`。**MUST NOT** 使用個人 PAT。
-25. **MUST** 使用 `docker/setup-buildx-action@v3` + `docker/build-push-action@v6`，快取 `type=gha` 並**每個映像獨立 `scope`**
+24. **MUST** job 權限 `contents: read`、`packages: write`；登入用 `docker/login-action` v3（SHA 見 elf-stack 3.5） + `secrets.GITHUB_TOKEN`。**MUST NOT** 使用個人 PAT。
+25. **MUST** 使用 `docker/setup-buildx-action` v3（SHA 見 elf-stack 3.5） + `docker/build-push-action` v6（SHA 見 elf-stack 3.5），快取 `type=gha` 並**每個映像獨立 `scope`**
     （`cache-from: type=gha,scope=api` / `cache-to: type=gha,mode=max,scope=api`，web 同理）。
     WHY：未指定 scope 時兩個映像共用預設 scope，互相覆蓋快取。
 26. **MUST** 有桌面版的專案把 docker job 放進 `elf-cicd-desktop` 的同一個 `release.yml`；純網頁專案才用獨立的 [`templates/release-docker.yml`](templates/release-docker.yml)。
     WHY：一個 tag 只跑一個 workflow，共用同一個 `verify` job。
 27. **MUST** 有桌面版又有 docker job 時，保留 `.github/release-body.md`（`elf-cicd-desktop`）最後一行 GHCR 連結 `ghcr.io/<owner>/<repo>`（小寫）；沒有 docker job 就刪除該行。
+28. **MUST** `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；**MUST NOT** 改回 `@vN`、`@stable` 或分支名。WHY：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ---
 
@@ -179,6 +180,7 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - [ ] 本機 `pnpm docker:up` 後 `docker compose … ps` 三個服務皆 running / healthy，`http://localhost:8080/api/health` 回 200
 - [ ] release docker job：小寫前綴、兩個 tag、`packages: write`、每個映像各自的 gha `scope`
 - [ ] docker job `needs: verify`；獨立的 release-docker.yml 也有 `verify` job
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ---
 
