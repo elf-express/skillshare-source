@@ -1,0 +1,21 @@
+mcp/elf-mcp-server/SKILL.md
+  s_0558afb6b232ea::t_6a362cf873aa57 151
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_0558afb6b232ea::t_8fc238fb9fa587 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bfc6781a9d93bcccf6aa42cf5e8d8e9f96abbcba",
+  "prompts": {},
+  "sessions": {
+    "s_0558afb6b232ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f21ecba8-f832-4433-a721-d32f99f1038d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
