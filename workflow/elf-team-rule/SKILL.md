@@ -5,9 +5,10 @@ description: |
   當任務涉及在任何 repo 開分支、合併、同步上游、發佈 release、送 PR 給原作者、建立新 repo 或新 fork、補 BRANCHING.md、
   設定分支保護、核對 release 分支 CI/CD 為什麼沒過、檢查分支與來源（上游／dev／release／main）是否對齊、
   正式版出問題要緊急修正（hotfix）、使用者要求「直接改 release／main」、
+  多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.1.1
+  version: 1.2.0
   owner: Elf Express
 ---
 
@@ -36,7 +37,8 @@ metadata:
 
 **Skill 載入（Superpower 開發方式）**
 
-1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，接著載入 `workflow__elf-linear-superpowers`（沒有安裝的工具就照 Linear 團隊文件「開發流程規範：Spec／Plan × superpowers」操作）。
+1. 每一段開發或 git 任務開始時，MUST 先載入 superpowers 的 `using-superpowers`（同步後名稱 `_superpowers__skills__using-superpowers`）；工作單在 Linear 時，接著載入 `workflow__elf-linear-superpowers`。
+   沒有安裝這些 skill 的 AI，照 Linear『開發流程規範』與『流程總覽（給所有 AI）』操作；『開發流程規範』是 Linear 團隊文件「開發流程規範：Spec／Plan × superpowers」。
    為什麼：superpowers 決定「先設計、再計畫、再實作、再驗證」的順序，沒先載入就會直接動手寫，跳過設計與兩道驗證。
 2. 之後 MUST 依任務再載入本 skill 與對應的領域 skill（例如 `backend__elf-dotnet`、`cicd__elf-cicd-versioning`）。
 3. MUST 在動手前確認必要的 skill 都已載入；不確定需要哪些時，先列出來給使用者看。
@@ -56,7 +58,14 @@ metadata:
 9. `dev` 是整合測試：只能經由開發分支的 PR 合併進來，MUST NOT 直接在 `dev` 上開發。例外只有兩種，都由維護者直接推送：第 1、2 種的「`main` → `dev` 同步合併」（見規則 18），以及 hotfix 發佈後的「`release` → `dev` 合回」（見規則 26）。
 10. 開發分支命名 MUST 為 `<類型>/e-<編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`、`hotfix/e-250-login-crash`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`。短名用英文小寫加連字號。
     編號：有 `[Spec]`＋`[Plan]` 時用 **Plan 編號**；沒有 Spec／Plan 的單一工作單（例如緊急修正）用**該單編號**。本規則是團隊唯一的分支命名，Linear「開發流程規範」引用本規則，不另外定義。
-    為什麼：Linear 的 PR 自動化（開 PR → 進行中、merge → 已完成）靠分支名稱裡的 `e-<編號>` 對應工作單；分支名稱 MUST NOT 含中文或全形符號，Linear 自動產生的 `gitBranchName` 常帶中文標題，不要直接用。
+    **工作單狀態**：
+    - 已導入 dev／release 的 repo（有 `BRANCHING.md`，第 1–3 種）：
+      - 開 PR → Plan「進行中」（自動）；PR 合進 `dev` → 「驗證中」（自動，Eddie 依目標分支設定）；Spec 維持「進行中」。
+      - 「已完成」由 AI 在步驟 7（`workflow__elf-linear-superpowers`）**手動設定**，三個條件都要滿足：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。Plan 完成後 Spec 由父子自動化關閉。
+    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部手動，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。
+    - 還沒導入 dev／release 的 repo（沒有 `BRANCHING.md`、只有主線）：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
+    - 過渡期：Eddie 在 E-310 留言確認自動化已設定之前，`dev` 合併後若被自動關單，AI 手動把 Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」。
+    為什麼：Linear 的 PR 自動化（開 PR → 進行中、合進 `dev` → 驗證中）靠分支名稱裡的 `e-<編號>` 對應工作單；`release` 是快轉推送、沒有 PR，Linear 的 PR 自動化不會觸發，所以「已完成」要手動設定。分支名稱 MUST NOT 含中文或全形符號，Linear 自動產生的 `gitBranchName` 常帶中文標題，不要直接用。
 11. 開發分支 MUST 從 `origin/dev` 開出，合回 `dev` 前先在開發分支上 `git merge origin/dev` 並跑完測試。唯一例外是 `hotfix/`：從 `origin/release` 開出、不經 PR 合回 `dev`，見規則 25、26。
 12. 第 1 種送原作者的 PR MUST 用 `pr/<英文短名>`，從 `main` 開出，只放 cherry-pick 的提交，一個分支一個主題。
 
@@ -70,13 +79,18 @@ metadata:
     - 無法確定 repo 類型，或 `BRANCHING.md` 與 remote 設定不一致
     - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外
     - `git push` 被拒（non-fast-forward）：MUST NOT 改用 `pull --rebase`、`reset` 或 force push 讓它過
+    - 在本規範沒有指示的 detached HEAD 上準備提交（規則 26 的替代做法本身會 `git switch --detach origin/dev`，所以只擋本規範沒有指示的情況，不把 detached HEAD 整個列為停止條件）
 14. 回報 MUST 包含：目前分支、執行的指令、錯誤訊息原文、判斷的原因、可選的處理方式。
 15. 對外的動作（對原作者開 PR、留言、推送到別人的 repo）MUST 先取得使用者明確同意。
 
 **Plan 容量（Plan & Task Capacity）**
 
-16. 單一 Plan 的 Task MUST 控制在 3–5 個；超過 5 個，或預估總工時超過團隊標準容量時，MUST 停止新增 Task 並提議拆分。
+16. 單一 Plan 的 Task MUST 控制在 3–5 個；超過 5 個時，MUST 停止新增 Task 並提議拆分。預估總工時是否超過團隊標準容量，依 Plan 的估點分三級：
+    - 估點 **13 以上**：MUST 拆單。
+    - 估點 **8**：可以不拆，但 MUST 在 Plan 留言說明不拆的理由。
+    - 估點 **5 以下**：照常進行。
     為什麼：Task 太多時上下文切換成本高、審查與測試會塞車，整個 Plan 的進度一起被拖慢。
+    為什麼（估點三級）：依使用者 2026-10-17 查到的 Linear 狀態歷程，E-240（13 點）實作約 3 天，審查後退回重改；E-122（8 點）在「已完成」與「進行中」之間來回 3 次。E-237、E-239 都估 8 點，實作只花 27 分鐘～2 小時，所以估點不能當唯一門檻；E-307 照 5 個 Task 切，約 1 小時完成、沒有退回。
 17. 拆分原則：優先按模組（不同業務領域分開）；其次按依賴（前置任務獨立成一個 Plan，完成並測試後再啟動後續）；拆完每份都要能獨立開發、測試、交付，太小不能獨立交付的就併入某個 Plan，當成其中一個 Task（打勾清單），不開子工作單。
     依開發流程規範「一個 Spec 對應一個 Plan」，拆 Plan 就是拆 Spec：新開 `[Spec]`＋`[Plan]` 一組，不在同一個 Spec 底下開第二個 Plan。
     提問範本：「目前此 Plan 下已有 X 個 Tasks，為避免開發進度延宕與上下文切換，建議將其拆分為 [Plan A] 與 [Plan B]。請問是否同意拆分？」
@@ -243,8 +257,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 
 ## 7. 待確認
 
-1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8。
+1. （已決議 2026-10-11，E-235）既有 CI skill 改以本規範為準：`elf-cicd-versioning` 改為版號 PR 進 `dev`、在 `release` 上打 tag 發版；`elf-cicd-frontend` CI 觸發改 `dev`、`release`；`elf-cicd-review` 的 required check 改設在 `dev`。mcp-library 已有 `dev`、`main`、`release` 三條分支，`BRANCHING.md` 為第 3 種（2026-10-17 `gh api` 查詢）；原先記載的「mcp-library 仍只有 `main`，導入 `dev` / `release` 前維持現況，見 `elf-mcp-knowledge` 待確認 8」已過時。
 2. （已決議 2026-10-13，E-244 沙盒實測）**status checks 對直接 push 的效果**：「Require status checks to pass」對直接 push 也生效：沒有 check 的新提交推不上去；已通過 CI 的提交快轉放行；合併提交依被併進來那個提交的 check 判斷，所以擋不住「用合併代替快轉」，這部分由 git-guard 擋（規則 30）。`dev` 的維護者 MUST 列入 bypass（規則 21）。
-5. **XiHan.Framework fork 的例外**：它是第 1 種，但只有 `main`、`dev`、`gh-pages`，沒有 `release`；工作分支用 `bug/` 而不是 `fix/`。要在它的 `BRANCHING.md` 記錄為例外，還是改成符合本規範，待決定。
 3. （已決議 2026-10-11）skillshare-source 的 `master` 已改名為 `main`，改由 `release` 快轉，並補上 `BRANCHING.md`。其他主線叫 `master` 的 repo，一律比照改名，不記為例外。
-4. **團隊標準容量**：規則 16 的「預估總工時超過團隊標準容量」沒有具體數字。
+4. **團隊標準容量**：已決議（2026-10-17）。規則 16 的「預估總工時超過團隊標準容量」原本沒有具體數字，改以估點分三級：13 以上 MUST 拆單；8 可以不拆，但 MUST 在 Plan 留言說明不拆的理由；5 以下照常進行。實際資料見規則 16。
+5. **XiHan.Framework fork 的例外**：已決議（2026-10-14，改為符合規範）。原記載「它是第 1 種，但只有 `main`、`dev`、`gh-pages`，沒有 `release`；工作分支用 `bug/` 而不是 `fix/`。要在它的 `BRANCHING.md` 記錄為例外，還是改成符合本規範，待決定。」證據：XiHan.Framework `BRANCHING.md` 第一行「# 分支規範：本 repo 為【第 1 種：貢獻型 fork】」，由 `1a32fcd7`（2026-10-14）新增；`git ls-remote --heads origin release` 回 `83047aa…`；同一提交 `1a32fcd7` 把 AGENTS.md 的分支前綴 `bug/` 改為 `fix/`。
