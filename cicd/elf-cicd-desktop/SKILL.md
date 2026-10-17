@@ -58,12 +58,12 @@ metadata:
 
 ### 工具鏈（團隊標準，覆蓋參考專案的 npm）
 
-9. **MUST** 順序為 `pnpm/action-setup@v4` → `actions/setup-node@v5`（`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.18`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
+9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.18`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
    WHY：`cache: pnpm` 需要 pnpm 已在 PATH，順序反了 setup-node 會報找不到 pnpm。
 10. **MUST NOT** 在 `pnpm/action-setup` 寫 `version:`；版本由根目錄 `package.json` 的 `"packageManager": "pnpm@<PNPM_VERSION>"` 決定。MUST NOT 使用 corepack。
     WHY：兩處都寫且不一致時 action 直接失敗；單一來源也保證 CI 與本機一致。
 11. **MUST** 安裝依賴用 `pnpm install --frozen-lockfile`（對應舊的 `npm ci`）。WHY：lockfile 與 package.json 不一致時要失敗，而不是悄悄改 lockfile。
-12. **MUST** 使用 `swatinem/rust-cache@v2`，`workspaces: src-tauri`。WHY：Rust 編譯是最慢的步驟。
+12. **MUST** 使用 `Swatinem/rust-cache` v2（SHA 見 elf-stack 3.5），`workspaces: src-tauri`。WHY：Rust 編譯是最慢的步驟。
 
 ### 簽章與憑證
 
@@ -76,7 +76,7 @@ metadata:
 
 ### tauri-action 參數
 
-17. **MUST** 使用 `tauri-apps/tauri-action@v0`，並固定以下參數：
+17. **MUST** 使用 `tauri-apps/tauri-action` v0（SHA 見 elf-stack 3.5），並固定以下參數：
 
     | 參數 | 值 | WHY |
     |---|---|---|
@@ -104,6 +104,7 @@ metadata:
 24. **MUST** 專案同時發佈容器映像（release.yml 內有 `docker` job，見 `elf-cicd-docker`）時保留 release-body.md 最後的 GHCR 行，並把 `<owner>/<repo>` 換成**小寫**；沒有容器映像時刪除該行與其上方的 `---`。
 25. **MUST** `tauri-action` step 的 `env` 設 `VITE_USE_MOCK: 'false'` 與 `VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}`，並在 repo **Settings → Secrets and variables → Actions → Variables** 建立 `VITE_API_BASE_URL`（正式 API 的完整網址，例如 `https://api.example.com/api`）。
     WHY：桌面版由 `beforeBuildCommand` 建置，不經過 `web.Dockerfile`，那裡的 `ARG VITE_USE_MOCK=false` 管不到；`VITE_*` 在建置時就寫死，漏設的話發出去的安裝檔會用假資料、而且打到不存在的相對路徑 `/api`（參考專案 TypingTrainer 就是這樣）。見 `elf-tauri` 規則 13b。
+26. **MUST** `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；**MUST NOT** 改回 `@vN`、`@stable` 或分支名。WHY：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ---
 
@@ -164,7 +165,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 - [ ] 只有 push tag / workflow_dispatch 兩種觸發；有 `verify` job，`desktop` job `needs: verify`
 - [ ] `max-parallel: 1`、`fail-fast: false`
 - [ ] macOS 列 `args: '--target universal-apple-darwin'` + 兩個 rust target
-- [ ] `pnpm/action-setup@v4` 在 `setup-node` 之前，且沒有 `version:`
+- [ ] `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） 在 `setup-node` 之前，且沒有 `version:`
 - [ ] `node-version-file: .nvmrc`、`cache: pnpm`、`pnpm install --frozen-lockfile`
 - [ ] 「Require the signing key」step 存在且會 `exit 1`
 - [ ] macOS「Check the Apple credentials」step 只警告不失敗
@@ -179,6 +180,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 - [ ] `gh release edit … --draft=false --latest` 已執行，`latest.json` 回 200
 - [ ] 至少一台 Windows 實機「檢查更新 → 下載安裝 → 重新啟動」成功
 - [ ] macOS 實機從 `universal.dmg` 開啟無 Gatekeeper 警告（已設 Apple 憑證時）
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ---
 
@@ -209,7 +211,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 ## 6. 待確認
 
 - pnpm 確切版本：`packageManager` 欄位要填 11.x 的哪一版，或改用 12（團隊尚未定案）。
-- `pnpm/action-setup` 的主版號（範本用 `@v4`；是否已有更新的 major 需團隊確認後統一）。
+- `pnpm/action-setup` 的主版號（範本用 v4（SHA 見 elf-stack 3.5）；是否已有更新的 major 需團隊確認後統一）。
 - 以 pnpm 取代 npm 後，tauri-action 依 `pnpm-lock.yaml` 自動改用 `pnpm tauri build` —— 參考專案只用 npm 驗證過，第一次 pnpm 發佈需實際確認 log。
 - Windows 程式碼簽章（`WINDOWS_CERTIFICATE` / `WINDOWS_CERTIFICATE_PASSWORD`）團隊是否要購買與導入；目前範本未含。
 - Apple 公證要用 Apple ID 方式（`APPLE_ID`/`APPLE_PASSWORD`/`APPLE_TEAM_ID`，範本採用）還是 App Store Connect API key 方式（`APPLE_API_ISSUER`/`APPLE_API_KEY`/`APPLE_API_KEY_PATH`）；團隊帳號由誰持有。

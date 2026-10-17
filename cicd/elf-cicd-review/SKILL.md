@@ -1,7 +1,7 @@
 ---
 name: elf-cicd-review
 description: |
-  Elf Express PR 自動 AI Code Review 規範（anthropics/claude-code-action@v1）。
+  Elf Express PR 自動 AI Code Review 規範（anthropics/claude-code-action v1，SHA 見 elf-stack 3.5）。
   當任務涉及新增或修改 .github/workflows/claude-review.yml、設定 CLAUDE_CODE_OAUTH_TOKEN /
   ANTHROPIC_API_KEY、調整審查 prompt、Dependabot 或 bot PR 審查失敗、AI 審查 job 報
   is_error 卻看不到原因，或設定 branch protection 要求 AI 審查通過時觸發。
@@ -30,7 +30,7 @@ metadata:
 
 1. MUST 放在 `.github/workflows/claude-review.yml`，與 `ci.yml` 分開。為什麼：審查失敗（額度、token 過期）不該讓 CI 結果看不清楚，兩者要各自是一個 check。
 2. MUST 觸發 `pull_request: types: [opened, synchronize, reopened, ready_for_review]`。每次 push 到 PR、重新開啟、draft 轉為 ready 都重審。
-3. MUST 使用 `anthropics/claude-code-action@v1`。MUST NOT 改用 `@main`、`@beta` 等浮動分支。為什麼：浮動分支的行為會在沒有 PR 的情況下改變，審查突然壞掉時無從比對。
+3. MUST 使用 `anthropics/claude-code-action` v1（SHA 見 elf-stack 3.5）。MUST NOT 改用 `@main`、`@beta` 等浮動分支。為什麼：浮動分支的行為會在沒有 PR 的情況下改變，審查突然壞掉時無從比對。
 4. MUST 維持 job id 與 `name: review`。為什麼：branch protection 以這個名稱設 required check。
 
 **Bot PR**
@@ -72,6 +72,7 @@ metadata:
 17. MUST 在 `dev` 的 repo 層 ruleset（或 branch protection）把 `review` 設為 required check。CI 的 `web` / `e2e` / `server` 不再逐一設定：組織 ruleset `elf-require-ci` 統一要求彙總 job `ci`（elf-team-rule E-244）。
     為什麼：開發分支一律經 PR 進 `dev`（elf-team-rule）；`main`、`release` 只快轉、不經 PR，設在那裡永遠用不到。
 18. MUST 理解：`review` 綠燈只代表「審查跑完」，**不代表沒有問題**。PR 作者 MUST 逐條回應 AI 留言（修正或說明不修的理由）後才合併。
+19. MUST `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；MUST NOT 改回 `@vN`、`@stable` 或分支名。為什麼：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -104,8 +105,8 @@ Known pitfalls in this repo — check every PR against them:
 ## 4. 檢查清單
 
 - [ ] 檔名 `.github/workflows/claude-review.yml`，觸發 `opened, synchronize, reopened, ready_for_review`
-- [ ] `actions/checkout@v5`
-- [ ] `anthropics/claude-code-action@v1`
+- [ ] `actions/checkout` v5（SHA 見 elf-stack 3.5）
+- [ ] `anthropics/claude-code-action` v1（SHA 見 elf-stack 3.5）
 - [ ] 有 `if: ${{ !endsWith(github.actor, '[bot]') }}`（bot PR 跳過為已決定例外，由人工看 diff）
 - [ ] `permissions` 只有 `contents: read` / `pull-requests: write` / `id-token: write`
 - [ ] 只傳一種憑證，且 secret 已在 repo 設定
@@ -114,6 +115,7 @@ Known pitfalls in this repo — check every PR against them:
 - [ ] prompt 已列出 repo 目錄與本專案地雷（或已刪除佔位段落）
 - [ ] `dev` branch protection 已把 `review` 設為 required
 - [ ] 開一個測試 PR，確認 PR 上出現 AI 總評留言與至少能留逐行留言
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 

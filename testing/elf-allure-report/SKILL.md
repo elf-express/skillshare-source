@@ -50,6 +50,7 @@ metadata:
    `allure generate --clean`（Allure 3 無此旗標）。
 7. **MUST** Allure 為「附加」報告：Playwright 在 CI 仍保留 `github` reporter 以顯示 PR 註解（見 `elf-e2e` §3.1）。
 8. **MUST NOT** 未經團隊決定就啟用 quality gate 或發布到 GitHub Pages（見 §6）。
+9. **MUST** `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；**MUST NOT** 改回 `@vN`、`@stable` 或分支名。WHY：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -176,7 +177,7 @@ pnpm exec allure run -- pnpm test:e2e                        # 執行測試並�
         if: always()
         run: pnpm exec allure generate allure-results -o allure-report
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
         with:
           name: allure-report
@@ -185,7 +186,7 @@ pnpm exec allure run -- pnpm test:e2e                        # 執行測試並�
 ```
 
 多個 job（web / e2e / server）各自產生結果時：各 job 上傳 `allure-results/` 為 artifact（名稱不同），
-最後一個 job 用 `actions/download-artifact@v5`（`merge-multiple: true`、`path: allure-results`）下載後再 `generate` 一次。
+最後一個 job 用 `actions/download-artifact` v5（SHA 見 elf-stack 3.5；`merge-multiple: true`、`path: allure-results`）下載後再 `generate` 一次。
 完整 workflow 由 `elf-cicd-frontend` / `elf-cicd-backend` 維護。
 
 ### 3.8 Quality gate（範本，啟用前需團隊決定門檻）
@@ -216,8 +217,9 @@ export default defineConfig({
 - [ ] `.gitignore` 含 `allure-results/`、`allure-report/`、`allure-history.jsonl`（除非決定入版控）
 - [ ] 沒有 `allure serve`、`--clean`、`npx allure`、本機絕對路徑
 - [ ] xUnit 專案有 `allureConfig.json`（`directory` 往上六層）且設 `CopyToOutputDirectory`；`Allure.Xunit` 版本在 `Directory.Packages.props`
-- [ ] CI 的 Playwright reporter 仍含 `github` + `html`；`actions/*` 為 `@v5`
+- [ ] CI 的 Playwright reporter 仍含 `github` + `html`；`actions/*` 為 v5（SHA 見 elf-stack 3.5）
 - [ ] CI 在測試失敗時仍產生並上傳報告（`if: always()`）
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 

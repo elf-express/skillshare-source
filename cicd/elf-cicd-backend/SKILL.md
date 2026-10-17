@@ -31,11 +31,11 @@ metadata:
 
 1. MUST 在 repo 根目錄放 `global.json`，`sdk.version` 為 10.0 的 SDK、`rollForward: latestFeature`（見 `templates/global.json`）。
    為什麼：沒有 global.json，每台機器用它裝過最新的 SDK，編譯結果與分析器警告會不同。
-2. MUST 在 CI 用 `actions/setup-dotnet@v5` + `global-json-file: global.json`。MUST NOT 用 `dotnet-version:`（不論 `10.0.x`、`latest` 或其他）。
+2. MUST 在 CI 用 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5） + `global-json-file: global.json`。MUST NOT 用 `dotnet-version:`（不論 `10.0.x`、`latest` 或其他）。
    為什麼：SDK 版本只能有一個來源；改 `global.json`，CI 就跟著改。
 3. MUST NOT 在 `global.json` 加 `"test": { "runner": "Microsoft.Testing.Platform" }`。
    為什麼：本規範的覆蓋率門檻靠 coverlet.msbuild 掛在 VSTest 流程上，切換 runner 後 coverlet 不再插樁，門檻會「靜默消失」。
-4. MUST 所有 `actions/*`（checkout / setup-dotnet / upload-artifact …）統一用 `@v5`。
+4. MUST 所有 `actions/*`（checkout / setup-dotnet / upload-artifact …）統一用 v5（SHA 見 elf-stack 3.5）。
 
 **方案與目錄**
 
@@ -75,6 +75,7 @@ metadata:
 
 20. MUST 維持 job id `server`、`name: server (build · tests)`。為什麼：branch protection 的 required check 以 `name` 比對，改名會讓 PR 永遠等不到狀態。`server` MUST 加進 `ci.yml` 彙總 job `ci` 的 `needs:`（elf-cicd-frontend 規則 23）；組織 ruleset 只要求 `ci`，沒列進去的 job 失敗也擋不住發佈。
 21. MUST NOT 使用 `paths:` 過濾或 `continue-on-error: true`（理由同 elf-cicd-frontend 規則 24、26）。
+22. MUST `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；MUST NOT 改回 `@vN`、`@stable` 或分支名。為什麼：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -131,8 +132,8 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 ## 4. 檢查清單
 
 - [ ] repo 根目錄有 `global.json`，`rollForward: latestFeature`，沒有 `test.runner`
-- [ ] CI 用 `actions/setup-dotnet@v5` + `global-json-file: global.json`，沒有 `dotnet-version:`
-- [ ] 所有 `actions/*` 都是 `@v5`
+- [ ] CI 用 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5） + `global-json-file: global.json`，沒有 `dotnet-version:`
+- [ ] 所有 `actions/*` 都是 v5（SHA 見 elf-stack 3.5）
 - [ ] 所有 restore / build / test 都指向 `server/<AppName>.slnx`
 - [ ] 單元測試在 `server/tests/<Project>.Tests/`、整合測試在 `server/tests/<AppName>.Api.IntegrationTests/`，且都已加入 `.slnx`
 - [ ] 測試 csproj 參考 `coverlet.msbuild`，**沒有** `coverlet.collector`、沒有 `Version=`、沒有自己的 `TargetFramework`
@@ -143,6 +144,7 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 - [ ] job `name: server (build · tests)` 未變更
 - [ ] 本機跑 3.2 的指令全綠，且合併後 line-rate ≥ 0.55
 - [ ] 刻意改壞一段被測邏輯，確認測試會紅，再改回來
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 

@@ -34,11 +34,11 @@ metadata:
 3. MUST 在根 `package.json` 設 `"packageManager": "pnpm@<PNPM_VERSION>"`（pnpm 11.x，確切版本見「待確認」）。MUST NOT 使用 corepack（CI 用 `pnpm/action-setup`、Docker 用 `npm install -g pnpm@${PNPM_VERSION}`）。
 4. MUST 在 CI 用 `actions/setup-node` 的 `node-version-file: .nvmrc`。MUST NOT 在 workflow 裡寫死 `node-version: 24`。
    為什麼：版本只能有一個來源，改 `.nvmrc` 就全部跟著改。
-5. MUST 使用 `pnpm/action-setup@v4` 且**不傳 `version:`**，讓它讀 `packageManager`。
+5. MUST 使用 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） 且**不傳 `version:`**，讓它讀 `packageManager`。
    為什麼：兩處都寫版本會互相打架，action 會直接報錯。
 6. MUST 把 `pnpm/action-setup` 放在 `actions/setup-node` **之前**。
    為什麼：`cache: pnpm` 要呼叫 pnpm 查 store 路徑，pnpm 還沒裝就會失敗。
-6a. MUST 所有 `actions/*`（checkout / setup-node / upload-artifact …）統一用 `@v5`。
+6a. MUST 所有 `actions/*`（checkout / setup-node / upload-artifact …）統一用 v5（SHA 見 elf-stack 3.5）。
 
 **安裝**
 
@@ -84,6 +84,7 @@ metadata:
     為什麼：組織 ruleset 把 `ci` 設為 required check；被路徑過濾掉的 workflow 不會回報狀態，PR 與發佈會永遠卡在 "Expected — Waiting for status"。
 25. MUST NOT 改彙總 job 的 `name: ci`：組織 ruleset 以這個名稱比對。其他 job 可以改名；改 job id 時，同一個 PR 必須同步改 `ci` 的 `needs:`。
 26. MUST NOT 在 CI 加 `continue-on-error: true` 讓失敗的步驟變綠。
+27. MUST `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；MUST NOT 改回 `@vN`、`@stable` 或分支名。為什麼：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -158,7 +159,7 @@ export default defineConfig({
 - [ ] repo 內沒有 `package-lock.json` / `yarn.lock`；`pnpm-lock.yaml` 已提交
 - [ ] `ci.yml` 裡沒有 `node-version: 24`、沒有 `npm ci`、沒有 `npx`
 - [ ] `pnpm/action-setup` 在 `setup-node` 之前，且沒有 `version:` 輸入
-- [ ] 所有 `actions/*` 都是 `@v5`；repo 內沒有 `corepack`
+- [ ] 所有 `actions/*` 都是 v5（SHA 見 elf-stack 3.5）；repo 內沒有 `corepack`
 - [ ] `apps/vite.config.ts` 有 `thresholds.lines: 55`、有 `coverage.include`、**沒有** `thresholds.branches`
 - [ ] `@vitest/coverage-v8` 裝在 `apps/`，版本與 `vitest` 完全一致
 - [ ] 新增的測試檔與被測檔同資料夾、副檔名 `.test.ts`
@@ -170,6 +171,7 @@ export default defineConfig({
 - [ ] 有 `ci` job 後，請管理員把 repo 的 custom property `has_ci` 設為 `true`
 - [ ] 本機 `pnpm verify` 全綠、`pnpm test:e2e` 全綠
 - [ ] 刻意把一個被測函式改壞，確認對應測試會變紅，再改回來（綠燈不等於有測到）
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 
@@ -191,7 +193,7 @@ export default defineConfig({
 ## 6. 待確認
 
 - pnpm 確切版本：**待確認（pnpm 11.x 或 12）**。`packageManager` 目前以 `pnpm@<PNPM_VERSION>` 佔位，確定後全團隊統一。
-- `pnpm/action-setup` 目前寫 `@v4`；是否已有對應 pnpm 11/12 的新 major 版本待確認（`actions/*` 已統一 `@v5`，不在此列）。
+- `pnpm/action-setup` 目前寫 v4（SHA 見 elf-stack 3.5）；是否已有對應 pnpm 11/12 的新 major 版本待確認（`actions/*` 已統一 v5 並釘 SHA，不在此列）。
 - pnpm 11 是否仍讀取 `.npmrc` 內的非 auth 設定未驗證；範本一律把 `engineStrict` 放在 `pnpm-workspace.yaml`，`.npmrc` 只放 registry / auth。
 - pnpm 10+ 預設不執行相依套件的 install scripts；需要允許時的欄位名稱（`onlyBuiltDependencies` 或新版名稱）依 pnpm 版本待確認。
 - `coverage.exclude` 已固定排除測試檔 / `.d.ts` / `main.ts` / `src/api/mock/**`；是否還要排除 `router/`、`locales/` 等，待團隊決定（排除清單變動需 review）。

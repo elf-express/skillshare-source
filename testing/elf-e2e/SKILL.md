@@ -117,6 +117,7 @@ playwright/.auth/        ← 登入變體的 storageState 輸出，MUST 加入 .
 - **MUST** flaky 測試先用 `pnpm exec playwright test <file> --repeat-each=10` 重現，再看 `test-results/**/trace.zip`
   （`pnpm exec playwright show-trace <path>`）與影片，**MUST NOT** 用加大 retries 或 `waitForTimeout` 掩蓋。
 - **MUST** 修 bug 的 E2E：把修正改回去確認測試會紅，再改回來。
+1. **MUST** `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；**MUST NOT** 改回 `@vN`、`@stable` 或分支名。WHY：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -215,7 +216,7 @@ export default defineConfig({
 ```
 
 - 登入變體需要：`e2e/auth.setup.ts`（`references/pom-templates.md` §4）、後端可連的拋棄式資料庫（連線字串放環境變數 `E2E_DB_CONNECTION`）、
-  CI secrets `E2E_USER` / `E2E_PASSWORD`，以及 CI job 內的 `actions/setup-dotnet@v5`（`global-json-file: global.json`）。
+  CI secrets `E2E_USER` / `E2E_PASSWORD`，以及 CI job 內的 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5；`global-json-file: global.json`）。
 - 後端埠號（上例 5080）與 dev server 的 API proxy 目標以專案設定為準，兩邊要一致。
 - `baseURL` / `webServer.url` 的前端埠號以專案 Vite 設定為準（參考專案為 5173）。
 
@@ -262,12 +263,12 @@ pnpm test:e2e
     name: e2e (browser)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # Version comes from the "packageManager" field in package.json; must run before setup-node.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -281,7 +282,7 @@ pnpm test:e2e
 
       - run: pnpm test:e2e
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: failure()
         with:
           name: playwright-report
@@ -291,7 +292,7 @@ pnpm test:e2e
           retention-days: 7
 ```
 
-- 開啟登入變體時，在 `pnpm install` 前加 `actions/setup-dotnet@v5`（`with: global-json-file: global.json`），
+- 開啟登入變體時，在 `pnpm install` 前加 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5；`with: global-json-file: global.json`），
   並在 `pnpm test:e2e` 步驟加 `env: E2E_USER: ${{ secrets.E2E_USER }}`、`E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}`。
 - 參考專案 CI 只設 `reporter: 'github'`，失敗時上傳的 `playwright-report/` 是空的；本定本在 CI 同時輸出 `github` + `html`，修正此問題。
 - 完整 workflow（與 lint / unit / build 的相依）見 `elf-cicd-frontend`。
@@ -334,9 +335,10 @@ pnpm exec allure open allure-report
 - [ ] 預設 config 為 mock 模式、沒有 `setup` project / `storageState`；登入變體才有 `auth.setup.ts`，帳密來自環境變數
 - [ ] `fullyParallel: false`、`workers: 1` 未被單一 PR 改動
 - [ ] `.gitignore` 含 `test-results/`、`playwright-report/`、`playwright/.auth/`
-- [ ] CI 用 `node-version-file: .nvmrc`、`actions/*@v5`，有 `pnpm exec playwright install --with-deps chrome`，失敗時上傳報告
+- [ ] CI 用 `node-version-file: .nvmrc`、`actions/*` v5（SHA 見 elf-stack 3.5），有 `pnpm exec playwright install --with-deps chrome`，失敗時上傳報告
 - [ ] CI reporter 含 `github` 與 `html`（加 allure 時也沒拿掉 `github`）
 - [ ] 本機 `pnpm test:e2e` 通過；修 bug 的測試已驗證會紅
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 

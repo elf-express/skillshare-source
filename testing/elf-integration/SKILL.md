@@ -105,6 +105,7 @@ server/tests/Acme.Api.IntegrationTests/
 2. **MUST NOT** 在整合測試中使用 `static` 可變狀態。
 3. **MUST NOT** 在測試中 `Thread.Sleep` 等待背景工作；背景工作（Hangfire 等）在 `Testing` 環境關閉，
    改為直接呼叫其 Job 方法測試。
+4. **MUST** `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 `stack/elf-stack` 3.5 節對照表；**MUST NOT** 改回 `@vN`、`@stable` 或分支名。WHY：見 elf-stack 規則 9 與其 `references/simplification-evidence.md`。
 
 ## 3. 標準範本
 
@@ -168,6 +169,7 @@ dotnet test server/tests/Acme.Api.Tests
 - [ ] 所有類別都有 `[Collection(IntegrationCollection.Name)]`
 - [ ] 修 bug 時把修正改回去確認測試會紅
 - [ ] 本機 `dotnet test` 通過（Docker 已啟動）；CI job 名稱仍是 `server (build · tests)`
+- [ ] 所有 `uses:` 為 40 碼 SHA＋`# 版本` 註解，且與 elf-stack 3.5 對照表逐字一致
 
 ## 5. 常見錯誤
 
