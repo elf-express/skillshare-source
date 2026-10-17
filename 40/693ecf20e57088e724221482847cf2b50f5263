@@ -1,0 +1,31 @@
+workflow/elf-team-rule/assets/BRANCHING-type1-contribution-fork.md
+  s_5ba9834caad6bc::t_914755bb6dafab 20-21,112
+workflow/elf-team-rule/assets/BRANCHING-type2-private-fork.md
+  s_5ba9834caad6bc::t_ab6c26faeaa578 15-16,95
+workflow/elf-team-rule/assets/BRANCHING-type3-own-project.md
+  s_5ba9834caad6bc::t_ccfb74ad60371a 14-15,80
+workflow/elf-team-rule/assets/gitattributes
+  s_5ba9834caad6bc::t_6902933a1359e2 1-13
+workflow/elf-team-rule/references/01-contribution-fork.md
+  s_5ba9834caad6bc::t_d967da9ab1d67f 105-106
+workflow/elf-team-rule/references/02-private-fork.md
+  s_5ba9834caad6bc::t_8fb43e6b3e0c5b 114-115
+workflow/elf-team-rule/references/03-own-project.md
+  s_5ba9834caad6bc::t_51ef75919ddc78 65-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "40693ecf20e57088e724221482847cf2b50f5263",
+  "prompts": {},
+  "sessions": {
+    "s_5ba9834caad6bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aaa29a4d-7fe5-4922-89b3-5fb71f56c4bf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
