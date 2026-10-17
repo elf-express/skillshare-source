@@ -1,0 +1,19 @@
+stack/elf-stack/SKILL.md
+  s_0558afb6b232ea::t_cd532bd816a128 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b91b6741af09c124adc75b3cc5d24fc2162ec833",
+  "prompts": {},
+  "sessions": {
+    "s_0558afb6b232ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f21ecba8-f832-4433-a721-d32f99f1038d",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
