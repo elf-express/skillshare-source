@@ -44,7 +44,7 @@ metadata:
    WHY：邏輯可測、工具殼不長邏輯；現有 8 個工具全是這個形狀。
 3. **MUST** 新專案依團隊標準：Node 24.18、pnpm 11.x、TypeScript、`*.test.ts` 與原始碼同目錄、vitest 行覆蓋率 ≥ 55%（範本 `vitest.config.ts`）。
    現況落差（**不要順手「統一」，列在待確認**；`origin/release` @ `73b8206` 實測）：`mcpjungle/docs-mcp-server` 用 npm＋`package-lock.json`、`tests/` 目錄（15 個測試檔）、
-   無覆蓋率門檻（沒有 `vitest.config.*`，`package.json` scripts 只有 `vitest run`）、Docker `node:26-alpine`（`Dockerfile:5,14`）、
+   無覆蓋率門檻（沒有 `vitest.config.*`，`test` script 是 `vitest run`，沒有 `--coverage`，`package.json:23`）、Docker `node:26-alpine`（`Dockerfile:5,14`）、
    CI `node-version: 24`（`ci.yml:165` 的 `build-test` matrix；`ci.yml:116` 的 `node-version: 20` 是 gateway dashboard 建置，不是 docs-mcp-server）、`engines >=18`（`package.json:27`）。
 
 ### SDK 與版本（實際在用的）
@@ -81,7 +81,7 @@ metadata:
 15. **MUST** HTTP 模式：每 session 一個 transport（以 `mcp-session-id` 為鍵、`onclose` 刪除）；`POST /mcp` 非 initialize 又無 session → 400；`GET`/`DELETE` 以 session 找 transport；`GET /health` **免驗證**並回載入數量。
 16. **MUST** `MCP_AUTH_TOKEN` 有設就要求 `Authorization: Bearer <token>`（401 + JSON-RPC `-32001`）；`/health` 永遠公開。
 17. **MUST** `/mcp*` 路由在驗證前限流：`express-rate-limit` 掛在每條 `/mcp*` 路由的第一個 middleware，且只計驗證失敗——`skip: (req) => isAuthorized(req)`，`skip` 與驗證共用同一個 `isAuthorized()`。
-    `trust proxy` 設 false；`standardHeaders: 'draft-8'`；預設 15 分鐘 20 次，用 `MCP_RATE_LIMIT_MAX`／`MCP_RATE_LIMIT_WINDOW_MS` 覆寫；每次回 429 寫 stderr 日誌（IP、次數／上限、時間窗）；`/health` 不限流（證據 E15，`mcpjungle/docs-mcp-server/src/http.ts`）。
+    `trust proxy` 設 false；`standardHeaders: 'draft-8'`；預設 15 分鐘 20 次，用 `MCP_RATE_LIMIT_MAX`／`MCP_RATE_LIMIT_WINDOW_MS` 覆寫；每次回 429 寫 stderr 日誌（IP、次數／上限、時間窗）；`/health` 不限流（證據 E15，`mcpjungle/docs-mcp-server/src/http.ts`；docs-mcp-server 的環境變數用 `DOCS_MCP_` 前綴（`DOCS_MCP_RATE_LIMIT_MAX`／`_WINDOW_MS`，`http.ts:180-181`））。
     WHY：Bearer token 不能被無限次嘗試；經 gateway 部署時所有請求的來源 IP 都是 gateway，只計 401 才不會讓正常流量共用額度；限流只拖慢猜測並留下日誌，不能取代長的隨機 `MCP_AUTH_TOKEN`。
 18. **MUST** 所有日誌走 `console.error`（stderr），前綴 `[<server-name>]`。**MUST NOT** 在任何路徑 `console.log`。
     WHY：stdio 模式 stdout 就是 JSON-RPC 串流，一行 log 就讓用戶端解析失敗。
