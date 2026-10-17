@@ -1,0 +1,23 @@
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_0558afb6b232ea::t_89a1c8ca3e1096 23
+scripts/validate.sh
+  s_0558afb6b232ea::t_332795f9b31314 150-151,180-181,212-213
+stack/elf-stack/SKILL.md
+  s_0558afb6b232ea::t_5c03edc9988abd 38-39,113,121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a423152992ab2167fc51203a3a439d83d1eabd03",
+  "prompts": {},
+  "sessions": {
+    "s_0558afb6b232ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f21ecba8-f832-4433-a721-d32f99f1038d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
