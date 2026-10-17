@@ -38,7 +38,7 @@ metadata:
    為什麼：兩處都寫版本會互相打架，action 會直接報錯。
 6. MUST 把 `pnpm/action-setup` 放在 `actions/setup-node` **之前**。
    為什麼：`cache: pnpm` 要呼叫 pnpm 查 store 路徑，pnpm 還沒裝就會失敗。
-6a. MUST 所有 `actions/*`（checkout / setup-node / upload-artifact …）統一用 `@v5`。
+6a. MUST 所有 `actions/*`（checkout / setup-node / upload-artifact …）統一用 v5（SHA 見 elf-stack 3.5）。
 
 **安裝**
 
@@ -159,7 +159,7 @@ export default defineConfig({
 - [ ] repo 內沒有 `package-lock.json` / `yarn.lock`；`pnpm-lock.yaml` 已提交
 - [ ] `ci.yml` 裡沒有 `node-version: 24`、沒有 `npm ci`、沒有 `npx`
 - [ ] `pnpm/action-setup` 在 `setup-node` 之前，且沒有 `version:` 輸入
-- [ ] 所有 `actions/*` 都是 `@v5`；repo 內沒有 `corepack`
+- [ ] 所有 `actions/*` 都是 v5（SHA 見 elf-stack 3.5）；repo 內沒有 `corepack`
 - [ ] `apps/vite.config.ts` 有 `thresholds.lines: 55`、有 `coverage.include`、**沒有** `thresholds.branches`
 - [ ] `@vitest/coverage-v8` 裝在 `apps/`，版本與 `vitest` 完全一致
 - [ ] 新增的測試檔與被測檔同資料夾、副檔名 `.test.ts`
@@ -193,7 +193,7 @@ export default defineConfig({
 ## 6. 待確認
 
 - pnpm 確切版本：**待確認（pnpm 11.x 或 12）**。`packageManager` 目前以 `pnpm@<PNPM_VERSION>` 佔位，確定後全團隊統一。
-- `pnpm/action-setup` 目前寫 `@v4`；是否已有對應 pnpm 11/12 的新 major 版本待確認（`actions/*` 已統一 `@v5`，不在此列）。
+- `pnpm/action-setup` 目前寫 v4（SHA 見 elf-stack 3.5）；是否已有對應 pnpm 11/12 的新 major 版本待確認（`actions/*` 已統一 v5 並釘 SHA，不在此列）。
 - pnpm 11 是否仍讀取 `.npmrc` 內的非 auth 設定未驗證；範本一律把 `engineStrict` 放在 `pnpm-workspace.yaml`，`.npmrc` 只放 registry / auth。
 - pnpm 10+ 預設不執行相依套件的 install scripts；需要允許時的欄位名稱（`onlyBuiltDependencies` 或新版名稱）依 pnpm 版本待確認。
 - `coverage.exclude` 已固定排除測試檔 / `.d.ts` / `main.ts` / `src/api/mock/**`；是否還要排除 `router/`、`locales/` 等，待團隊決定（排除清單變動需 review）。

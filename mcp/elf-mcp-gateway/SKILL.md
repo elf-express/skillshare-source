@@ -103,7 +103,7 @@ metadata:
 ### CI / 發佈
 
 20. **MUST** 所有 workflow 的 `uses:` 釘**完整 commit SHA**並在行尾註解版本（`@<40-char-sha>  # v7`）。WHY：`83cb805`——org policy 要求 SHA 釘選。
-    注意：其他團隊 skill（`elf-stack` 等）寫 `@v5` 版本標籤，與本 repo 衝突，見待確認。
+    注意：其他團隊 skill（`elf-stack` 等）原用 `actions/*` 版本標籤；已決改釘 SHA（E-302），見待確認第 1 條與 elf-stack 3.5。
 21. **MUST** GHCR 登入用 `password: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}`，**MUST NOT** 改成 step `if: secrets...`。
     WHY：`5c42768`——`secrets` context 不能用在 step `if:`（報 `Unrecognized named-value: 'secrets'`）。
 22. **MUST** `docker-publish.yml` 維持：matrix 每個 image 一筆（`docs-mcp-server` → `./mcp/docs-mcp-server`、`docs-registrar` → `./mcpjungle`（自訂 `dockerfile`）、
@@ -215,7 +215,7 @@ docker compose up -d --force-recreate registrar
 
 ## 7. 待確認
 
-1. **Action 版本策略衝突**：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 原寫 `actions/*` v5（SHA 見 elf-stack 3.5）；已決（E-302，2026-10-17）：團隊標準為釘 SHA，見 elf-stack 規則 9 與 3.5。另 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12）。
+1. **Action 版本策略衝突**：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 原寫 `actions/*` v5 版本標籤（未釘 SHA）；已決（E-302，2026-10-17）：團隊標準為釘 SHA，見 elf-stack 規則 9 與 3.5。另 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12）。
 2. **PR AI review**：團隊標準要求 Claude AI review（`elf-cicd-review`），本 repo `.github/workflows/` 目前**沒有** claude-review workflow。
 3. **發版流程**：`release.yml` 已刪（證據 E1），`v*.*.*` tag 目前靠人工推；是否導入 `elf-cicd-versioning`。另 mcp-library 只有 `main`、`docker-publish.yml` 在 push `main` 時重建 `latest`（實測 2026-10-11），與 `elf-team-rule`「部署一律用 `release`」不符；導入 `dev` / `release` 後，本 skill 第 6 節「main 的 Action」一列一併改寫。
 4. **公網存取模型**：gateway 目前 `SERVER_MODE=development`（無用戶端驗證），nginx 範例也未加驗證；對外開放前要選 enterprise 模式或 nginx 層驗證。

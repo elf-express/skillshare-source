@@ -186,7 +186,7 @@ pnpm exec allure run -- pnpm test:e2e                        # 執行測試並�
 ```
 
 多個 job（web / e2e / server）各自產生結果時：各 job 上傳 `allure-results/` 為 artifact（名稱不同），
-最後一個 job 用 `actions/download-artifact` v5（SHA 見 elf-stack 3.5）（`merge-multiple: true`、`path: allure-results`）下載後再 `generate` 一次。
+最後一個 job 用 `actions/download-artifact` v5（SHA 見 elf-stack 3.5；`merge-multiple: true`、`path: allure-results`）下載後再 `generate` 一次。
 完整 workflow 由 `elf-cicd-frontend` / `elf-cicd-backend` 維護。
 
 ### 3.8 Quality gate（範本，啟用前需團隊決定門檻）

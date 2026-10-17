@@ -216,7 +216,7 @@ export default defineConfig({
 ```
 
 - 登入變體需要：`e2e/auth.setup.ts`（`references/pom-templates.md` §4）、後端可連的拋棄式資料庫（連線字串放環境變數 `E2E_DB_CONNECTION`）、
-  CI secrets `E2E_USER` / `E2E_PASSWORD`，以及 CI job 內的 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5）（`global-json-file: global.json`）。
+  CI secrets `E2E_USER` / `E2E_PASSWORD`，以及 CI job 內的 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5；`global-json-file: global.json`）。
 - 後端埠號（上例 5080）與 dev server 的 API proxy 目標以專案設定為準，兩邊要一致。
 - `baseURL` / `webServer.url` 的前端埠號以專案 Vite 設定為準（參考專案為 5173）。
 
@@ -292,7 +292,7 @@ pnpm test:e2e
           retention-days: 7
 ```
 
-- 開啟登入變體時，在 `pnpm install` 前加 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5）（`with: global-json-file: global.json`），
+- 開啟登入變體時，在 `pnpm install` 前加 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5；`with: global-json-file: global.json`），
   並在 `pnpm test:e2e` 步驟加 `env: E2E_USER: ${{ secrets.E2E_USER }}`、`E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}`。
 - 參考專案 CI 只設 `reporter: 'github'`，失敗時上傳的 `playwright-report/` 是空的；本定本在 CI 同時輸出 `github` + `html`，修正此問題。
 - 完整 workflow（與 lint / unit / build 的相依）見 `elf-cicd-frontend`。

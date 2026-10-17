@@ -35,7 +35,7 @@ metadata:
    為什麼：SDK 版本只能有一個來源；改 `global.json`，CI 就跟著改。
 3. MUST NOT 在 `global.json` 加 `"test": { "runner": "Microsoft.Testing.Platform" }`。
    為什麼：本規範的覆蓋率門檻靠 coverlet.msbuild 掛在 VSTest 流程上，切換 runner 後 coverlet 不再插樁，門檻會「靜默消失」。
-4. MUST 所有 `actions/*`（checkout / setup-dotnet / upload-artifact …）統一用 `@v5`。
+4. MUST 所有 `actions/*`（checkout / setup-dotnet / upload-artifact …）統一用 v5（SHA 見 elf-stack 3.5）。
 
 **方案與目錄**
 
@@ -133,7 +133,7 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 
 - [ ] repo 根目錄有 `global.json`，`rollForward: latestFeature`，沒有 `test.runner`
 - [ ] CI 用 `actions/setup-dotnet` v5（SHA 見 elf-stack 3.5） + `global-json-file: global.json`，沒有 `dotnet-version:`
-- [ ] 所有 `actions/*` 都是 `@v5`
+- [ ] 所有 `actions/*` 都是 v5（SHA 見 elf-stack 3.5）
 - [ ] 所有 restore / build / test 都指向 `server/<AppName>.slnx`
 - [ ] 單元測試在 `server/tests/<Project>.Tests/`、整合測試在 `server/tests/<AppName>.Api.IntegrationTests/`，且都已加入 `.slnx`
 - [ ] 測試 csproj 參考 `coverlet.msbuild`，**沒有** `coverlet.collector`、沒有 `Version=`、沒有自己的 `TargetFramework`

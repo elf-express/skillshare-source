@@ -58,7 +58,7 @@ metadata:
 
 ### 工具鏈（團隊標準，覆蓋參考專案的 npm）
 
-9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5）（`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.18`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
+9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.18`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
    WHY：`cache: pnpm` 需要 pnpm 已在 PATH，順序反了 setup-node 會報找不到 pnpm。
 10. **MUST NOT** 在 `pnpm/action-setup` 寫 `version:`；版本由根目錄 `package.json` 的 `"packageManager": "pnpm@<PNPM_VERSION>"` 決定。MUST NOT 使用 corepack。
     WHY：兩處都寫且不一致時 action 直接失敗；單一來源也保證 CI 與本機一致。
@@ -211,7 +211,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 ## 6. 待確認
 
 - pnpm 確切版本：`packageManager` 欄位要填 11.x 的哪一版，或改用 12（團隊尚未定案）。
-- `pnpm/action-setup` 的主版號（範本用 `@v4`；是否已有更新的 major 需團隊確認後統一）。
+- `pnpm/action-setup` 的主版號（範本用 v4（SHA 見 elf-stack 3.5）；是否已有更新的 major 需團隊確認後統一）。
 - 以 pnpm 取代 npm 後，tauri-action 依 `pnpm-lock.yaml` 自動改用 `pnpm tauri build` —— 參考專案只用 npm 驗證過，第一次 pnpm 發佈需實際確認 log。
 - Windows 程式碼簽章（`WINDOWS_CERTIFICATE` / `WINDOWS_CERTIFICATE_PASSWORD`）團隊是否要購買與導入；目前範本未含。
 - Apple 公證要用 Apple ID 方式（`APPLE_ID`/`APPLE_PASSWORD`/`APPLE_TEAM_ID`，範本採用）還是 App Store Connect API key 方式（`APPLE_API_ISSUER`/`APPLE_API_KEY`/`APPLE_API_KEY_PATH`）；團隊帳號由誰持有。
