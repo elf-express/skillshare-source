@@ -1,0 +1,19 @@
+scripts/validate.sh
+  s_0558afb6b232ea::t_b6004e88bd1dff 128-215
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff64d6d7ef98884c5e7a88262d88ceabeb0eca60",
+  "prompts": {},
+  "sessions": {
+    "s_0558afb6b232ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f21ecba8-f832-4433-a721-d32f99f1038d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
