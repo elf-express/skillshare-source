@@ -149,8 +149,6 @@ metadata:
 
 **多 AI 並行**
 
-`workflow__elf-linear-superpowers`「原則」的多 AI 那一行、Linear「流程總覽」鐵則 8 與「流程步驟 2」都引用本節的規則 31–36。
-
 31. 一個 session 對應一個 worktree、一條分支、一張 Plan；兩個 session MUST NOT 用同一條分支。session 開始前 MUST 確認工作目錄就是這張 Plan 的 worktree（repo 外同層、分支名稱符合規則 10）；MUST NOT 在 Orca 自動建立的 `.ocrca/…` 目錄裡做事。
     為什麼：E-302（2026-10-17）停在 Orca 建的中文分支目錄，後來另開 worktree，舊的那個因為正是當下的工作目錄而刪不掉。
 32. 會改到同一批檔案的單 MUST 用 blocked by 排序（例：E-308 blocked by E-307）。
@@ -158,7 +156,8 @@ metadata:
     - `並行：可（與 E-xxx）`（多張用 `、` 分隔，例 `並行：可（與 E-308、E-315）`）
     - `並行：不可（blocked by E-xxx）`
     - 下一行 `理由：` 寫兩邊要改的檔案清單比對結果。
-    里程碑描述列出整體順序與可並行的組合。
+    - 里程碑描述列出整體順序與可並行的組合。
+
     為什麼：沒標 blocked by 不等於確認過可以並行，可能只是沒人檢查。
 33. 只改自己負責的單；對別張單 MUST 只用留言，由負責那張單的 session 更新描述。
     為什麼：Linear 描述是後寫的覆蓋先寫的，兩邊同時修改時，一邊的內容會悄悄消失（E-302 改了 E-303 的描述）。
