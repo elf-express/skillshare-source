@@ -1,0 +1,24 @@
+AGENTS.md
+  s_460b6f61ac8f68::t_1d494df2f9f277 121-123
+scripts/validate.sh
+  s_460b6f61ac8f68::t_1d494df2f9f277 113-116,119-127
+  s_460b6f61ac8f68::t_a9dbc956a6611a 117-118
+.gitignore
+  s_460b6f61ac8f68::t_1d494df2f9f277 13-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6201653dbb7333bc51398ecc040064ef16f57202",
+  "prompts": {},
+  "sessions": {
+    "s_460b6f61ac8f68": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a04b1ad-ac55-48dc-8082-308cc0f44e87",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
