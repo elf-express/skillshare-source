@@ -19,7 +19,7 @@ metadata:
 > | 流程：維運單 | 不改 repo 的維運工作 |
 > | Linear 巡檢規則 | 可自動檢查的規則 R1–R12、W1–W5 |
 >
-> 版本：2026-10-15（與上列文件同步）
+> 版本：2026-10-17（與上列文件同步；Linear 正本於發版時依核准稿更新）
 
 Linear 是規格與計畫的唯一來源（single source of truth）。superpowers 各 skill 照常執行，但**產出寫進 Linear issue，不寫 `docs/superpowers/specs/`、`docs/superpowers/plans/` 檔案**（除非使用者明確要求另存）。
 
@@ -81,10 +81,10 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
   | Spec 有「規格已定案」、Plan 待規劃 | 步驟 2～3 |
   | Plan 待辦、沒排週期 | 步驟 3a |
   | Plan 進行中、還有未勾步驟 | 步驟 4（從第一個未勾的步驟繼續） |
-  | Plan 驗證中 | 步驟 5 或 6（看留言紀錄） |
+  | Plan 驗證中、PR 尚未合進 `dev` | 步驟 5 或 6（看留言紀錄） |
   | Plan 驗證中、PR 已合進 `dev` | 步驟 7（等發版） |
 
-  步驟 5-1 已改為驗證中的 Plan，在步驟 7 開 PR 時會被自動拉回進行中，這是正常的；PR 合進 `dev` 後才再改為驗證中（自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。
+  步驟 5-1 已改為驗證中的 Plan，在步驟 7 開 PR 時會被自動拉回進行中，這是正常的，仍在步驟 7（等 PR 合併），不要回步驟 4；PR 有審查活動或合進 `dev` 時會再自動改為驗證中（合進 `dev` 的自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。
 
 - **新需求**：`save_issue` 在團隊 `ELF EXPRESS` 套用模板 `Spec 設計規格` 建立 `[Spec] 主題`。確認底下有 `[Plan]` 子 issue（沒有就手動建：parent 為此 Spec、label `Plan`、狀態 待規劃），並把子 issue 標題改成 `[Plan] 主題`。
 - 建立後立即設定 Spec 的 **estimate**，依目前對需求規模的初估。
@@ -174,7 +174,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中 |
 | 發版完成 | elf-team-rule 規則 10 的三個條件都滿足後，AI 手動改為 已完成：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`） | 自動關閉 |
 | 未導入 dev／release 的 repo | PR 合併 → 已完成（預設自動化） | 自動關閉 |
-| 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（規則 18），開發分支不適用 | — |
+| 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（elf-team-rule 規則 18），開發分支不適用 | — |
 | 保留分支 | 維持 驗證中，留言原因 | 維持進行中 |
 | 捨棄 | 改為 已取消，留言原因 | 問使用者：一併取消或保留重新規劃 |
 
