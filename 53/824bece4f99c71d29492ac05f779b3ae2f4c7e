@@ -1,0 +1,37 @@
+.metadata.json
+  s_bfd25b3a9e4e41::t_b9d8539d1b7a81 13,16,18,20-92,99,102-104,106-196,202,205-207,209,218
+frontend/vue/shadcn-vue/components/code-block.md
+  s_bfd25b3a9e4e41::t_88238676a76ab2 1-781
+frontend/vue/shadcn-vue/components/combobox.md
+  s_bfd25b3a9e4e41::t_b2b852927748d1 146
+frontend/vue/shadcn-vue/components/data-table.md
+  s_bfd25b3a9e4e41::t_d7883fa98d2a19 890
+frontend/vue/shadcn-vue/components/date-picker.md
+  s_bfd25b3a9e4e41::t_54e16074632f2f 37
+frontend/vue/shadcn-vue/components/marker.md
+  s_bfd25b3a9e4e41::t_ed7b450c13e525 139
+frontend/vue/shadcn-vue/components/trace.md
+  s_bfd25b3a9e4e41::t_425bbe64fe80dc 1-519
+frontend/vue/shadcn-vue/references/components.md
+  s_bfd25b3a9e4e41::t_0763fab2317634 3,23,77
+skillshare/SKILL.md
+  s_bfd25b3a9e4e41::t_abd0f6ceea2278 12
+skillshare/references/mcp.md
+  s_bfd25b3a9e4e41::t_7e9fc6b1b80765 7,27-28,74,76-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "53824bece4f99c71d29492ac05f779b3ae2f4c7e",
+  "prompts": {},
+  "sessions": {
+    "s_bfd25b3a9e4e41": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14048-1d19-7730-ba15-dd1c45879d8d",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
