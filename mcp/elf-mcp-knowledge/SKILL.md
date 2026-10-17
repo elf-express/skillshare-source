@@ -102,6 +102,7 @@ metadata:
 
 12. **MUST** 新語料不手寫註冊檔：registrar 依 `corpus.json` 自動產生，見 `elf-mcp-gateway` 第 2 節〈註冊〉。本機先跑 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books <暫存目錄>`，印出的 id 要包含新語料。
     WHY：產生器依 capabilities 自動列齊工具（`gen-book-configs.mjs:57,62`），取代證據 E10 那種手寫漏列；任一語料不合法，registrar 不註冊任何 server 並以 1 結束（`:87-90`）。
+    （`:87-90` 是產生器自己以 1 結束；registrar 收到後呼叫 `fail` 整批不註冊，見 `registrar.sh:24,27`、`books/README.md:171`。）
     gateway dashboard 與 AI 端只看得到這段描述（E10：當時手寫的 fc 註冊檔漏列 outline / symbol），所以描述的來源 `corpus.json` 的 `description` 要寫清楚涵蓋範圍。
 13. **MUST NOT** 為了新語料去改 `REGISTER_LIST`：它空白時 registrar 註冊全部書本＋`registry/*.json`，有值時只註冊它列的名字（`registrar.sh:44-52`；`REGISTER_EXTRAS=0` 時空白只註冊書本，`compose.attach.yaml:25` 預設 0）。細節見 `elf-mcp-gateway` 第 2 節〈註冊〉。
     WHY：書本清單由 `gen-book-configs.mjs` 掃 `books/*/corpus/*/` 產生，registrar 映像也直接帶 `books/`（`mcpjungle/registry/Dockerfile:5`）；把新 id 寫進 `REGISTER_LIST` 只會讓它變成「只註冊這些」，**清單外的書反而不會註冊**。
@@ -139,7 +140,7 @@ docker compose exec mcpjungle /mcpjungle list servers      # 以 gateway 執行�
 
 ```text
 mcpjungle/books/<書名>/corpus/<id>/
-├── corpus.json            # 必放（欄位全選填，但團隊規定 title / description / capabilities 都要寫）
+├── corpus.json            # 必放（docs-mcp-server 讀取時欄位全選填，但團隊規定六欄 book / language / source / title / description / capabilities 都要寫；book 要等於書資料夾名）
 ├── sources.json           # 選用：只在要覆寫自動抽取的來源時放
 ├── index.md               # 選用：分類導航
 ├── <分類>/01<主題>.md      # 依 templates/doc-template.md
@@ -159,7 +160,7 @@ mcpjungle/books/<書名>/corpus/<id>/
 }
 ```
 
-六個欄位**都要寫**（`mcpjungle/books/README.md` 第三節 `:112-155` 的團隊規定）；`book` / `language` / `source` 程式不讀，但它們是回溯來源與分辨同書各語言的唯一依據。
+六個欄位**都要寫**（`mcpjungle/books/README.md` 第三節 `:112-155` 的團隊規定）；`source` 程式不讀；`book`／`language` docs-mcp-server 不讀，但 registrar 的 `gen-book-configs.mjs:52-55` 會驗證（`book` 要等於書資料夾名、id 要等於 `<book>-<language 小寫>` 或 `<book>-bi`），不符就整批不註冊（`registrar.sh:24,27`）。三者是回溯來源與分辨同書各語言的唯一依據。
 上游授權要求保留聲明時另加 `license` 欄並在語料根目錄放 `LICENSE` 全文。
 
 能力對照（目前，`73b8206`：`sqlsugar-zh-tw` = cheatsheet + examples；`fc-zh-tw`、`nginx-en`、`opnsense-en`、`opnsense-zh-tw`、`stalwart-en` = symbol，`books/README.md:38-45`）：
@@ -206,7 +207,7 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 
 | 檔案 | 更新什麼 |
 |---|---|
-| 根 `README.md` | 結構表的語料清單與篇數（`:26-28`）、registrar 註冊的 server 清單（`:62`、`:93`） |
+| 根 `README.md` | 結構表的書名清單（`:23`）、`import.ts` 書（`:26-28`）、registrar 註冊的 server 清單（`:62`、`:93`） |
 | 根 `CLAUDE.md` | 語料清單（`:13`）、「目前:`sqlsugar-zh-tw` 開 `cheatsheet`+`examples`…開 `symbol`」那行（`:95`）、registrar 自動註冊的書本清單（`:132`） |
 | `mcpjungle/docs-mcp-server/README.md` | 種子語料清單與篇數（`:10`、`:27`）、工具表 |
 | `mcpjungle/books/README.md` | 第一節「現有語料」表（`:36-45`，id / book / language / 篇數 / capabilities）與第六節的總量數字（`:206`） |
@@ -222,7 +223,7 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 1. 依 `elf-mcp-server` 建 server（`<server-name>` kebab-case、工具 `<domain>_<verb>`、雙 transport、`/health`）。
 2. 在根 `compose.yaml` 加 service：`networks: [mcpjungl]`、**不發佈 ports**、`TZ`、`TRANSPORT: http`、**不寫** `container_name`（`ci.yml:68`）。
 3. `mcpjungle/registry/<server-name>.json` 用 `elf-mcp-gateway` 的 `templates/servers/http-server.json`，`url: http://<service 名>:<PORT>/mcp`。
-4. 預設會註冊 `registry/*.json`（`registrar.sh:49-50`）；加進 `ci.yml` 的 `build-test` matrix（`:156-165`）、`docker-build`（`:216`）、`docker-publish.yml`、`dependabot.yml`（`elf-mcp-gateway` 規則 23）。
+4. 預設會註冊 `registry/*.json`（`registrar.sh:49-50`；接現有 gateway（`compose.attach.yaml` 的 `REGISTER_EXTRAS=0`）時見規則 13）；加進 `ci.yml` 的 `build-test` matrix（`:156-165`）、`docker-build`（`:216`）、`docker-publish.yml`、`dependabot.yml`（`elf-mcp-gateway` 規則 23）。
 5. Step 6 驗證方式相同：`docker compose exec mcpjungle /mcpjungle list tools | grep '<server-name>__'` ＋ 一次 `invoke`。
 
 ---
@@ -251,7 +252,7 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 
 - [ ] id 符合 `[a-z0-9-]`、無底線、非泛名；`list servers` 確認無撞名
 - [ ] 每篇 md：`# 標題`、前 15 行有來源行；速查 / 符號語料符合第 7、8 條
-- [ ] `corpus.json` 三欄都寫；capabilities 與內容相符
+- [ ] `corpus.json` 六欄都寫（規則 2a），`book` 等於書資料夾名；capabilities 與內容相符
 - [ ] `examples/` 只有白名單副檔名、無機密、無 `bin/obj`
 - [ ] `npm run build` 通過；`npm test` 全過且測試數 ≥ 128＋新增的 smoke test
 - [ ] 書本語料：`elf-mcp-book` 第 3 節的上架前檢查兩項皆 0（泛名標題、來源問題）
@@ -283,7 +284,7 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 1. （已決議）語料 id 禁止底線、格式 `<書名>-<語言>`、≤ 30 字元，見規則 2a。
 2. （已決議）見規則 2a。
 3. 新語料是否一律同時做策略 A（每書一個 server）與 B（`docs` 整包），或只做 A。
-   現況（`73b8206`）：A 是預設，registrar 自動註冊全部書本；B 要設 `REGISTER_LIST=docs`（設定在 `registry/optional/docs.json`，mcp-library `CLAUDE.md:116`），註冊後 `docs__docs_search` 用 `corpus` 參數選書，新語料自動出現在參數裡、不需任何改動。
+   現況（`73b8206`）：A 是預設，registrar 自動註冊全部書本；B 要設 `REGISTER_LIST=docs`（設定在 `registry/optional/docs.json`，mcp-library `CLAUDE.md:116`），註冊後 `docs__docs_search` 用 `corpus` 參數選書，新語料自動出現在參數裡、不需任何改動。設 `REGISTER_LIST=docs` 時只註冊 docs、書本不註冊（`registrar.sh:44-45`）；A、B 要並存就得把書本 id 一起列進去。
 4. fc 語料檔名與標題為簡體、內文為繁中；已命名為 `fc-zh-tw`。檔名是否要轉繁體（會影響 `sources.json` 的鍵）仍待決定。
 5. `include_index`（legacy `sqlsugar_list_notes` 附 index.md 導航）是否要以 `docs_outline` 參數補回（證據 E5）。
 6. 每個新語料是否強制附一個 `tests/<id>.test.ts` smoke test（本 skill 建議強制）。
