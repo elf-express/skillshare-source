@@ -144,7 +144,8 @@ import os, re, sys
 sys.stdout.reconfigure(encoding="utf-8")  # messages contain an em dash
 table_path, dirs = sys.argv[1], sys.argv[2:]
 row_re = re.compile(r"^\|\s*`([^`\s]+/[^`\s]+)`\s*\|\s*([^|]+?)\s*\|\s*`([0-9a-f]{40})`\s*\|")
-uses_re = re.compile(r"""^\s*(?:-\s+)?uses:\s*([^\s@'"]+)@(\S+)(.*)$""")
+uses_re = re.compile(r"""^\s*(?:-\s+)?uses:\s*["']?([^\s@'"]+)@([^\s'"]+)["']?(.*)$""")
+any_uses_re = re.compile(r"^\s*(?:-\s+)?uses:\s*(\S+)")
 sha_re = re.compile(r"^[0-9a-f]{40}$")
 comment_re = re.compile(r"^\s+#\s*(\S+)")
 
@@ -163,7 +164,8 @@ if not table:
 used = set()
 count = 0
 for d in dirs:
-    for root, _, files in os.walk(d):
+    for root, subdirs, files in os.walk(d):
+        subdirs.sort()
         for name in sorted(files):
             if not name.endswith((".md", ".yml", ".yaml")):
                 continue
@@ -172,8 +174,12 @@ for d in dirs:
                 path = path[2:]
             with open(path, encoding="utf-8") as f:
                 for n, line in enumerate(f, 1):
-                    m = uses_re.match(line.rstrip("\r\n"))
+                    text = line.rstrip("\r\n")
+                    m = uses_re.match(text)
                     if not m:
+                        a = any_uses_re.match(text)
+                        if a and not a.group(1).strip("'\"").startswith(("./", "docker://")):
+                            print(f"ERR\t{path}:{n} uses: line could not be parsed — expected <action>@<40-char sha> # <version>")
                         continue
                     action, ref, rest = m.groups()
                     if action.startswith(("./", "docker://")):
