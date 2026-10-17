@@ -105,7 +105,7 @@ metadata:
 18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理（同一天已有就加 `-2`），經 PR 合回 `dev`；這個 PR MUST 用「Create a merge commit」合併，MUST NOT squash 或 rebase。
     為什麼（merge commit）：squash 或 rebase 會產生新提交，`main`（或 hotfix 的 `release`）就不再是 `dev` 的祖先，下次同步又衝突、下次發佈無法快轉。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
-19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支（`git branch -d <分支>`、`git push origin --delete <分支>`）；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。
+19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支（`git branch -d <分支>`、`git push origin --delete <分支>`）；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。worktree 的清理見規則 36。
 
 **分支保護**
 
@@ -146,6 +146,47 @@ metadata:
     為什麼：規則寫在文件裡擋不住 AI 判斷錯誤；git-guard 在推送當下檢查 `release`、`main`、`dev` 的來源與形狀，GitHub 組織 ruleset（`elf-protect-branches`、`elf-require-ci`）再擋沒測過的內容（E-244）。繞過它就等於回到沒有防護的狀態。
     - husky repo 執行 `pnpm install` 後，husky 會把 `core.hooksPath` 改回 `.husky/_`，git-guard 隨之失效；`--check .` 會報出來，經使用者同意後重跑 `install.sh --repo .`。
     - Git LFS 的 hook 由 git-guard 代為執行，不需要（也不要）`git lfs install --force`。Python 的 `pre-commit install` 遇到全機 `core.hooksPath` 會拒絕安裝，做法見 `scripts/git-guard/README.md`。
+
+**多 AI 並行**
+
+`workflow__elf-linear-superpowers`「原則」的多 AI 那一行、Linear「流程總覽」鐵則 8 與「流程步驟 2」都引用本節的規則 31–36。
+
+31. 一個 session 對應一個 worktree、一條分支、一張 Plan；兩個 session MUST NOT 用同一條分支。session 開始前 MUST 確認工作目錄就是這張 Plan 的 worktree（repo 外同層、分支名稱符合規則 10）；MUST NOT 在 Orca 自動建立的 `.ocrca/…` 目錄裡做事。
+    為什麼：E-302（2026-10-17）停在 Orca 建的中文分支目錄，後來另開 worktree，舊的那個因為正是當下的工作目錄而刪不掉。
+32. 會改到同一批檔案的單 MUST 用 blocked by 排序（例：E-308 blocked by E-307）。
+    **並行標註**：同一專案有兩組以上未完成的單時（里程碑一定隸屬某個專案，所以也涵蓋同一里程碑的情況；與巡檢 W6 的範圍一致），Spec 定案前 MUST 在「## 並行」一節寫一行，格式固定（巡檢 W6 逐字判斷，與 Spec 模板的欄位文字完全一致）：
+    - `並行：可（與 E-xxx）`（多張用 `、` 分隔，例 `並行：可（與 E-308、E-315）`）
+    - `並行：不可（blocked by E-xxx）`
+    - 下一行 `理由：` 寫兩邊要改的檔案清單比對結果。
+    里程碑描述列出整體順序與可並行的組合。
+    為什麼：沒標 blocked by 不等於確認過可以並行，可能只是沒人檢查。
+33. 只改自己負責的單；對別張單 MUST 只用留言，由負責那張單的 session 更新描述。
+    為什麼：Linear 描述是後寫的覆蓋先寫的，兩邊同時修改時，一邊的內容會悄悄消失（E-302 改了 E-303 的描述）。
+34. 會改動共用本機狀態的操作（skillshare 設定與 `skillshare sync`、全域 git 設定、Credential Manager）執行前，MUST 確認沒有其他 session 依賴它，並在里程碑或相關的單留言告知。
+    為什麼：E-303 跑 sync 時，E-302 正在拿 audit 數字做改前改後比對，兩邊基準不同。
+35. 刪除或移動共用路徑前，MUST 在相關的單上確認沒有人在用。
+    為什麼：E-303 刪了舊 clone，稍早的稽核正在讀那份。
+    - 規則 34、35 的「確認有沒有人在用」：查同一里程碑、同一專案裡狀態為「進行中」或「驗證中」的 Plan，有就在那張單留言；判斷不了就問使用者。
+36. session 收尾時 MUST 清理自己建立的 worktree 與分支（規則 19 的分支刪除之外加上 worktree），並把 Orca 自動建立、沒用到的 `.ocrca/…` 目錄列進清理清單。
+    為什麼：E-302、E-310 都留下了這種目錄。
+
+**合併方式**
+
+37. 開發分支的 PR 合進 `dev` MUST 用「Create a merge commit」，MUST NOT squash 或 rebase。
+    為什麼：
+    1. 可以追溯：每個 Task 是一個帶 Plan 編號的 commit（例 `fix(E-307): …`），審查逐 Task 進行；merge commit 保留這些 commit，稽核問「哪一步、誰審的」時對得到 Plan 的勾選紀錄與審查留言，squash 會把這條線切斷。
+    2. 與規則 18 一致：全團隊只有一種合併方式，AI 不用每次判斷。
+    3. 不用 rebase：rebase 產生新 SHA，PR 上審查過、CI 跑過的提交就不是實際進 `dev` 的那一批。
+    - 衍生要求：每個 commit 都會保留，提交要有意義，不留 `wip`、`fix typo` 這類零碎提交。**合併前在自己分支上整理 commit 是允許的**（做法見規則 38）；禁止的是**合併時** squash 或 rebase。
+38. 整理 commit 分三個時間點：
+
+    | 時間點 | 做法 |
+    | -- | -- |
+    | 第一次推送之前 | 可以整理：`git commit --fixup <SHA>`，再 `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/dev`，**在 Git Bash 執行**（`變數=值 指令` 的寫法在 PowerShell 不成立；AI 環境不支援互動式 rebase）。整理完 `git diff <整理前的 HEAD> HEAD` 輸出 MUST 為空，證明程式內容沒有變動 |
+    | 已推送、還沒開 PR | 依規則 13 停下來問使用者；同意後才可對**自己的開發分支** `git push --force-with-lease` |
+    | 已開 PR | MUST NOT 改寫歷史，一律新增 commit 修正（例 `fix(E-xx): address review — …`）。為什麼：PR 上的審查留言與 check runs 綁在當時的 SHA，改寫後審查紀錄對不上程式碼。這種 commit 不算零碎提交 |
+
+    - `dev`、`release`、`main` 任何情況 MUST NOT force push（既有規則 8、13、20、21 不變）。
 
 ## 3. 標準範本
 
@@ -211,7 +252,15 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 動手前先讀 BRANCHING.md，依 elf-team-rule 規範操作分支。
 ```
 
-5. 經由開發分支（例如 `docs/branching-doc`）的 PR 合進 `dev`。
+5. 放入 `.gitattributes`，與 `BRANCHING.md` 分開成**獨立 commit**：
+   1. 複製 `assets/gitattributes` 到 repo 根目錄，改名為 `.gitattributes`。repo 已有 `.gitattributes` 時，範本加在檔案**最前面**，原有規則一行都不動。
+      為什麼：`.gitattributes` 後面的規則優先，加在前面，原有的特定規則（例如 LFS 的 `filter=lfs -text`）才會繼續生效。
+      範本內容：文字檔一律 LF（第一行 `* text=auto eol=lf`，`.sh`、`.ps1` 也涵蓋在內，PowerShell 5.1 與 7 都讀得了）；`.bat`、`.cmd` 維持 CRLF（改成 LF 在 cmd 下會出錯）；圖片、字型、PDF、壓縮檔與 Office 檔明確標 `binary`，防止 `text=auto` 對少見格式誤判。中文編碼與 BOM 不在範本處理範圍。
+   2. `git add --renormalize .`
+   3. `git diff --cached --ignore-cr-at-eol -- . ':!.gitattributes'` 輸出 MUST 為空，證明只改了行尾。
+   4. `git diff --cached --name-only | wc -l` 的檔案數寫進 PR 描述；**超過 20 個**先停下來回報（初始值；只是停下確認，不是禁止提交）。要列出檔名時用 `git -c core.quotepath=false diff --cached --name-only`，中文路徑才不會變成八進位跳脫。
+   5. 提交。
+6. 經由開發分支（例如 `docs/branching-doc`）的 PR 合進 `dev`。
 
 ## 4. 禁止簡化
 
@@ -225,6 +274,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
 - MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
+- MUST NOT 以 squash 或 rebase 合併開發分支 PR，一律用「Create a merge commit」（規則 37）。
+- 已開 PR 後 MUST NOT 改寫歷史，一律新增 commit 修正（規則 38）。
 
 ## 5. 檢查清單
 
@@ -233,13 +284,16 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] 工作目錄乾淨、已 `git fetch --all --prune`
 - [ ] 提交在開發分支上，分支名稱符合 `<類型>/e-<編號>-<短名>`
 - [ ] 合回 `dev` 前已吸收最新 `origin/dev` 並跑過測試
+- [ ] 開發分支的 PR 用 merge commit 合進 `dev`，沒有 squash 或 rebase（規則 37）
 - [ ] 快轉 `release`／`main` 前已列出會帶進去的提交，使用者看過
 - [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
 - [ ] 拆成兩組以上 Spec＋Plan 時已建里程碑（規則 17）
+- [ ] 同一專案有兩組以上未完成的單時，Spec 定案前已在「## 並行」寫好並行標註（規則 32）
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
 - [ ] 合併完成的開發分支、`pr/`、`merge/conflict-*` 已刪除
+- [ ] session 收尾時自己建立的 worktree 已清理，Orca 建立但沒用到的 `.ocrca/…` 目錄已列進清理清單（規則 36）
 - [ ] Plan 的 Task 數 ≤ 5
 
 ## 6. 常見錯誤
@@ -252,8 +306,10 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 | 第 2 種初次建立時 `fatal: a branch named 'main' already exists` | 從第 1 種 clone，本地已有預設分支 `main` | 改用 `git init` 再加 remote（`references/02` A 節） |
 | 設了分支保護後 `git push origin release` 被拒 | 設了「必須經過 PR」 | 依規則 20，只禁止 force push／刪除、限制 push 名單 |
 | `git status` 出現 `?? .ocrca/` | Orca 把 worktree 建在 repo 裡的 `.ocrca/` | 把 `.ocrca/` 加進 `.gitignore`；skill 來源 repo 另加進 `.skillignore.local`，否則 `skillshare sync` 會連到 worktree 裡的重複 skill |
+| worktree 簽出成 CRLF | repo 沒有 `.gitattributes`，行尾交給各機器的 `core.autocrlf`；Git for Windows 安裝時預設設為 `true`（系統層 `C:/Program Files/Git/etc/gitconfig`），簽出時把 LF 轉成 CRLF | 依 §3「新 repo 補上 BRANCHING.md」第 5 步放入 `assets/gitattributes`，以獨立 commit 提交 |
 | 合併狀態一直 pending | 安裝的 GitHub App 建了 check suite 卻從不回報 | 回報使用者，由管理員決定移除 App 或調整必要檢查 |
 | `release` 快轉後 `main` 推不上去 | 有 bot 或人直接在 `main` 提交（例如舊的 `version.yml` 自動 bump 版號） | 停下來回報；舊專案依 `elf-cicd-versioning` 3.4 遷移 |
+| 合進 `dev` 後 Plan 被自動標成已完成 | Linear 的 PR 自動化還沒改成依目標分支設定，`dev` 合併就觸發預設的「merge → 已完成」 | 依規則 10 的過渡期做法：Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」 |
 
 ## 7. 待確認
 
