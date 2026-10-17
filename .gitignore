@@ -10,6 +10,11 @@ _superpowers/
 .ocrca/
 .skillignore.local
 
+# .NET build output from restoring or building a template (e.g. cicd/elf-cicd-backend/templates/).
+# Ignoring it only keeps it out of commits; validate.sh still fails while it is on disk.
+bin/
+obj/
+
 # Removed as a submodule — the working repo lives at its own clone
 # (elf-express/mcp-library). Kept here only if someone re-clones it locally.
 mcp-library/
