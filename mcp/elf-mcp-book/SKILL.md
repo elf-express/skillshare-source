@@ -71,7 +71,7 @@ metadata:
    書資料夾另有 `import.ts`、`transform.ts`（產生語料）與 `corpus/`（語料區）。
    `<書名>` 用小寫、可含 `-`，且**與未來語料 id 的書名部分同一個字串**（`opnsense` → `opnsense-en` / `opnsense-zh-tw`）。
    WHY：素材與語料靠這個字串對應；`mcpjungle/books/README.md` 規定 id 為 `<書名>-<語言>`，書名不一致就無法回溯來源；
-   registrar 的 `gen-book-configs.mjs:52` 要求 `corpus.json` 的 `book` 等於書資料夾名，`:53-55` 要求 id 等於 `<book>-<language 小寫>`。
+   registrar 的 `gen-book-configs.mjs:52` 要求 `corpus.json` 的 `book` 等於書資料夾名，`:53-55` 要求 id 等於 `<book>-<language 小寫>`，或 `<book>-bi`（中英混排，`gen-book-configs.mjs:54-55`）。
 2. **MUST** 語言資料夾用擷取工具的原樣命名，現況四種：`en`、`zh-TW`、`zh-CN`（原文 / 譯文）、`en+zh-TW`（雙語對照）、`en-translated`（回譯）。
    **MUST NOT** 把 `en+zh-TW`、`en-translated` 這類衍生物刪掉或壓成一份。
    WHY：`.gitattributes:10-11` 註解明文「素材區保留完整（含 en+zh-TW 雙語對照、en-translated 等衍生物），語料只取其中一種」；
@@ -83,7 +83,7 @@ metadata:
    WHY：`.gitattributes:32-33` 註解——2600+ 篇書會把這個 repo 標成 Markdown 專案，蓋掉真正的 TypeScript 原始碼；也讓 diff 預設折疊。
 5. **MUST** 單一檔案 < 5 MB。CI `basics` 的檢查是 `ci.yml:77` 對**整棵樹**的 `find . -type f -size +5M -not -path "./.git/*" -not -path "*/node_modules/*"`（只排除 `.git/` 與 `node_modules/`），
    不是只看變更檔，也**不**排除 `mcpjungle/books/`；不分副檔名，對圖片也有效。
-   **現況（新書不要再犯）**：4 個超標合併檔已移出版控——`nginx/source/en/000 全書 (nginx.org) en.md` 12 MB、`nginx/source/en+zh-TW/000 全書 (nginx.org) en+zh-TW.md` 16 MB、
+   **現況（新書不要再犯）**：4 個超標合併檔都不在版控——`nginx/source/en/000 全書 (nginx.org) en.md` 12 MB、`nginx/source/en+zh-TW/000 全書 (nginx.org) en+zh-TW.md` 16 MB、
    `opnsense/source/en+zh-TW/000 全書 (docs.opnsense.org) en+zh-TW.md` 7.3 MB 由 `4554bdf` 移除；`stalwart/source/en+zh-TW/000 全書 (stalw.art) en+zh-TW.md` 從未進版控、由 `920892f` 列名。
    四個都靠 `.gitignore:13-20` **逐檔列名**排除，不是通用規則；新書再出現超標檔只有 CI 擋得住。見第 7 節待確認 2。
    自查：
