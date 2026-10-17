@@ -102,6 +102,8 @@ git push -u origin feat/e-<編號>-<短名>
 gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名>
 ```
 
+經 PR 合回 `dev`，用 merge commit（規則 37），不可 squash 或 rebase。
+
 合併後刪除 `feat/e-<編號>-<短名>`（本地與遠端）。
 
 ### B4. 發佈給下游（`dev` → `release`）
