@@ -125,6 +125,94 @@ else
   pass "no bin/ or obj/ build output in the tree"
 fi
 
+section "action pins"
+# Every `uses:` line in an elf-* skill must pin the action to a 40-char commit SHA
+# with a trailing '# <version>' comment that matches the pin table in stack/elf-stack/SKILL.md.
+mapfile -t pin_dirs < <(for d in "${skill_dirs[@]}"; do [[ "$(basename "$d")" == elf-* ]] && echo "$d"; done)
+pin_out=$("$PY" - stack/elf-stack/SKILL.md "${pin_dirs[@]}" <<'PY' 2>&1
+"""Check `uses:` pins in elf-* skills against the elf-stack pin table.
+
+Decisions:
+- Table key is the full string before '@' (subpath actions such as
+  github/codeql-action/init keep their subpath).
+- Version is the first token after '#' in the trailing comment.
+- Lookup is by the (action, sha) pair, so one action may have several rows.
+- Files are read with open(path, encoding="utf-8") in text mode (CRLF safe).
+"""
+import os, re, sys
+
+sys.stdout.reconfigure(encoding="utf-8")  # messages contain an em dash
+table_path, dirs = sys.argv[1], sys.argv[2:]
+row_re = re.compile(r"^\|\s*`([^`\s]+/[^`\s]+)`\s*\|\s*([^|]+?)\s*\|\s*`([0-9a-f]{40})`\s*\|")
+uses_re = re.compile(r"""^\s*(?:-\s+)?uses:\s*([^\s@'"]+)@(\S+)(.*)$""")
+sha_re = re.compile(r"^[0-9a-f]{40}$")
+comment_re = re.compile(r"^\s+#\s*(\S+)")
+
+table = {}
+try:
+    with open(table_path, encoding="utf-8") as f:
+        for line in f:
+            m = row_re.match(line)
+            if m:
+                table[(m.group(1), m.group(3))] = m.group(2)
+except OSError:
+    pass
+if not table:
+    print(f"ERR\taction pin table not found in {table_path}")
+
+used = set()
+count = 0
+for d in dirs:
+    for root, _, files in os.walk(d):
+        for name in sorted(files):
+            if not name.endswith((".md", ".yml", ".yaml")):
+                continue
+            path = os.path.join(root, name).replace(os.sep, "/")
+            if path.startswith("./"):
+                path = path[2:]
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    m = uses_re.match(line.rstrip("\r\n"))
+                    if not m:
+                        continue
+                    action, ref, rest = m.groups()
+                    if action.startswith(("./", "docker://")):
+                        continue
+                    count += 1
+                    loc = f"{path}:{n}"
+                    if not sha_re.match(ref):
+                        print(f"ERR\t{loc} uses {action}@{ref} — not a 40-char commit SHA")
+                        continue
+                    c = comment_re.match(rest)
+                    if not c:
+                        print(f"ERR\t{loc} uses {action}@{ref} — missing '# <version>' comment")
+                        continue
+                    if not table:
+                        continue
+                    tv = table.get((action, ref))
+                    if tv is None:
+                        print(f"ERR\t{loc} {action}@{ref} — not in the elf-stack pin table")
+                        continue
+                    used.add((action, ref))
+                    if c.group(1) != tv:
+                        print(f"ERR\t{loc} {action} comment '{c.group(1)}' != pin table version '{tv}'")
+for (action, ref), tv in sorted(table.items()):
+    if (action, ref) not in used:
+        print(f"WARN\t{action} {tv} is in the pin table but no elf-* file uses it")
+print(f"COUNT\t{count}")
+PY
+)
+pin_bad=0; pin_count=0
+while IFS=$'\t' read -r kind msg; do
+  case "$kind" in
+    ERR)   err "$msg"; pin_bad=1 ;;
+    WARN)  warn "$msg" ;;
+    COUNT) pin_count=$msg ;;
+    *)     err "action pin check crashed: $kind $msg"; pin_bad=1 ;;
+  esac
+done <<< "$pin_out"
+[ "$pin_bad" -eq 0 ] && pass "all elf-* uses: are pinned to the elf-stack table ($pin_count lines)"
+
 section "skillshare CLI checks"
 if command -v skillshare >/dev/null; then
   if skillshare sync --dry-run >/dev/null 2>&1; then
