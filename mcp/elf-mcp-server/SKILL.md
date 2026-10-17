@@ -148,7 +148,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 5. **MUST NOT** 為了讓測試通過放寬比對或加 fallback；**MUST NOT** 刪測試、改成 `it.skip`、把斷言改寬（`toMatch(/./)`）。WHY：證據 E7（`e3d8808` 移除讓測試假通過的 token-OR fallback）。
 6. **MUST NOT** 移除 `truncateIfNeeded`、mtime 快取、BOM 處理、`SKIP_DIRS`、副檔名白名單。WHY：分別防爆 context、確保改檔即時生效、避免亂碼、避免掃進 `node_modules`/`bin`/`obj`。
 7. **MUST NOT** 移除 HTTP 模式的 `/health`、Bearer 驗證、404（未知 scope）、400（無 session）、500 包裝與 `onclose` 清理。WHY：gateway healthcheck、registrar 等待、MCPJungle 連線都依賴這些行為（`mcp/docs-mcp-server/src/http.ts`）。
-8. **MUST NOT** 移除 stdio 或 HTTP 任一 transport。WHY：stdio 給本機 `.mcp.json` / `npx -y @elf-express/docs-mcp-server`，HTTP 給 gateway 與遠端連接器（CLAUDE.md「A–D 四種接法」）。
+8. **MUST NOT** 移除 stdio 或 HTTP 任一 transport。WHY：stdio 給本機 `.mcp.json` / `node <repo>/mcpjungle/docs-mcp-server/dist/index.js`（`<repo>` 是 elf-express/mcp-library 的本機 clone；先在 `mcpjungle/docs-mcp-server` 執行 `npm ci && npm run build` 才有 `dist/index.js`；npm 套件已停止發布，見證據 E16），HTTP 給 gateway 與遠端連接器（CLAUDE.md「A–D 四種接法」）。
 9. **MUST NOT** 用 `console.log`。WHY：stdio 串流污染。
 10. **MUST NOT** 只改程式不改檔頭註解 / README / servers/*.json 描述。WHY：證據 E8、E9、E10。
 11. **MUST NOT** 讓 dependabot 或「順手升級」跨主版本（zod、express、typescript、@types/node、SDK）而不經人工評估。WHY：證據 E3——拿掉 `semver-major` ignore 後三個 server 主版本分岔。
