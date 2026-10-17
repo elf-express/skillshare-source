@@ -110,6 +110,21 @@ else
   pass "_superpowers/ is properly gitignored"
 fi
 
+section "build output"
+# skillshare sync copies every file in a skill folder to every target, gitignored
+# or not, so a dotnet restore inside templates/ lands obj/ in each AI's skills.
+mapfile -t build_dirs < <(
+  find . \( -path ./.git -o -path ./node_modules \) -prune -o \
+    -type d \( -name bin -o -name obj \) -print | sort
+)
+if [ "${#build_dirs[@]}" -gt 0 ]; then
+  for d in "${build_dirs[@]}"; do
+    err "build output '$d' — delete it; skillshare sync would copy it into every target"
+  done
+else
+  pass "no bin/ or obj/ build output in the tree"
+fi
+
 section "skillshare CLI checks"
 if command -v skillshare >/dev/null; then
   if skillshare sync --dry-run >/dev/null 2>&1; then

@@ -118,6 +118,9 @@ included:
 - `.metadata.json` parses as JSON
 - every `.metadata.json` entry has a `subdir` or is in `WHOLE_REPO_ALLOWED`
 - `_superpowers/` has no tracked files (a gitignored repo must never get committed)
+- no `bin/` or `obj/` directory exists anywhere in the tree. `.gitignore` keeps them out of commits,
+  but `skillshare sync` copies a skill folder whole, so a `dotnet restore` run inside a `templates/`
+  folder would ship `obj/` to every target
 - `skillshare sync --dry-run` and `skillshare audit --yes --no-tui --quiet` both succeed
   (skipped with a warning when the CLI is absent — a pass there is not proof)
 
