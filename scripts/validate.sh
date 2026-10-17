@@ -147,6 +147,8 @@ row_re = re.compile(r"^\|\s*`([^`\s]+/[^`\s]+)`\s*\|\s*([^|]+?)\s*\|\s*`([0-9a-f
 uses_re = re.compile(r"""^\s*(?:-\s+)?uses:\s*["']?([^\s@'"]+)@([^\s'"]+)["']?(.*)$""")
 any_uses_re = re.compile(r"^\s*(?:-\s+)?uses:\s*(\S+)")
 sha_re = re.compile(r"^[0-9a-f]{40}$")
+# An owner/name@tag reference in prose or code (bare '@vN' and 'tauri@v2' do not match).
+tag_ref_re = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.*-]+@(?:v[0-9]+|stable|main|master)\b")
 comment_re = re.compile(r"^\s+#\s*(\S+)")
 
 table = {}
@@ -175,6 +177,8 @@ for d in dirs:
             with open(path, encoding="utf-8") as f:
                 for n, line in enumerate(f, 1):
                     text = line.rstrip("\r\n")
+                    for t in tag_ref_re.finditer(text):
+                        print(f'ERR\t{path}:{n} {t.group(0)} — tag reference; write "<action> vN（SHA 見 elf-stack 3.5）" or pin the SHA')
                     m = uses_re.match(text)
                     if not m:
                         a = any_uses_re.match(text)
@@ -205,6 +209,8 @@ for d in dirs:
 for (action, ref), tv in sorted(table.items()):
     if (action, ref) not in used:
         print(f"WARN\t{action} {tv} is in the pin table but no elf-* file uses it")
+if count == 0:
+    print("ERR\tno uses: lines found in elf-* skills — discovery is broken")
 print(f"COUNT\t{count}")
 PY
 )

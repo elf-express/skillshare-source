@@ -35,8 +35,8 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 7. **MUST NOT** 使用 `latest`、`*`、浮動 docker tag（如 `postgres:latest`）。
 8. 升級流程見第 6 節：**先改本表，再改專案**。
 9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
-10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。
-11. **MUST** 下游 repo 啟用 Dependabot 的 `package-ecosystem: github-actions` 更新。WHY：釘 SHA 後 action 的安全修補不會自動進來，沒有更新機制等於把舊版凍結。Dependabot 對 SHA 釘選發 PR 並同步更新同一行的版本註解（GitHub 官方文件已確認，連結見 `references/simplification-evidence.md`）。
+10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。WHY：同規則 9。
+11. **MUST** 下游 repo 啟用 Dependabot 的 `package-ecosystem: github-actions` 更新。WHY：釘 SHA 後 action 的安全修補不會自動進來，沒有更新機制等於把舊版凍結。Dependabot 對 SHA 釘選發 PR 並同步更新同一行的版本註解（GitHub 官方文件已確認，連結見 `references/simplification-evidence.md`）。下游 `dependabot.yml` 的 `github-actions` 區塊 **MUST** 忽略主版本升級：`ignore: - dependency-name: "*"` 加 `update-types: ["version-update:semver-major"]`（寫法同 `mcp/elf-mcp-gateway` 的 `semver-major` ignore）。WHY：規則 3 禁止未經明確要求就升級，主版本升級要先改 3.5 對照表（見 6）再動專案，Dependabot 不該自行跨主版本。下游 repo 收到 Dependabot PR 就是通知：先更新 3.5 節，3.5 與該 PR 的 SHA／版本一致後才可合併；團隊不採用該版本就關閉 PR。
 
 ## 3. 版本表
 
@@ -110,7 +110,7 @@ dotnet test server/<App>.slnx -c Release \
 | `actions/setup-dotnet` | v5.4.0 | `26b0ec14cb23fa6904739307f278c14f94c95bf1` |  |
 | `actions/setup-node` | v5.0.0 | `a0853c24544627f65ddf259abe73b1d18a591444` |  |
 | `actions/upload-artifact` | v5.0.0 | `330a01c490aca151604b8cf639adc76d48f6c5d4` |  |
-| `actions/download-artifact` | v5.0.0 | `634f93cb2916e3fdff6788551b99b062d0335ce0` |  |
+| `actions/download-artifact` | v5.0.0 | `634f93cb2916e3fdff6788551b99b062d0335ce0` | 只出現在 elf-allure-report 的說明文字（沒有 `uses:` 行），validate.sh 對它報「未使用」警告是預期的 |
 | `anthropics/claude-code-action` | v1.0.252 | `f27be6b65a4652f08a2ba3cff79114829b588967` |  |
 | `docker/build-push-action` | v6.19.2 | `10e90e3645eae34f1e60eeb005ba3a3d33f178e8` |  |
 | `docker/login-action` | v3.7.0 | `c94ce9fb468520275223c153574b00df6fe4bcc9` |  |
@@ -118,7 +118,7 @@ dotnet test server/<App>.slnx -c Release \
 | `pnpm/action-setup` | v4.4.0 | `fc06bc1257f339d1d5d8b3a19a8cae5388b55320` |  |
 | `Swatinem/rust-cache` | v2.9.2 | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |  |
 | `tauri-apps/tauri-action` | v0.6.2 | `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` |  |
-| `dtolnay/rust-toolchain` | master@2026-10-16 | `683b588c487a69d01f6c6ddf40f036ff682cc2c8` | 需人工更新：釘的是分支 commit，Dependabot 不一定能更新 |
+| `dtolnay/rust-toolchain` | master@2026-10-16 | `683b588c487a69d01f6c6ddf40f036ff682cc2c8` | 需人工更新：釘的是分支 commit，Dependabot 可能只把 SHA 升到最新 commit 而不更新 `master@<日期>` 註解（證據 E4），日期與 SHA 要人工核對 |
 
 ## 4. 標準範本
 
