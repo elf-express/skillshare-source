@@ -129,6 +129,8 @@ CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev
 rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
 read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
 run there. CI has no `_superpowers/` checkout and reports 46 folders; that is expected.
+That 46 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
+caveats below never apply there.
 
 It does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
 no-guessing rule, or anything under `agents/`. Those are on the author and on PR review. There is no
@@ -139,7 +141,10 @@ Three caveats before you treat a red result as your own doing:
 
 - Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
-  `_superpowers/` checked out it reports 61 folders, which matches what syncs.
+  `_superpowers/` checked out it reports 61 folders. That is validate's count (`_superpowers/` included),
+  not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
+  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 59 actually sync.
+  CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,
   run it as `XDG_CONFIG_HOME=<worktree config> bash scripts/validate.sh` (see Gotchas).
@@ -215,6 +220,14 @@ A clone made before the rename still has a local `master`: `git branch -m master
   ~900 KB while the oh-my-claudecode bundle was tracked); seeing it in a diff after any
   `skillshare update` / `upgrade` is normal.
 - `.skillignore.local` (not in git) holds per-machine overrides; `!/skillshare` must stay anchored with `/`, otherwise copies of `skillshare/` inside tool worktrees (e.g. `.kilo/worktrees/*`) get synced as skills.
+- In `.skillignore` / `.skillignore.local`, a rule with a trailing `/` (e.g. `frontend/design/ui-ux-pro-max/`)
+  does not exclude the skill folder itself under skillshare v0.25.13; write it as
+  `/frontend/design/ui-ux-pro-max`. A trailing `/` only works for a parent directory such as `.ocrca/`
+  (E-303, tested 2026-10-17).
+- Git commands that print paths (`git ls-files`, `git status`, `git diff --name-only`, `git grep -l`, …)
+  escape Chinese paths as octal by default (`"\346\..."`), so a `grep` piped after them silently misses
+  those files. Run such commands as `git -c core.quotepath=false …` (or use `-z`). Plain `grep` / `rg` are
+  not affected, and counting lines only (`| wc -l`) is not affected either (E-308).
 - VS Code's Kilo Code extension creates `.kilo/worktrees/` full repo copies; they are ignored. Remove them with `git worktree remove`, never by editing.
 - Windows: Git `core.symlinks=false` turns symlinks in upstream repos into small text files (e.g. `ui-ux-pro-max/scripts`). Replace them with the real directories when a skill depends on them.
 - Your skillshare **source** may not be the clone you are working in. On a teammate's machine
@@ -223,6 +236,10 @@ A clone made before the rename still has a local `master`: `git branch -m master
   skillshare command from a feature worktree with a throwaway config (`targets: {}` syncs nowhere):
   ```bash
   WT_CFG=$(mktemp -d); mkdir -p $WT_CFG/skillshare
+  # Run one of the two printf lines.
+  # Git Bash (Windows): Windows skillshare rejects /e/… paths ("source path does not exist", E-311 step 2)
+  printf 'sources:\n  skills: %s\nmode: merge\ntargets: {}\n' "$(pwd -W)" > $WT_CFG/skillshare/config.yaml
+  # Other environments (Linux, macOS):
   printf 'sources:\n  skills: %s\nmode: merge\ntargets: {}\n' "$PWD" > $WT_CFG/skillshare/config.yaml
   XDG_CONFIG_HOME=$WT_CFG skillshare uninstall <path> --dry-run
   ```

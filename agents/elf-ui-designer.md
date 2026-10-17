@@ -18,7 +18,7 @@ skills:
    | 任務涉及 | 載入 |
    |---|---|
    | 文案、語系、中文長度 | `frontend__elf-i18n` |
-   | 探索視覺方向、配色、字型搭配 | `frontend__design__ui-ux-pro-max` |
+   | 探索視覺方向、配色、字型搭配 | `frontend__design__ui-ux-pro-max`（目前未派發，已排除，E-303） |
    | 對照 Web Interface Guidelines 做審查 | `frontend__design__web-design-guidelines` |
 3. 有交接包時，**先完整讀** `chats/` 的設計對話與主要原型檔（`HANDOFF.md` 的要求），再讀它引用的所有檔案。
 4. 設計在 Figma：可用環境中的 Figma MCP（例如 `get_design_context`、`get_screenshot`）讀取 frame。
