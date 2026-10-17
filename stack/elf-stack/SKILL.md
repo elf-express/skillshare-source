@@ -36,7 +36,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 8. 升級流程見第 6 節：**先改本表，再改專案**。
 9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
 10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。WHY：同規則 9。
-11. **MUST** 下游 repo 啟用 Dependabot 的 `package-ecosystem: github-actions` 更新。WHY：釘 SHA 後 action 的安全修補不會自動進來，沒有更新機制等於把舊版凍結。Dependabot 對 SHA 釘選發 PR 並同步更新同一行的版本註解（GitHub 官方文件已確認，連結見 `references/simplification-evidence.md`）。下游 `dependabot.yml` 的 `github-actions` 區塊 **MUST** 忽略主版本升級：`ignore: - dependency-name: "*"` 加 `update-types: ["version-update:semver-major"]`（寫法同 `mcp/elf-mcp-gateway` 的 `semver-major` ignore）。WHY：規則 3 禁止未經明確要求就升級，主版本升級要先改 3.5 對照表（見 6）再動專案，Dependabot 不該自行跨主版本。下游 repo 收到 Dependabot PR 就是通知：先更新 3.5 節，3.5 與該 PR 的 SHA／版本一致後才可合併；團隊不採用該版本就關閉 PR。
+11. **MUST** 下游 repo 啟用 Dependabot 的 `package-ecosystem: github-actions` 更新。WHY：釘 SHA 後 action 的安全修補不會自動進來，沒有更新機制等於把舊版凍結。Dependabot 對 SHA 釘選發 PR 並同步更新同一行的版本註解（GitHub 官方文件已確認，連結見 `references/simplification-evidence.md`）。下游 `dependabot.yml` 的 `github-actions` 區塊 **MUST** 忽略主版本升級：`ignore: - dependency-name: "*"` 加 `update-types: ["version-update:semver-major"]`（寫法同 `mcp/elf-mcp-gateway` 的 `semver-major` ignore）。WHY：規則 3 禁止未經明確要求就升級，主版本升級要先改 3.5 對照表（見 6）再動專案，Dependabot 不該自行跨主版本。主版本升級不是永遠不做：要開單、規劃後再升，否則舊的主版本總有一天會停止提供安全修補。下游 repo 收到 Dependabot PR 就是通知：先更新 3.5 節，3.5 與該 PR 的 SHA／版本一致後才可合併；團隊不採用該版本就關閉 PR。
 
 ## 3. 版本表
 
