@@ -1,0 +1,27 @@
+workflow/elf-team-rule/SKILL.md
+  s_94d34e2b504313::t_3e22c00ccfac08 11
+  s_94d34e2b504313::t_9b8a726417eab9 40-41
+  s_94d34e2b504313::t_b41df82015e942 61-68
+  s_94d34e2b504313::t_827e5f07a66011 263
+  s_94d34e2b504313::t_605203a7507ce7 264
+  s_94d34e2b504313::t_0a8b9e29448cd4 8
+  s_94d34e2b504313::t_759d3ed577fc2e 82
+  s_94d34e2b504313::t_a5fd56deb3dceb 88-91,93
+  s_94d34e2b504313::t_4fb10f39359df6 260
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1c15665f5d8e8dfa96526d5a2a2ef044a8863598",
+  "prompts": {},
+  "sessions": {
+    "s_94d34e2b504313": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "761bcb56-936e-4629-93e3-3ecf95d671df",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
