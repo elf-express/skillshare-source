@@ -189,13 +189,18 @@ curl http://localhost:5690/health                 # corpora / docs 數要 +1 / +
 
 書本語料另跑 `elf-mcp-book` 第 3 節的「上架前檢查（規則 9、10、11）」：泛名標題 0 篇、來源問題 0 篇。
 
-**Step 4 — 註冊**：註冊見 `elf-mcp-gateway` 第 2 節〈註冊〉。本機驗證（不需 Docker）：
+**Step 4 — 註冊**：註冊見 `elf-mcp-gateway` 第 2 節〈註冊〉。下面兩步即該節 A 的步驟 1、2，指令、預期與停止條件跟該節逐字一致；兩步都不起容器。
 
-下面這行在 mcp-library repo 根目錄執行（Step 3 停在 `mcpjungle/docs-mcp-server`，先 `cd ../..`）：
+下面兩步在 mcp-library repo 根目錄執行（Step 3 停在 `mcpjungle/docs-mcp-server`，先 `cd ../..`）：
 
-    node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books "$(mktemp -d)"   # 印出的 id 要包含 <id>；exit 1 代表有語料不合法、registrar 會整批不註冊
+- **步驟 1（不手寫註冊檔）**：不新增任何註冊檔，`REGISTER_LIST` 保持空白（預設）。
+  指令 `docker compose config | grep REGISTER_LIST`，預期 `REGISTER_LIST: ""`（接現有 gateway 時加 `-f compose.attach.yaml`）；GitOps 工具則看它的 env 編輯器有沒有設 `REGISTER_LIST`。
+  有值就停，見 `elf-mcp-gateway`〈註冊〉B 表第 2 列。
+- **步驟 2（部署前驗證）**：
+  指令 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books "$(mktemp -d)"`，預期 exit 0，印出的 id 包含 `<id>`（`73b8206` 印出 6 個 id）。
+  exit 1 就停，修 `corpus.json`（原因見 `elf-mcp-gateway`〈註冊〉B 表第 4 列）；這時 registrar 也會整批不註冊。
 
-留在 `mcpjungle/docs-mcp-server` 底下時的等價寫法（`73b8206` 兩種寫法都 exit 0、印出同樣 6 個 id）：
+補充（不屬於上面跟 `elf-mcp-gateway` 逐字一致的段落）：留在 `mcpjungle/docs-mcp-server` 底下時，步驟 2 的等價寫法如下（`73b8206` 兩種寫法都 exit 0、印出同樣 6 個 id）：
 
     node ../registry/gen-book-configs.mjs ../books "$(mktemp -d)"
 
@@ -203,19 +208,25 @@ curl http://localhost:5690/health                 # corpora / docs 數要 +1 / +
 build 法 `docker compose up -d --build`；pull 法 `docker compose -f compose.pull.yaml up -d`；接現有 gateway 用 `docker compose -f compose.attach.yaml up -d --build`。細節見 `elf-mcp-gateway`。
 以上 `docker compose` 指令在 mcp-library repo 根目錄執行（`compose.yaml`、`compose.pull.yaml`、`compose.attach.yaml` 都在根目錄）。
 
-**Step 6 — 驗證 gateway**（三項都要貼輸出到 PR）
+**Step 6 — 驗證 gateway**（以下指令都要跑，每條都要符合預期；輸出貼到 PR）
 
-在 mcp-library repo 根目錄執行。接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`。
+在 mcp-library repo 根目錄執行。指令、預期與停止條件即 `elf-mcp-gateway` 第 2 節〈註冊〉A 的步驟 3，跟該節逐字一致。
 
 ```bash
-docker compose logs registrar                                   # 應有「>> 註冊 <id>」且 Exited (0)
+docker compose logs registrar                                   # 應有「>> 註冊 <id>」
+docker compose ps -a registrar                                  # 應為 Exited (0)
 docker compose exec mcpjungle /mcpjungle list servers           # 有 <id>
 docker compose exec mcpjungle /mcpjungle list tools | grep '<id>__'        # 無條件工具 4 個 + 能力工具
 docker compose exec mcpjungle /mcpjungle invoke <id>__docs_list_corpora --input '{}'
 docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"query":"<該領域關鍵字>"}'
 ```
 
-`docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）。
+Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
+`docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
+接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
+退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
+接現有 gateway 時，所有 `docker compose run --rm … registrar` 都要加 `-f compose.attach.yaml`，所有 `exec mcpjungle …`（含 `deregister`）都在現有 gateway 的 compose 專案執行；否則在預設 `compose.yaml` 上 `run` 會經 `depends_on` 一併起 `mcpjungle` 與 `postgres`（`compose.yaml:78-80`、`:33-35`），等於第二個 gateway，違反 `elf-mcp-gateway` 規則 8。
+不能只看 `list servers`。任一項不符就停，查 `elf-mcp-gateway`〈註冊〉B 表。
 
 **Step 7 — 同 PR 更新文件**（證據 E9–E11：每次都有人漏）
 
@@ -272,7 +283,7 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 - [ ] 書本語料：`elf-mcp-book` 第 3 節的上架前檢查兩項皆 0（泛名標題、來源問題）
 - [ ] `/health` 的 corpora / docs 數正確；`/mcp/<id>` 可初始化、`/mcp/<不存在>` 回 404
 - [ ] `gen-book-configs.mjs` 本機印出 `<id>`（註冊描述的工具清單由它依 capabilities 列齊）；沒有手改 `REGISTER_LIST`
-- [ ] registrar log（`docker compose logs registrar`）、`list tools`、`invoke <id>__docs_search` 輸出已貼到 PR
+- [ ] 第 3 節 Step 6 的六條指令（`logs registrar`、`ps -a registrar` 為 Exited (0)、`list servers`、`list tools`、兩個 `invoke`）輸出都已貼到 PR
 - [ ] 第 3 節 Step 7 的文件都已更新
 - [ ] `grep -c 'registerTool(' src/index.ts` 仍為 8（路線 A 不應改變）
 
