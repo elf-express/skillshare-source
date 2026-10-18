@@ -1,0 +1,30 @@
+mcp/elf-mcp-gateway/SKILL.md
+  s_1ce812ccb52424::t_bff8f53f2bb696 17-19
+  s_1ce812ccb52424::t_f9c4bd48693a4b 30-32,34-35
+  s_1ce812ccb52424::t_bc37584050047e 5,7-8,11
+  s_1ce812ccb52424::t_9f0ef005289d7a 163,165,167-168
+  s_1ce812ccb52424::t_9d3414fca1d64b 136-139
+  s_1ce812ccb52424::t_529fc6b254c776 43-47,49-51,53-62,64-65
+  s_1ce812ccb52424::t_dda2ca759d5532 166
+  s_1ce812ccb52424::t_fc82569e68d043 172-174
+  s_1ce812ccb52424::t_bcbbb3cfb340a9 227-228
+  s_1ce812ccb52424::t_df9b594baa6f92 235-236
+  s_1ce812ccb52424::t_093274a785c87d 142-143
+  s_1ce812ccb52424::t_50f4ec56c645ac 147,149,151-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "49c4c201f3c196c1f20ac8b40d90729f4cd04d59",
+  "prompts": {},
+  "sessions": {
+    "s_1ce812ccb52424": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d64a02a2-0754-40d7-ad89-c0c3f42006f6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
