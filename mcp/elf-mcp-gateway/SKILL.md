@@ -179,44 +179,47 @@ metadata:
 
 | 檔案 | 用途 |
 |---|---|
-| `templates/docker-compose.mcpjungle.yml` | 現行正式 compose（原樣） |
+| `templates/docker-compose.mcpjungle.yml` | 正式 compose；mcp-library 現行是根目錄 `compose.yaml`（`compose.yaml:7-98`） |
 | `templates/.env.example` | 所有 env 與預設值說明 |
-| `templates/Dockerfile.registrar`、`templates/registrar.sh` | registrar（原樣，**不可精簡**） |
-| `templates/servers/*.json` | 四種註冊檔 |
-| `templates/group.json` | tool group（`mcpjungle create group -c group.json` → `/v0/groups/<name>/mcp`） |
-| `templates/nginx.example.conf` | 對外反向代理（改 ① server_name ② 憑證 ③ `<GATEWAY_LAN_IP>`） |
-| `templates/docker-publish.matrix-entry.yml` | 新 server 要加的 CI / publish / dependabot 片段 |
+| `templates/Dockerfile.registrar`、`templates/registrar.sh` | registrar（**不可精簡**）；mcp-library 現行是 `mcpjungle/registry/Dockerfile` 與 `mcpjungle/registry/registrar.sh` |
+| `templates/servers/*.json` | 四種註冊檔；mcp-library 現行的非書本註冊檔在 `mcpjungle/registry/*.json`，書本不手寫（見〈註冊〉） |
+| `templates/group.json` | tool group（端點 `/v0/groups/<name>/mcp`）；mcp-library 現行放 `mcpjungle/registry/groups/<name>.json`，格式由 `mcpjungle/registry/gen-group-configs.mjs:13-50` 驗證，registrar 建立或更新（`registrar.sh:90-104`） |
+| `templates/nginx.example.conf` | 對外反向代理（改 ① server_name ② 憑證 ③ `<GATEWAY_LAN_IP>`）；mcp-library 現行是根目錄 `nginx.example.conf` |
+| `templates/docker-publish.matrix-entry.yml` | 新 server 要加的 CI / publish / dependabot 片段（現行位置見規則 22、23） |
 
-部署（根目錄）：
+部署（mcp-library repo 根目錄）：
 
 ```bash
-docker compose up -d --build                           # 零設定即可起（DB 內建）；build 法：現場 build 最新源碼
+docker compose up -d --build                           # 零設定即可起（DB 內建）；build 法：現場 build 最新源碼（README.md:75）
 cp .env.example .env                                   # 只在要改預設值時才需要（密碼、外部 DB、port、TZ…）
-docker compose -f docker-compose.pull.yml up -d        # pull 法：拉 GHCR 映像（docs-mcp-server、docs-registrar，pull_policy: always）
+docker compose -f compose.pull.yaml up -d              # pull 法：docs-mcp-server、docs-registrar 拉 GHCR 映像（pull_policy: always，compose.pull.yaml:20,27）；gateway 仍現場 build（README.md:76）
 # GHCR 為 private 時，部署端先：echo "$GHCR_PAT" | docker login ghcr.io -u <github-user> --password-stdin
 ```
 
-驗證（每次部署後）：
+驗證（每次部署後；容器名由 compose 產生，一律用 service 名，`AGENTS.md:47`）：
 
 ```bash
-docker compose ps                                                     # mcpjungle-server Up、docs-mcp-server Up、registrar Exited (0)
-docker logs $(docker compose ps -aq registrar)                        # 「registrar: 完成」＋清單
-docker exec mcpjungle-server /mcpjungle list servers
-docker exec mcpjungle-server /mcpjungle list tools
-docker exec mcpjungle-server /mcpjungle invoke sqlsugar-zh-tw__docs_list_corpora --input '{}'
+docker compose ps -a                                                  # mcpjungle、docs-mcp-server Up，registrar Exited (0)（README.md:92）
+docker compose logs registrar                                         # 「registrar: 完成」＋清單（README.md:93、registrar.sh:87）
+docker compose exec mcpjungle /mcpjungle list servers                 # （README.md:94）
+docker compose exec mcpjungle /mcpjungle list tools
+docker compose exec mcpjungle /mcpjungle invoke sqlsugar-zh-tw__docs_list_corpora --input '{}'
 curl -s http://<host>:18800/health                                    # 外部可達性（經 nginx 則打 https://<domain>/health）
 ```
 
-用戶端連線：`http://<host>:18800/mcp`（全部工具）、`http://<host>:18800/v0/groups/<group>/mcp`（tool group）；對外一律 `https://<domain>/mcp`。
+新增一本書的完整驗證見第 2 節〈註冊〉A 步驟 3。
+
+用戶端連線：`http://<host>:18800/mcp`（全部工具）、`http://<host>:18800/v0/groups/<group>/mcp`（tool group）（`mcpjungle/gateway/internal/api/server.go:213-225`）；對外一律 `https://<domain>/mcp`。
 
 修改既有註冊（registrar 冪等不會覆寫）：
 
 ```bash
-docker exec mcpjungle-server /mcpjungle deregister <name>
-docker compose up -d --force-recreate registrar
+docker compose exec mcpjungle /mcpjungle deregister <name>      # mcpjungle/README.md:113
+docker compose run --rm registrar                               # mcpjungle/README.md:60
 ```
 
-手動註冊（host 上裝官方 CLI）：`REGISTRY=http://localhost:18800 ./register.sh [per-book|all|none]`，`WITH_TOOLS=0` 略過官方工具。
+手動註冊單一 server（舊的 host 端註冊腳本已在 `56e67b6` 刪除，host 不必裝 CLI）：`docker compose run --rm -e REGISTER_LIST="<name>" registrar`（`mcpjungle/README.md:61`）。`<name>` 可以是書本 id、`registry/*.json` 或 `registry/optional/*.json` 的名稱（`compose.yaml:86`）。
+只准這樣一次性執行，**不要**把 `REGISTER_LIST` 寫進 `.env`（〈註冊〉規則 10）；要略過 `filesystem` / `fetch` / `time`，同樣一次性加 `-e REGISTER_EXTRAS=0`（`compose.yaml:87`）。
 
 ---
 
@@ -241,15 +244,15 @@ docker compose up -d --force-recreate registrar
 ## 5. 檢查清單
 
 - [ ] `.env` 只含 `.env.example` 列出的變數（全部選用）；用內建 DB 時**不要**設 `MCPJUNGLE_DATABASE_URL`，改密碼則兩處同步
-- [ ] `docker compose config` 無錯；gateway `build.context: ./MCPJungle`、`Dockerfile.fullbuild`
-- [ ] `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`、四服務 `TZ`；`postgres` 有 healthcheck 且 gateway `depends_on: service_healthy`
-- [ ] 新 `servers/<name>.json`：name 合規且唯一、description 列齊工具、無明文 token
-- [ ] `REGISTER_LIST` 兩處（registrar.sh / dockhand compose）按需更新
-- [ ] registrar `Exited (0)`；`list servers` / `list tools` / 一次 `invoke` 成功並貼到 PR
+- [ ] `docker compose config` 無錯（CI 對 `compose.yaml`、`compose.pull.yaml`、`compose.attach.yaml` 三份各跑 `config -q`，`.github/workflows/ci.yml:71-73`）；gateway `build.context: ./mcpjungle/gateway`、`Dockerfile.fullbuild`（`compose.yaml:28-30`）
+- [ ] `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`（`compose.yaml:41`）、四服務 `TZ`（`:16,42,61,89`）；`postgres` 有 healthcheck（`:19-23`）且 gateway `depends_on: service_healthy`（`:33-35`）；docs-mcp 也有 healthcheck（`:62-67`），registrar 等它 `service_healthy`（`:81-82`）
+- [ ] 書本依〈註冊〉A；非書本 `mcpjungle/registry/<name>.json` 依〈註冊〉規則 9、10：name 合規且唯一、description 列齊工具、無明文 token
+- [ ] 沒有為新 server 改 `REGISTER_LIST`（規則 14）；點名註冊只用一次性 `docker compose run --rm -e REGISTER_LIST=<名稱> registrar`（規則 10）
+- [ ] registrar `Exited (0)`；`list servers` / `list tools` / 一次 `invoke` 成功並貼到 PR（新書照〈註冊〉A 步驟 3 五條全跑）
 - [ ] 對外：nginx 範本三處已改；dashboard 限內網；development 模式未直接暴露公網
 - [ ] workflow 新增的 `uses:` 皆為完整 SHA＋版本註解
 - [ ] 新 image 已加 docker-publish / ci / dependabot（含 semver-major ignore）
-- [ ] README / CLAUDE.md 的服務名、預設清單、port 已同步
+- [ ] README / CLAUDE.md / AGENTS.md 的服務名、預設清單、port 已同步
 
 ---
 
@@ -259,15 +262,15 @@ docker compose up -d --force-recreate registrar
 |---|---|---|
 | `duplicate key value violates unique constraint "idx_mcp_servers_name" (SQLSTATE 23505)` | 同名 server 已被 registrar 自動註冊 | 換 name，或先 `deregister` |
 | registrar `mkdir /app: read-only file system` | GitOps 工具下使用相對 bind mount | 用烤好設定的 `docs-registrar` image（`54a9c08`） |
-| registrar 反覆「上游尚未就緒」後放棄 | docs-mcp 啟動失敗或不在 `mcpjungl` 網路 | `docker logs docs-mcp-server`；確認 `networks: [mcpjungl]` |
-| registrar「等 gateway 逾時(120s)」 | gateway 連不上 DB：改了 `POSTGRES_PASSWORD` 卻沒同步 `MCPJUNGLE_DATABASE_URL`，或覆寫的外部 DB 位址不通 | `docker logs mcpjungle-server`；兩處密碼對齊（規則 2b），或移除覆寫回用內建 DB |
+| registrar 反覆「上游尚未就緒」後放棄（`registrar.sh:82`；20 次後記為失敗，最後 exit 1，`:81,105`） | docs-mcp 啟動失敗，或不在 registrar 所在的網路 | `docker compose logs docs-mcp-server`；確認 `networks: [mcpjungl]`（`compose.yaml:68`）；接現有 gateway 時兩個 service 都在 `gateway` 網路（`compose.attach.yaml:14,26`），它指到 `MCPJUNGLE_NETWORK`（`:28-31`） |
+| registrar「等 gateway 逾時(120s)」（`registrar.sh:63`） | gateway 連不上 DB：改了 `POSTGRES_PASSWORD` 卻沒同步 `MCPJUNGLE_DATABASE_URL`，或覆寫的外部 DB 位址不通 | `docker compose logs mcpjungle`；兩處密碼對齊（規則 2b），或移除覆寫回用內建 DB |
 | stdio server 註冊時 init timeout | `npx -y` 首次下載慢 | `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`（或更高） |
 | stdio server 啟動即崩、log 有 `enableCompileCache is not a function` | gateway runtime Node 20 | Node 22（`67b8864`） |
 | 起 stack 報 container name `mcpjungle-server` already in use | 機器上還跑著舊的固定 container 名堆疊，或自己加了 `container_name`（違反 `ci.yml:68-70`；CI 報「compose 不可寫死 container_name(-p mcp-test 並存會撞名)」，`ci.yml:69`） | 停掉舊堆疊、拿掉 `container_name`；並存測試用 `docker compose -p mcp-test` |
 | 能呼叫工具但收不到回應 / 60 秒斷線 | nginx buffer SSE、預設 timeout | 依規則 16 |
 | Actions 報 `Unrecognized named-value: 'secrets'` | 在 step `if:` 用了 secrets | 改 `password: ${{ secrets.GHCR_PAT \|\| secrets.GITHUB_TOKEN }}` |
 | workflow 被 org 拒絕執行 | `uses:` 未釘 SHA | 釘完整 SHA（`83cb805`） |
-| pull 法部署後內容沒更新 | main 的 Action 尚未推完新 `latest` | 看 Actions 完成再 `up -d`（`pull_policy: always`） |
+| pull 法部署後內容沒更新 | push `release` 觸發的 Action 尚未推完新 `latest`（`.github/workflows/docker-publish.yml:16-18,88`） | 看 Actions 完成再 `docker compose -f compose.pull.yaml up -d`（`pull_policy: always`，`compose.pull.yaml:20,27`） |
 | `docker compose build docs-mcp` 報 no such service | service 已改名 `docs-mcp-server` | 用新名字（證據 E11） |
 | 時間顯示差 8 小時 | 容器沒設 TZ / 沒裝 tzdata | 規則 7 |
 
@@ -275,20 +278,31 @@ docker compose up -d --force-recreate registrar
 
 ## 7. 待確認
 
-1. **Action 版本策略衝突**：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 原寫 `actions/*` v5 版本標籤（未釘 SHA）；已決（E-302，2026-10-17）：團隊標準為釘 SHA，見 elf-stack 規則 9 與 3.5。另 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12）。
-2. **PR AI review**：團隊標準要求 Claude AI review（`elf-cicd-review`），本 repo `.github/workflows/` 目前**沒有** claude-review workflow。
-3. **發版流程**：`release.yml` 已刪（證據 E1），`v*.*.*` tag 目前靠人工推；是否導入 `elf-cicd-versioning`。另 mcp-library 只有 `main`、`docker-publish.yml` 在 push `main` 時重建 `latest`（實測 2026-10-11），與 `elf-team-rule`「部署一律用 `release`」不符；導入 `dev` / `release` 後，本 skill 第 6 節「main 的 Action」一列一併改寫。
-4. **公網存取模型**：gateway 目前 `SERVER_MODE=development`（無用戶端驗證），nginx 範例也未加驗證；對外開放前要選 enterprise 模式或 nginx 層驗證。
-5. `bearer_token: "${VAR}"` 展開：fork 的 CLI 有此功能（`cmd/config_reader_env_test.go`），但 registrar 用的是**上游** `ghcr.io/mcpjungle/mcpjungle:latest-stdio` 為 base，且 compose 的 registrar 目前沒有傳 `DOCS_MCP_AUTH_TOKEN`；硬化時需實測並補 env。
-6. CI Node 版本：`ci.yml` / `npm-publish.yml` 用 `node-version: 20`，與團隊 Node 24.18、Docker `node:26-alpine`、gateway Node 22 皆不同。
+1. **Action 版本策略衝突**（**已解決**）：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 原寫 `actions/*` v5 版本標籤（未釘 SHA）；已決（E-302，2026-10-17）：團隊標準為釘 SHA，見 elf-stack 規則 9 與 3.5。
+   另一處 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12），`npm-publish.yml` 已在 `cf42e88` 刪除。
+2. **PR AI review**：團隊標準要求 Claude AI review（`elf-cicd-review`），mcp-library `.github/workflows/` 目前（`origin/release` @ `73b8206`）只有 `ci.yml`、`docker-publish.yml`，**沒有** claude-review workflow。
+3. **發版流程**（**部分解決**）：分支部分已解決：mcp-library 已採用 `dev` / `release`（`5d00449`），CI 在 push `dev`、`release`、`hotfix/**` 時跑（`.github/workflows/ci.yml:19`），`docker-publish.yml` 只在 push `release` 時發佈、`latest` 只在 `refs/heads/release` 產生（`.github/workflows/docker-publish.yml:16-18,88`），符合 `elf-team-rule`；第 6 節「pull 法部署後內容沒更新」一列已改寫。
+   仍未解決：`release.yml` 已刪（證據 E1），沒有任何東西自動打 `v*.*.*` tag，tag 只能人工推；是否導入 `elf-cicd-versioning`。
+4. **公網存取模型**：gateway 目前 `SERVER_MODE=development`（`compose.yaml:39`，無用戶端驗證），nginx 範例也未加驗證；對外開放前要選 enterprise 模式或 nginx 層驗證。
+5. **`${VAR}` 展開與 token 傳遞**（**部分解決**）：書本的 token 已解決：設了 `DOCS_MCP_AUTH_TOKEN` 時由產生器自動加上 `bearer_token`（`56e67b6`，`gen-book-configs.mjs:65`），compose 也把它傳進 registrar（`compose.yaml:85`）。
+   仍未解決：非書本註冊檔（`registry/*.json`、`optional/`）裡 `bearer_token` / `env` 的 `${VAR}` 能不能被 registrar 映像的 CLI 展開——fork 的 CLI 有此功能（`mcpjungle/gateway/cmd/config_reader_env_test.go`），但 registrar 以**上游** `ghcr.io/mcpjungle/mcpjungle:latest-stdio` 為基底（`registry/Dockerfile:4`）；以及非書本 server 需要的 token 怎麼傳進 registrar 容器（〈註冊〉規則 9、10）。硬化時需實測，在那之前照規則 10「需要 token 時停下來回報」。
+6. CI Node 版本：`.github/workflows/ci.yml:116`（dashboard 建置）用 `node-version: 20`，`:151`（registry 測試）、`:165`（docs-mcp-server build-test）用 Node 24；registrar 映像基底內建 Node 20（`registry/Dockerfile:1`）。
+   與團隊 Node 24.18、docs-mcp Docker `node:26-alpine`（`mcpjungle/docs-mcp-server/Dockerfile:5,14`）、gateway Node 22（`mcpjungle/gateway/Dockerfile.fullbuild:49`）仍不一致。
 7. TZ 與 DB：gateway 設 `TZ=Asia/Taipei`；MCPJungle 寫入 Postgres 的時間欄位型別（timestamp vs timestamptz）未查證，是否符合團隊「DB 一律 UTC」。
-8. `docker-compose.localtest.yml` 與正式 stack 已三處不一致：① 仍用上游 image、無 TZ / timeout 30 ② 仍是雙網路（`shared-db` ＋ `mcpjungl`）寫法，而 `shared-db/` 目錄已隨 `a39e3eb` 移除
-   ③ **`build: ../docs-mcp-server` 路徑在 `fb1d578` 之後已失效**（現為 `../mcp/docs-mcp-server`），照註解執行會 build 失敗。是否同步或廢除。
-9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`——MCPJungle 本身的路由是 `/mcp` 與 `/v0/groups/<group>/mcp`，此寫法是否正確待實測。
-10. 備援（README「公司一套、家裡一套」）：兩套 gateway 的 DB 與註冊同步方式未文件化。
-11a. **`mcpjungle/nginx.example.conf` 在 mcp-library 裡從未 `git add`**（實測 2026-10-04，`git ls-files --error-unmatch` 回非零）。
-    本 skill 規則 16 與禁止簡化 5 都以它為權威出處，但重新 clone 的人拿不到——要嘛把它提交上去，要嘛改以本 skill 的 `templates/nginx.example.conf` 為準。
-    同樣未納管的還有 `AGENTS.md`、`.mcp.json`、`docs/superpowers/**`。
-11. docs-mcp-server 在 compose 內沒有 healthcheck（獨立 compose 有）；是否補上並讓 registrar `depends_on: condition: service_healthy`（不取代重試）。
+8. **自包含端到端測試的 localtest compose**（**已解決**）：原本跟正式 stack 三處不一致（① 用上游 image、無 TZ / timeout 30 ② 雙網路（`shared-db` ＋ `mcpjungl`）寫法 ③ docs-mcp 的 build 路徑失效），已在 `e563c9e`（E-131）刪除。
+   並存測試改用 `MCPJUNGLE_HOST_PORT=18900 IMAGE_TAG=mcp-test docker compose -p mcp-test up -d --build`（`compose.yaml:6`、`README.md:90-96`），見規則 2c。
+9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`（`README.md:64`）。靜態已確認：gateway 只有 `/mcp`、`/v0/groups/:name/mcp`、`/sse` 三個 MCP 路由（`mcpjungle/gateway/internal/api/server.go:213-230`），`/mcp/<corpus>` 不存在；
+   README 這句屬於 mcp-library 的文件漂移（見本節末）。連線還沒實測。
+10. 備援（`README.md:82`「公司一套、家裡一套」）：兩套 gateway 的 DB 與註冊同步方式未文件化。
+11a. **nginx 範例與 `AGENTS.md` 未納管**（**已解決**）：實測 2026-10-04 時它們在 mcp-library 從未 `git add`，規則 16 與禁止簡化 5 的權威出處重新 clone 拿不到；當時的選項是把它提交上去，或改以本 skill 的 `templates/nginx.example.conf` 為準。
+    mcp-library 選了前者：`fb4a0ed` 把 nginx 範例、`AGENTS.md` 與 `docs/superpowers/**` 的 dashboard plan / spec 納管，`e563c9e` 再把 nginx 範例搬到根目錄 `nginx.example.conf`。
+    `docs/superpowers/**` 之後在 `cf42e88` 刪除；`.mcp.json` 改列入 `.gitignore`（`d22cfbf`，`.gitignore:11`）。
+11. **docs-mcp-server 的 compose healthcheck**（**已解決**）：`e563c9e` 在 compose 內補上 healthcheck（`compose.yaml:62-67`），registrar `depends_on` docs-mcp `condition: service_healthy`（`:81-82`）；重試仍保留，不被取代（禁止簡化 1）。
 12. **為什麼不能再起第二個 gateway**（規則 8）：mcp-library 的 `compose.attach.yaml:1`、`CLAUDE.md:130`、`AGENTS.md:29`、`mcpjungle/README.md:117` 只寫「不要再起 gateway」，沒寫理由。
     舊理由（固定 container 名會撞名）在 `e563c9e`（E-131）拿掉 `container_name` 後已不成立，CI 也擋 `container_name`（`ci.yml:68-70`）。真正的理由待查明。
+
+**mcp-library 自己的文件漂移**（只記錄，不在本 skill 處理；`origin/release` @ `73b8206`）：
+
+- `README.md:64` 寫用戶端可連 `/mcp/<corpus>`，gateway 沒有這個路由（待確認 9）。
+- `README.md:78` 與 `compose.pull.yaml:1` 寫映像在 push `main` 時發佈，實際是 push `release`（`.github/workflows/docker-publish.yml:16-18`）。
+- `mcpjungle/books/README.md:116-117` 把 `book`、`language` 標成程式不讀取，但 `gen-book-configs.mjs:52-55` 用它們驗證語料 id（E-309 交接已提）。
