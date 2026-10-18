@@ -1,0 +1,22 @@
+mcp/elf-mcp-gateway/references/simplification-evidence.md
+  s_1ce812ccb52424::t_2dfb4209064a94 17
+mcp/elf-mcp-gateway/SKILL.md
+  s_1ce812ccb52424::t_b061230cc579cf 113-127
+  s_1ce812ccb52424::t_4a4c0ebdc88733 64,66-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "14107ffdb0bca7e5e89537849f8ea775af05cf6d",
+  "prompts": {},
+  "sessions": {
+    "s_1ce812ccb52424": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d64a02a2-0754-40d7-ad89-c0c3f42006f6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
