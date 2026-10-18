@@ -78,10 +78,11 @@ metadata:
 - **步驟 2（部署前驗證）**：
   指令 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books "$(mktemp -d)"`，預期 exit 0，印出的 id 包含 `<id>`（`73b8206` 印出 6 個 id）。
   exit 1 就停，修 `corpus.json`（原因見 B 表第 4 列）；這時 registrar 也會整批不註冊。
-- **步驟 3（部署後驗證）**：五條指令都要跑，每條都要符合預期：
+- **步驟 3（部署後驗證）**：以下指令都要跑，每條都要符合預期：
 
   ```bash
-  docker compose logs registrar                                   # 應有「>> 註冊 <id>」且 Exited (0)
+  docker compose logs registrar                                   # 應有「>> 註冊 <id>」
+  docker compose ps -a registrar                                  # 應為 Exited (0)
   docker compose exec mcpjungle /mcpjungle list servers           # 有 <id>
   docker compose exec mcpjungle /mcpjungle list tools | grep '<id>__'        # 無條件工具 4 個 + 能力工具
   docker compose exec mcpjungle /mcpjungle invoke <id>__docs_list_corpora --input '{}'
@@ -90,7 +91,8 @@ metadata:
 
   Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
   `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
-  接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`。
+  接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
+  退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
   接現有 gateway 時，所有 `docker compose run --rm … registrar` 都要加 `-f compose.attach.yaml`，所有 `exec mcpjungle …`（含 `deregister`）都在現有 gateway 的 compose 專案執行；否則在預設 `compose.yaml` 上 `run` 會經 `depends_on` 一併起 `mcpjungle` 與 `postgres`（`compose.yaml:78-80`、`:33-35`），等於第二個 gateway，違反規則 8。
   不能只看 `list servers`。任一項不符就停，查 B 表。
 
@@ -141,7 +143,7 @@ metadata:
     另兩段同樣保留：註冊前先驗證，不合法就整批不註冊（`:24-56`）；任一 server 或群組失敗時最後 exit 1（`:105`）。各情況的症狀與處理見〈註冊〉B 表。
     WHY：`3eaebfd`——docs-mcp 尚未監聽時註冊會 connection refused；冪等讓每次 push 後 redeploy 安全。
 14. 註冊見第 2 節〈註冊〉。**MUST NOT** 為新 server 改 `REGISTER_LIST`。
-15. registrar 結束 `Exited (0)` 是**正常**；`docker compose logs registrar` 應見「registrar: 完成,目前 servers:」與清單（`registrar.sh:87`）。
+15. registrar 結束 `Exited (0)` 是**正常**，用 `docker compose ps -a registrar` 確認；`docker compose logs registrar` 應見「registrar: 完成,目前 servers:」與清單（`registrar.sh:87`）。這行印在群組處理之前，不代表最終成功。
     例外：任一 server 或群組註冊失敗時印「registrar: 註冊失敗:…」並 exit 1（`registrar.sh:105`）；註冊前驗證失敗也是 exit 1（〈註冊〉B 表第 1 列）。
 
 ### 對外與安全
