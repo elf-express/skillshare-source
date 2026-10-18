@@ -61,9 +61,42 @@ metadata:
 8. **MUST** 要接「現有」gateway 時用 `mcpjungle/docker-compose.dockhand.yml`（只起 docs-mcp + registrar，加入 external 網路 `MCPJUNGLE_NETWORK`），**MUST NOT** 再起第二個 gateway。
    WHY：container 名固定 `mcpjungle-server`，同機已有同名 gateway 會撞名。
 
-### 註冊檔 `servers/*.json`
+### 註冊
 
-9. **MUST** 依 MCPJungle `RegisterServerInput`（`MCPJungle/pkg/types/mcp_server.go`）撰寫，欄位：
+本節是註冊的權威版本；其他規則、第 3 節操作、第 5 節檢查清單只指向這裡，`elf-mcp-knowledge` Step 4／Step 6 的指令與預期輸出跟本節逐字一致。**書本註冊設定只以產生器的輸出為準**：registrar 啟動時由 `mcpjungle/registry/gen-book-configs.mjs` 依各書 `corpus.json` 產生，連同 `registry/*.json` 註冊進 gateway（`registrar.sh:2-3`），不手寫、不進 repo。行號以 mcp-library `origin/release` @ `73b8206` 為準；以下指令都在 mcp-library repo 根目錄執行。
+
+**A. 新增一本書：三步，每步都附指令、預期輸出、停止條件**
+
+- **步驟 1（不手寫註冊檔）**：不新增任何註冊檔，`REGISTER_LIST` 保持空白（預設）。
+  指令 `docker compose config | grep REGISTER_LIST`，預期 `REGISTER_LIST: ""`（接現有 gateway 時加 `-f compose.attach.yaml`）；GitOps 工具則看它的 env 編輯器有沒有設 `REGISTER_LIST`。
+  有值就停，見 B 表第 2 列。
+- **步驟 2（部署前驗證）**：
+  指令 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books "$(mktemp -d)"`，預期 exit 0，印出的 id 包含 `<id>`（`73b8206` 印出 6 個 id）。
+  exit 1 就停，修 `corpus.json`（原因見 B 表第 4 列）；這時 registrar 也會整批不註冊。
+- **步驟 3（部署後驗證）**：五條指令都要跑，每條都要符合預期：
+
+  ```bash
+  docker compose logs registrar                                   # 應有「>> 註冊 <id>」且 Exited (0)
+  docker compose exec mcpjungle /mcpjungle list servers           # 有 <id>
+  docker compose exec mcpjungle /mcpjungle list tools | grep '<id>__'        # 無條件工具 4 個 + 能力工具
+  docker compose exec mcpjungle /mcpjungle invoke <id>__docs_list_corpora --input '{}'
+  docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"query":"<該領域關鍵字>"}'
+  ```
+
+  `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
+  接現有 gateway（`compose.attach.yaml`）時：attach 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`。`logs registrar` 要寫成 `docker compose -f compose.attach.yaml logs registrar`；`exec mcpjungle` 的三條要在現有 gateway 的 compose 專案執行。
+  不能只看 `list servers`。任一項不符就停，查 B 表。
+
+**B. 症狀 → 原因 → 處理（registrar 的四種行為）**
+
+| 症狀 | 原因 | 處理 |
+|---|---|---|
+| registrar 印出「…(未註冊任何 server)」並 exit 1，整批都沒註冊 | 註冊前驗證失敗，由 `fail`（`registrar.sh:24`）整批中止：語料設定不合法（`:27`）；`registry/*.json` 跟語料 id 同名（`:34`）；`REGISTER_LIST` 列了找不到設定檔的名稱（`:54-56`）；群組設定不合法（`:29`） | 依訊息修正，再 `docker compose run --rm registrar` |
+| 新書沒註冊，其他書正常 | `REGISTER_LIST` 有值時只註冊列出的名稱（`registrar.sh:44-45`） | 清空 `REGISTER_LIST` 或補上 `<id>` |
+| 改了 description／url 沒生效；改名後舊名還在 | 已註冊的直接略過（`registrar.sh:68-75`）；改名只新增、不移除 | `docker compose exec mcpjungle /mcpjungle deregister <名稱>`，再 `docker compose run --rm registrar` |
+| `gen-book-configs` exit 1，訊息指向 id | id 規則：`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`、最多 30 字元（`gen-book-configs.mjs:10-11`）；不可重複（`:40`）；`book` 等於書資料夾名，id 等於 `<book>-<language 小寫>` 或 `<book>-bi`（`:52-55`） | 改資料夾名或 `corpus.json` |
+
+9. **MUST** 非書本註冊檔（`mcpjungle/registry/<name>.json`、`registry/optional/<name>.json`）依 MCPJungle `RegisterServerInput`（`mcpjungle/gateway/pkg/types/mcp_server.go:49`）撰寫；書本不手寫，走上面 A。下表只適用非書本設定，欄位：
 
    | 欄位 | 何時必填 | 說明 |
    |---|---|---|
@@ -77,9 +110,21 @@ metadata:
    | `session_mode` | 選用 | `stateless`（預設）/ `stateful` |
 
    範本：`templates/servers/http-server.json`、`http-server-auth.json`、`stdio-server.json`、`stdio-server-env.json`。
-10. **MUST** 需 token 的 server（如 github）不放進自動註冊清單，除非 token 已由 env 提供。WHY：`mcpjungle/README.md`「沒進自動註冊，以免無 token 失敗」。
-11. **MUST** 知識語料採**策略 A**（每本書一個 server，`/mcp/<id>`，工具 `<id>__docs_search`）；策略 B（`docs-all.json`，`docs__docs_*`）只當補充入口。
-    WHY：A 才能在 gateway 以 server 為單位做 tool group 與 enterprise ACL。
+   mcp-library 現行對照：stdio 看 `mcpjungle/registry/fetch.json`、`filesystem.json`、`time.json`；streamable_http 看 `registry/optional/docs.json`。
+   檔名（不含 `.json`）就是 `name`，不可跟語料 id 同名（`registrar.sh:34`）。`bearer_token` 的 `${ENV_NAME}` 能不能在 registrar 映像裡展開還沒驗證（待確認 5）。
+10. **MUST** 非書本 server 依需求走下面兩條路之一，並遵守後面的限制：
+    - **不需要 token**：放 `mcpjungle/registry/<name>.json`。`compose.yaml` 預設會註冊（`REGISTER_EXTRAS` 預設 1，`compose.yaml:87`）；`compose.attach.yaml` 預設不註冊（預設 0，`compose.attach.yaml:25`）。
+    - **點名才註冊**：放 `mcpjungle/registry/optional/<name>.json`。`optional/` 的意義是「點名才註冊」，不是「需要 token」（`optional/docs.json` 沒有 token）。預設清單只收產生器輸出（`$GEN`）與 `registry/*.json`（`registrar.sh:47-51`）；`optional/` 只在 `config_of` 查名稱時用到（`:37-42`）。
+      只准用一次性指令註冊：`docker compose run --rm -e REGISTER_LIST=<名稱> registrar`。
+    - **MUST NOT** 把 `REGISTER_LIST` 寫進 `.env`（或 GitOps 工具的 env）。WHY：有值時只註冊列出的名稱（`registrar.sh:44-45`），之後新加的書都不會被註冊，也不會報錯。
+    - 需要 token 的 server（如 github）：token 怎麼傳進 registrar 容器還沒驗證（待確認 5），維持停止條件：**需要 token 時停下來回報**。
+    - **MUST NOT** 把 token 寫進 `registry/*.json`（含 `optional/`），也不能烤進映像。WHY：`registry/Dockerfile:6-7` 會把 `registry/*.json` 與 `optional/` 整包 COPY 進 `docs-registrar` 映像，推到 GHCR。
+      mcp-library `mcpjungle/README.md:95-100` 目前教人把 PAT 明文放進 `optional/`，不要照做，追蹤 E-325（高優先）。
+    - 範本細節見 E-317；CI 與 Dependabot 見 `elf-mcp-knowledge` 路線 C 與本 skill 規則 23。
+11. **MUST** 知識語料採**策略 A**：每本書一個 server，名稱＝語料 id，位址由產生器寫成 `${DOCS_MCP_URL}/mcp/<id>`（`gen-book-configs.mjs:63`），工具 `<id>__docs_search`；這是預設，不必設定（`mcpjungle/README.md:68`）。
+    策略 B（整包一個 `docs`，`registry/optional/docs.json`，工具 `docs__docs_*`，用 `corpus` 參數選書）只當補充入口，依規則 10 點名註冊（`mcpjungle/README.md:69`）。
+    B 是手寫檔，設了 `DOCS_MCP_AUTH_TOKEN` 也不會自動帶 `bearer_token`（`mcpjungle/README.md:69`）；要加就屬於規則 10 的「需要 token」，停下來回報。
+    WHY：A 才能在 gateway 以 server 為單位做 tool group 與 enterprise ACL（`registry/groups/claude-tools.json` 的 `"@books"` 展開成全部書本 server，`mcpjungle/README.md:73`）。
 
 ### registrar
 
