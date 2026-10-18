@@ -1,0 +1,21 @@
+mcp/elf-mcp-knowledge/SKILL.md
+  s_5ba9834caad6bc::t_540570a529c830 192,194,196-201,203
+  s_5ba9834caad6bc::t_16f2f5ef19ab7c 211,213,216-217,224-229
+  s_5ba9834caad6bc::t_43fbc21e84c03c 286
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "94b7a4c9f44f8772090df86b997ee1b77bc91ae2",
+  "prompts": {},
+  "sessions": {
+    "s_5ba9834caad6bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aaa29a4d-7fe5-4922-89b3-5fb71f56c4bf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
