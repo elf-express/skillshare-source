@@ -132,6 +132,7 @@ pnpm run build
 ```
 
 HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PORT>/health`，再照 `mcpjungle/docs-mcp-server/README.md`「二、本機 Docker 測試」（`:131-160`）裡「驗證 MCP 流程」的 initialize → 帶 `mcp-session-id` 呼叫。
+（`$env:TRANSPORT="http"; pnpm start` 是 PowerShell 寫法；Git Bash 寫成 `TRANSPORT=http pnpm start`。）
 
 ---
 

@@ -72,6 +72,7 @@ metadata:
    - id 總長 **≤ 30 字元**，因 gateway 工具名為 `<id>__<tool>`，部分用戶端上限約 64 字元。
    - `corpus.json` **MUST** 含 `book`、`language`（BCP 47，如 `zh-TW`）、`source`（原始網址）、`title`、`description`、`capabilities`。
    - 目錄樹與完整範例見 repo 的 `mcpjungle/books/README.md`（唯一權威版本；命名在第一節 `:12-45`，目錄樹在第二節）。
+     `:12-45` 是整個第一節：`:12-34` 是命名規則（語言後綴表與規則表），`:36-45` 是「現有語料」表。
    WHY：`.` 不在 MCPJungle 允許字元內，`_` 會和 `__` 切分衝突；語言放後綴讓同書各語言相鄰、AI 從 id 就知道語言。
 3. **MUST** id 在「整台 gateway」唯一，不只是 `mcpjungle/books/` 內唯一。
    現有保留名（`73b8206`）：6 個語料 id `fc-zh-tw`、`nginx-en`、`opnsense-en`、`opnsense-zh-tw`、`sqlsugar-zh-tw`、`stalwart-en`（`books/README.md:38-45`）；`filesystem`、`fetch`、`time`（`mcpjungle/registry/*.json`）；`docs`（策略 B 整包，`mcpjungle/registry/optional/docs.json`）；以及 DB 裡任何已註冊的名字（舊名 `sqlsugar`、`fc` 已改名，gateway 需先手動 `deregister` 舊名，mcp-library `mcpjungle/README.md:113`）。
@@ -129,6 +130,8 @@ Step 7  同 PR 更新文件
 
 **Step 0 — 選 id、查撞名**
 
+在 mcp-library repo 根目錄執行（Step 0–2 都在根目錄；Step 3 才 `cd mcpjungle/docs-mcp-server`）：
+
 ```bash
 ls mcpjungle/books/*/corpus/ mcpjungle/registry/
 docker compose exec mcpjungle /mcpjungle list servers      # 以 gateway 執行期清單為準（books/README.md:163）
@@ -178,7 +181,9 @@ mcpjungle/books/<書名>/corpus/<id>/
 npm ci && npm run build && npm test               # 既有測試（73b8206 為 128 個）必須全過，數量不得減少
 cp <skill>/templates/corpus-smoke.test.ts tests/<id>.test.ts   # 即 mcpjungle/docs-mcp-server/tests/<id>.test.ts；把 <corpus-id> 換掉後跑
 $env:DOCS_SCOPE="<id>"; npm run dev               # stdio 鎖單一語料，stderr 應印「已鎖定單一語料:<id>」
+#   （PowerShell；Git Bash 寫成 DOCS_SCOPE=<id> npm run dev）
 $env:TRANSPORT="http"; npm start                  # 另開終端：
+#   （PowerShell；Git Bash 寫成 TRANSPORT=http npm start）
 curl http://localhost:5690/health                 # corpora / docs 數要 +1 / +篇數
 ```
 
@@ -186,12 +191,21 @@ curl http://localhost:5690/health                 # corpora / docs 數要 +1 / +
 
 **Step 4 — 註冊**：註冊見 `elf-mcp-gateway` 第 2 節〈註冊〉。本機驗證（不需 Docker）：
 
+下面這行在 mcp-library repo 根目錄執行（Step 3 停在 `mcpjungle/docs-mcp-server`，先 `cd ../..`）：
+
     node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books "$(mktemp -d)"   # 印出的 id 要包含 <id>；exit 1 代表有語料不合法、registrar 會整批不註冊
+
+留在 `mcpjungle/docs-mcp-server` 底下時的等價寫法（`73b8206` 兩種寫法都 exit 0、印出同樣 6 個 id）：
+
+    node ../registry/gen-book-configs.mjs ../books "$(mktemp -d)"
 
 **Step 5 — 部署**：push `release` → `docker-publish.yml` 重建 `docs-mcp-server` 與 `docs-registrar` 兩個 image（`docker-publish.yml:16-18`；語料打包在 image 內，`mcpjungle/docs-mcp-server/Dockerfile:26`）。
 build 法 `docker compose up -d --build`；pull 法 `docker compose -f compose.pull.yaml up -d`；接現有 gateway 用 `docker compose -f compose.attach.yaml up -d --build`。細節見 `elf-mcp-gateway`。
+以上 `docker compose` 指令在 mcp-library repo 根目錄執行（`compose.yaml`、`compose.pull.yaml`、`compose.attach.yaml` 都在根目錄）。
 
 **Step 6 — 驗證 gateway**（三項都要貼輸出到 PR）
+
+在 mcp-library repo 根目錄執行。接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`。
 
 ```bash
 docker compose logs registrar                                   # 應有「>> 註冊 <id>」且 Exited (0)

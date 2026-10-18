@@ -72,7 +72,8 @@ metadata:
    `<書名>` 用小寫、可含 `-`，且**與未來語料 id 的書名部分同一個字串**（`opnsense` → `opnsense-en` / `opnsense-zh-tw`）。
    WHY：素材與語料靠這個字串對應；`mcpjungle/books/README.md` 規定 id 為 `<書名>-<語言>`，書名不一致就無法回溯來源；
    registrar 的 `gen-book-configs.mjs:52` 要求 `corpus.json` 的 `book` 等於書資料夾名，`:53-55` 要求 id 等於 `<book>-<language 小寫>`，或 `<book>-bi`（中英混排，`gen-book-configs.mjs:54-55`）。
-2. **MUST** 語言資料夾用擷取工具的原樣命名，現況四種：`en`、`zh-TW`、`zh-CN`（原文 / 譯文）、`en+zh-TW`（雙語對照）、`en-translated`（回譯）。
+   現況（`73b8206`）：stalwart 的 `source/en/` 不是扁平的，底下是巢狀子目錄（`auth/`、`cluster/`、`email/`…）；它的 `isIncluded` 收所有不以 `_` 開頭的 `.md`／`.mdx`（`stalwart/transform.ts:9-12`，`_` 開頭的是 Starlight 片段）。
+2. **MUST** 語言資料夾用擷取工具的原樣命名，現況五種：`en`、`zh-TW`、`zh-CN`（原文 / 譯文）、`en+zh-TW`（雙語對照）、`en-translated`（回譯）。
    **MUST NOT** 把 `en+zh-TW`、`en-translated` 這類衍生物刪掉或壓成一份。
    WHY：`.gitattributes:10-11` 註解明文「素材區保留完整（含 en+zh-TW 雙語對照、en-translated 等衍生物），語料只取其中一種」；
    `en+zh-TW` 是 168小隊審稿的**輸入**（見規則 16），刪了審查就沒有對照基準。
@@ -88,6 +89,7 @@ metadata:
    四個都靠 `.gitignore:13-20` **逐檔列名**排除，不是通用規則；新書再出現超標檔只有 CI 擋得住。見第 7 節待確認 2。
    自查：
    ```bash
+   # 在 mcp-library repo 根目錄執行（CI 掃的是整棵樹）
    find . -type f -size +5M -not -path "./.git/*" -not -path "*/node_modules/*"
    ```
 6. **MUST** 擷取產出的 md 保持與來源一致（YAML front matter、`[⬆ 目錄]` / 上下篇導航行都留著）。
@@ -97,6 +99,7 @@ metadata:
 
 7. **MUST** 一個語言資料夾 = 一個語料，id = `<書名>-<語言小寫>`（`opnsense/source/zh-TW/` → `opnsense-zh-tw`）。
    命名的完整規則（禁底線、禁點、≤ 30 字元、禁泛名、全 gateway 唯一）以 `mcpjungle/books/README.md` 第一節（`:12-34`）為**權威**，不要在這裡另立一套；
+   （`:12-34` 指第一節的命名規則：語言後綴表與規則表；同一節的 `:36-45` 是「現有語料」表，不屬命名規則。）
    registrar 會實際檢查（`gen-book-configs.mjs:10-11,38-40,53-55`）。
 8. **MUST NOT** 上架下列四類，它們只留在素材區：
 
@@ -116,6 +119,7 @@ metadata:
 10. **MUST** 要不要收目錄頁（`000 目錄.md`）由 `import.ts` 的 `isIncluded` 決定；有收的話，目錄頁同樣要通過規則 9 的來源檢查。
     WHY：`books/README.md` 第六節（`:202`）允許保留目錄頁；但它沒有 front matter，開頭是 `# …`＋`> 網站：https://…`（證據 B12），收了卻抽不到來源就違反規則 9。
     現況（`73b8206`）：opnsense `transform.ts:7` 排除 `000 `、nginx `transform.ts:17-19` 只收有章節標籤的檔名，兩本都不收目錄頁。
+    stalwart 的 `isIncluded`（`stalwart/transform.ts:9-12`）收所有不以 `_` 開頭的 `.md`／`.mdx`，但它的 `source/en/` 是巢狀子目錄、沒有 `000 目錄.md` 這類目錄頁，所以不涉及本條。
 11. **MUST** `import.ts` 產出的語料不得有泛名標題：`page`、`index`、`untitled` 或空標題。
     標題取法：先取 front matter 的 `title:`，沒有才取第一個 `# ` 標題，去掉頭尾空白，不分大小寫。（`title:` 的值依 YAML 解析，外層引號不算標題的一部分。）重複標題只列出，不算失敗。
     WHY：`docs_search`／`docs_outline` 回傳的是檔名與標題，那是 AI 選檔的唯一線索。
@@ -185,6 +189,7 @@ opnsense 另有 `168小隊-啟動提示.md`（譯文審查的啟動提示，貼�
 上架一本書（素材 → 語料），指令照抄：
 
 ```bash
+# 所在目錄：0)、1) 在 mcp-library repo 根目錄；2)–4) 在 mcpjungle/docs-mcp-server；5) 回到 repo 根目錄
 # 0) 選 id 並查撞名（規則 7；權威規則見 mcpjungle/books/README.md 第一節）
 ls mcpjungle/books/*/corpus/ mcpjungle/registry/
 docker compose exec mcpjungle /mcpjungle list servers      # 以 gateway 執行期清單為準
@@ -205,6 +210,8 @@ find ../books/<書名>/corpus -type f -size +5M
 # 4) 確認腳本可重複執行：先 git add，再跑一次，diff 必須是空的
 git add ../books/<書名>/corpus && npx tsx ../books/<書名>/import.ts && git diff --stat -- ../books/<書名>/corpus
 
+# 回到 mcp-library repo 根目錄，再接步驟 5
+cd ../..
 # 5) corpus.json、smoke test、註冊、部署、文件 → 照 elf-mcp-knowledge Step 2–7
 ```
 
@@ -212,6 +219,7 @@ git add ../books/<書名>/corpus && npx tsx ../books/<書名>/import.ts && git d
 
 ```bash
 # 在 mcpjungle/docs-mcp-server、npm run build 之後執行；ID 換成語料 id
+# 標題取法：先取 front matter 的 title:，沒有才取第一個 "# " 標題，去掉頭尾空白，不分大小寫（title: 的值依 YAML 解析，外層引號不算標題）
 ID=<id>
 node --input-type=module - "$ID" <<'EOF'
 import * as c from "./dist/corpus.js";
@@ -245,8 +253,10 @@ EOF
 驗證上架後真的查得到（四項都貼到 PR）：
 
 ```bash
+# 從 mcp-library repo 根目錄開始：第一行 cd 進 mcpjungle/docs-mcp-server，上架前檢查也在那裡跑；cd ../.. 之後的 curl、docker compose 在 repo 根目錄執行
 cd mcpjungle/docs-mcp-server && npm run build && npm test       # 73b8206 為 128 個測試，全過、數量不減
 #   上架前檢查（上一段）：泛名標題 0 篇、來源問題 0 篇
+cd ../..
 curl -s http://localhost:5690/health                      # corpora +1、docs +篇數
 docker compose exec mcpjungle /mcpjungle invoke "$ID"__docs_search --input '{"query":"<該書真實關鍵字>"}'
 ```
