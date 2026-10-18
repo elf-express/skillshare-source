@@ -1,0 +1,33 @@
+mcp/elf-mcp-gateway/SKILL.md
+  s_1ce812ccb52424::t_c199fca1bcb5bb 281-290
+  s_1ce812ccb52424::t_20787a046f28e8 182,184-188,190,193,195,199,202-206,210-212,217-218,221-222
+  s_1ce812ccb52424::t_faf0a9c19e3e93 265-266
+  s_1ce812ccb52424::t_dd908c31b49eea 303-308
+  s_1ce812ccb52424::t_add090d203a795 255
+  s_1ce812ccb52424::t_1c3df4b98e6b01 292-300
+  s_1ce812ccb52424::t_41707f4d825c43 273
+  s_1ce812ccb52424::t_0ed541b715ae87 247-251
+mcp/elf-mcp-gateway/references/simplification-evidence.md
+  s_1ce812ccb52424::t_ee8a9acc554736 22
+  s_1ce812ccb52424::t_d77f4ac9468a4f 12
+  s_1ce812ccb52424::t_7ad4359596aa18 21
+  s_1ce812ccb52424::t_0e8af182552ac0 17
+  s_1ce812ccb52424::t_48b8599dfd3c7b 20
+  s_1ce812ccb52424::t_ac77af06b3a607 28-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "da04e2a66a7941073d1e545eaabd563e48c210a4",
+  "prompts": {},
+  "sessions": {
+    "s_1ce812ccb52424": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d64a02a2-0754-40d7-ad89-c0c3f42006f6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
