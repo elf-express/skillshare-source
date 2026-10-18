@@ -58,8 +58,8 @@ metadata:
    WHY：`67b8864`——Node 20 跑不動使用 Node 22 API 的 stdio server（`@smartbear/mcp` 用 `module.enableCompileCache`）；`npx` / `uvx` 是 stdio server 的前提。
 6. **MUST** `MCP_SERVER_INIT_REQ_TIMEOUT_SEC` 預設 **30**。WHY：`bafd8e8`——`npx -y` 首次執行要下載套件，10 秒不夠。
 7. **MUST** 四個服務都設 `TZ: ${TZ:-Asia/Taipei}`（含 `postgres`），gateway image 安裝 `tzdata`（`bafd8e8`）。TZ 只影響日誌 / 顯示；DB 時間欄位依 `elf-postgresql` 以 UTC `timestamptz` 儲存。
-8. **MUST** 要接「現有」gateway 時用 `mcpjungle/docker-compose.dockhand.yml`（只起 docs-mcp + registrar，加入 external 網路 `MCPJUNGLE_NETWORK`），**MUST NOT** 再起第二個 gateway。
-   WHY：container 名固定 `mcpjungle-server`，同機已有同名 gateway 會撞名。
+8. **MUST** 要接「現有」gateway 時用 `compose.attach.yaml`（只起 docs-mcp + registrar，加入 external 網路 `MCPJUNGLE_NETWORK`，預設 `mcp-library_mcpjungl`），**MUST NOT** 再起第二個 gateway。
+   出處（mcp-library `origin/release` @ `73b8206`）：`compose.attach.yaml:1`、`CLAUDE.md:130`、`AGENTS.md:29`、`mcpjungle/README.md:117`。這些檔只寫了規則、沒寫理由，理由列在待確認「為什麼不能再起第二個 gateway」。
 
 ### 註冊
 
@@ -132,7 +132,7 @@ metadata:
     WHY：`54a9c08`——Dockhand / Portainer 把 repo clone 進自己的容器，相對 bind mount 由 host daemon 解析，報 `mkdir /app: read-only file system`。
 13. **MUST** 保留 `registrar.sh` 的三段邏輯：等 gateway（每 2 秒、上限 60 次＝120 秒）→ 每個 server 註冊重試（3 秒、上限 20 次）→ 冪等（`list servers` 已有則略過）。
     WHY：`3eaebfd`——docs-mcp 尚未監聽時註冊會 connection refused；冪等讓每次 push 後 redeploy 安全。
-14. **MUST** 新 server 加進 `REGISTER_LIST`：`registrar.sh` 預設值（主 stack）與 `docker-compose.dockhand.yml` 預設值（接現有 gateway）各自維護。
+14. 註冊見第 2 節〈註冊〉。**MUST NOT** 為新 server 改 `REGISTER_LIST`。
 15. registrar 結束 `Exited (0)` 是**正常**；`docker logs` 應見「registrar: 完成,目前 servers:」與清單。
 
 ### 對外與安全
@@ -149,6 +149,7 @@ metadata:
 
 20. **MUST** 所有 workflow 的 `uses:` 釘**完整 commit SHA**並在行尾註解版本（`@<40-char-sha>  # v7`）。WHY：`83cb805`——org policy 要求 SHA 釘選。
     注意：其他團隊 skill（`elf-stack` 等）原用 `actions/*` 版本標籤；已決改釘 SHA（E-302），見待確認第 1 條與 elf-stack 3.5。
+    現況（mcp-library `origin/release` @ `73b8206`）：`ci.yml:114,149,175` 的 setup-node 註解寫 `# v6`，實際是 v7.1.0，違反本規則，追蹤 E-324。
 21. **MUST** GHCR 登入用 `password: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}`，**MUST NOT** 改成 step `if: secrets...`。
     WHY：`5c42768`——`secrets` context 不能用在 step `if:`（報 `Unrecognized named-value: 'secrets'`）。
 22. **MUST** `docker-publish.yml` 維持：matrix 每個 image 一筆（`docs-mcp-server` → `./mcp/docs-mcp-server`、`docs-registrar` → `./mcpjungle`（自訂 `dockerfile`）、
@@ -156,6 +157,7 @@ metadata:
     `metadata-action` tags（semver 三層、branch、`sha-<short>`、預設分支 `latest`、手動 tag）、GHA cache `scope=<image>`、`provenance: false`。
 23. **MUST** 新 server 同 PR 加進：`docker-publish.yml` matrix、`ci.yml` 的 `build-test` 與 `docker-build` matrix、`dependabot.yml`（含 `semver-major` ignore）。範本 `templates/docker-publish.matrix-entry.yml`。
     WHY：證據 E4——核心 `docs-mcp-server` 至今不在 CI matrix 與 dependabot；證據 E3——拿掉 major ignore 後主版本分岔。
+    現況（mcp-library `origin/release` @ `73b8206`）：`dependabot.yml` 沒有 `semver-major` ignore，違反本規則，追蹤 E-323。
 24. **MUST** commit / PR 標題走 Conventional Commits（CI `basics` 用 `webiny/action-conventional-commits` 擋）。
 
 ---
@@ -219,7 +221,7 @@ docker compose up -d --force-recreate registrar
 8. **MUST NOT** 刪 `dependabot.yml` 的 `semver-major` ignore（新增時一律帶上），或把 server 從 CI matrix 拿掉。WHY：證據 E3、E4。
 9. **MUST NOT** 刪發版能力而不留替代。WHY：證據 E1——`0115d50` 刪了 `release.yml`（建 tag / Release / dispatch publish），之後沒有任何東西產生 `v*.*.*` tag，`docker-publish` / `npm-publish` 的 tag 觸發形同虛設。要恢復請依 `elf-cicd-versioning`。
 10. **MUST NOT** 在 `servers/*.json` 寫明文 token，或把 `description` 簡化成一個詞。WHY：安全；證據 E10。
-11. **MUST NOT** 改 compose service 名 / container 名 / image 名而不全域搜尋更新 README 與 CLAUDE.md。WHY：證據 E11（`docs-mcp` → `docs-mcp-server` 後 README 指令失效）。
+11. **MUST NOT** 改 compose service 名 / image 名而不全域搜尋更新 README、CLAUDE.md 與 AGENTS.md。WHY：證據 E11（`docs-mcp` → `docs-mcp-server` 後 README 指令失效）。
 
 ---
 
@@ -248,7 +250,7 @@ docker compose up -d --force-recreate registrar
 | registrar「等 gateway 逾時(120s)」 | gateway 連不上 DB：改了 `POSTGRES_PASSWORD` 卻沒同步 `MCPJUNGLE_DATABASE_URL`，或覆寫的外部 DB 位址不通 | `docker logs mcpjungle-server`；兩處密碼對齊（規則 2b），或移除覆寫回用內建 DB |
 | stdio server 註冊時 init timeout | `npx -y` 首次下載慢 | `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`（或更高） |
 | stdio server 啟動即崩、log 有 `enableCompileCache is not a function` | gateway runtime Node 20 | Node 22（`67b8864`） |
-| 起 stack 報 container name `mcpjungle-server` already in use | 同機已有 gateway | 停舊的，或改用 dockhand compose 接現有 gateway |
+| 起 stack 報 container name `mcpjungle-server` already in use | 機器上還跑著舊的固定 container 名堆疊，或自己加了 `container_name`（違反 `ci.yml:68-70`；CI 報「compose 不可寫死 container_name(-p mcp-test 並存會撞名)」，`ci.yml:69`） | 停掉舊堆疊、拿掉 `container_name`；並存測試用 `docker compose -p mcp-test` |
 | 能呼叫工具但收不到回應 / 60 秒斷線 | nginx buffer SSE、預設 timeout | 依規則 16 |
 | Actions 報 `Unrecognized named-value: 'secrets'` | 在 step `if:` 用了 secrets | 改 `password: ${{ secrets.GHCR_PAT \|\| secrets.GITHUB_TOKEN }}` |
 | workflow 被 org 拒絕執行 | `uses:` 未釘 SHA | 釘完整 SHA（`83cb805`） |
@@ -275,3 +277,5 @@ docker compose up -d --force-recreate registrar
     本 skill 規則 16 與禁止簡化 5 都以它為權威出處，但重新 clone 的人拿不到——要嘛把它提交上去，要嘛改以本 skill 的 `templates/nginx.example.conf` 為準。
     同樣未納管的還有 `AGENTS.md`、`.mcp.json`、`docs/superpowers/**`。
 11. docs-mcp-server 在 compose 內沒有 healthcheck（獨立 compose 有）；是否補上並讓 registrar `depends_on: condition: service_healthy`（不取代重試）。
+12. **為什麼不能再起第二個 gateway**（規則 8）：mcp-library 的 `compose.attach.yaml:1`、`CLAUDE.md:130`、`AGENTS.md:29`、`mcpjungle/README.md:117` 只寫「不要再起 gateway」，沒寫理由。
+    舊理由（固定 container 名會撞名）在 `e563c9e`（E-131）拿掉 `container_name` 後已不成立，CI 也擋 `container_name`（`ci.yml:68-70`）。真正的理由待查明。
