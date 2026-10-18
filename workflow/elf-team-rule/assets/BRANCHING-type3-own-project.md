@@ -11,6 +11,8 @@
 | 本 repo（`origin`） | `elf-express/{{repo 名稱}}`          |
 | 部署位置              | `{{部署到哪裡，例如主機或環境名稱}}` |
 
+行尾：LF，由 `.gitattributes` 規定（範本：elf-team-rule `assets/gitattributes`）
+
 ## 分支用途
 
 | 分支                      | 用途                 | 可否提交                 | 從哪裡更新      |
@@ -75,7 +77,7 @@ git switch main && git merge --ff-only origin/main && git merge --ff-only origin
 建議在 GitHub 設定分支保護規則（Branch Protection Rules 或 Ruleset）：
 
 * **`main` 與 `release`**：禁止 force push、禁止刪除、只允許維護者 push。**不要**設「必須經過 Pull Request」：這兩條分支是在本機 `merge --ff-only` 後直接 push 的，GitHub 的 PR 合併會產生新提交或新 SHA，無法快轉。
-* **`dev`**：禁止 force push、禁止刪除；開發分支（`feat/*`、`fix/*`、`docs/*`、`chore/*`、`test/*`、`merge/*`）一律經 PR 合併，維護者保留直接 push 權限，給 hotfix 發佈後的 `release` → `dev` 合回使用。
+* **`dev`**：禁止 force push、禁止刪除；開發分支（`feat/*`、`fix/*`、`docs/*`、`chore/*`、`test/*`、`merge/*`）一律經 PR 合併，用 merge commit（elf-team-rule 規則 37），維護者保留直接 push 權限，給 hotfix 發佈後的 `release` → `dev` 合回使用。
 
 ## 禁止事項
 

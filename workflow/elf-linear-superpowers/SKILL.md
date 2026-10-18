@@ -2,7 +2,7 @@
 name: elf-linear-superpowers
 description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: Elf Express
 ---
 
@@ -17,9 +17,9 @@ metadata:
 > | 隊友規範：角色、命名與回報 | 統籌與 subagent 的角色、命名、回報 |
 > | 分支規範：三種 repo 類型 | 分支用途、命名、發佈、hotfix、git-guard |
 > | 流程：維運單 | 不改 repo 的維運工作 |
-> | Linear 巡檢規則 | 可自動檢查的規則 R1–R12、W1–W5 |
+> | Linear 巡檢規則 | 可自動檢查的規則 R1–R12、W1–W6 |
 >
-> 版本：2026-10-15（與上列文件同步）
+> 版本：2026-10-17（與上列文件同步；Linear 正本於發版時依核准稿更新）
 
 Linear 是規格與計畫的唯一來源（single source of truth）。superpowers 各 skill 照常執行，但**產出寫進 Linear issue，不寫 `docs/superpowers/specs/`、`docs/superpowers/plans/` 檔案**（除非使用者明確要求另存）。
 
@@ -47,7 +47,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 狀態 | 待規劃 → 待辦 → 進行中 → 驗證中 → 已完成；另有 已取消、Duplicate、Triage |
 | 父子自動化 | 子 issue 全部完成 → 父 issue 自動關閉；父 issue 關閉**不會**關子 issue |
 | Estimate | Spec 與 Plan **必填**；維運單選填 |
-| GitHub PR 自動化 | 開 PR → 進行中；PR 審查活動 → 驗證中；PR merge → 已完成 |
+| GitHub PR 自動化 | 開 PR → 進行中；PR 審查活動 → 驗證中；PR 合進 `dev` → 驗證中（自動，Eddie 依目標分支設定；設定完成前依 elf-team-rule 規則 10 的過渡期處理）。已導入 dev／release 的 repo，「已完成」在發版完成後於步驟 7 手動設定；還沒導入的 repo 維持 PR merge → 已完成 |
 
 ## 生命週期對照
 
@@ -65,8 +65,8 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | S3 | dispatching-parallel-agents | 按需 | Plan | — | 並行 Task 與整合結果留言 |
 | 5-1 | requesting-code-review | 必經・保險① | Plan | 進行中 → 驗證中 | 所有 Task 勾完即改；結果依嚴重度留言 |
 | 5-2 | receiving-code-review | 必經 | Plan | 維持驗證中 | 逐項處理方式留言；有 Critical 回 5-1 |
-| 6 | verification-before-completion | 必經・保險② | Plan＋Spec | 維持驗證中 | 證據留言；勾 Spec 驗收條件 |
-| 7 | finishing-a-development-branch | 必經 | Plan →（自動）Spec | → 已完成 或 已取消 | 巡檢全規則自查；收尾選項與結果留言 |
+| 6 | verification-before-completion | 必經・保險② | Plan＋Spec | 維持驗證中 | 證據分兩段留言：程式本身的證據合進 `dev` 前必須完成，與 `release` 有關的證據發版完成前補齊；勾 Spec 驗收條件 |
+| 7 | finishing-a-development-branch | 必經 | Plan →（自動）Spec | 開 PR → 進行中；合進 `dev` → 驗證中（自動）；發版完成 → 已完成（手動）；或 已取消 | 巡檢全規則自查；收尾選項與結果留言；已完成的三個條件與自動化設定前的過渡期見 elf-team-rule 規則 10 |
 
 ## 各步驟做法
 
@@ -81,7 +81,10 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
   | Spec 有「規格已定案」、Plan 待規劃 | 步驟 2～3 |
   | Plan 待辦、沒排週期 | 步驟 3a |
   | Plan 進行中、還有未勾步驟 | 步驟 4（從第一個未勾的步驟繼續） |
-  | Plan 驗證中 | 步驟 5 或 6（看留言紀錄） |
+  | Plan 驗證中、PR 尚未合進 `dev` | 步驟 5 或 6（看留言紀錄） |
+  | Plan 驗證中、PR 已合進 `dev` | 步驟 7（等發版） |
+
+  步驟 5-1 已改為驗證中的 Plan，在步驟 7 開 PR 時會被自動拉回進行中，這是正常的，仍在步驟 7（等 PR 合併），不要回步驟 4；PR 有審查活動或合進 `dev` 時會再自動改為驗證中（合進 `dev` 的自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。
 
 - **新需求**：`save_issue` 在團隊 `ELF EXPRESS` 套用模板 `Spec 設計規格` 建立 `[Spec] 主題`。確認底下有 `[Plan]` 子 issue（沒有就手動建：parent 為此 Spec、label `Plan`、狀態 待規劃），並把子 issue 標題改成 `[Plan] 主題`。
 - 建立後立即設定 Spec 的 **estimate**，依目前對需求規模的初估。
@@ -156,6 +159,9 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 1. 執行完整驗證指令（`dotnet test`、前端 build、lint），讀取並核對實際輸出。
 2. 資料庫腳本在已部署環境重跑一次，確認冪等。
 3. 在 Plan 留言證據：指令、exit code、通過／失敗數。沒有證據不宣告完成。
+   證據分兩段，完成時間點不同：
+   - **合進 `dev` 前必須完成**：測試、build、lint、資料庫腳本冪等這類「程式本身對不對」的證據。為什麼：延到合併後才補，等於讓沒驗證過的程式先進整合分支，保險②失效。
+   - **發版完成前補齊**：與 `release` 有關的證據（快轉後的 check runs、`skillshare sync`、實機驗證）。
 4. 回 Spec 逐條核對「驗收條件」，有證據才勾；不過就回 S2。
 5. 勾 Plan 的「完成檢查」。
 
@@ -165,8 +171,11 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 
 | 選項 | Plan | Spec |
 |---|---|---|
-| 開 PR（base 為 `dev`） | PR 自動連到 Plan，merge 後自動改為 已完成。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 自動關閉 |
-| 本地 merge | 手動改為 已完成 | 自動關閉 |
+| 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中 |
+| 發版完成 | elf-team-rule 規則 10 的三個條件都滿足後，AI 手動改為 已完成：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`） | 自動關閉 |
+| hotfix | 不經 PR 合回 `dev`（elf-team-rule 規則 11）：依規則 25 快轉 `release`（repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開 draft PR，只用來觸發 CI）；依規則 26 在本機把 `release` 合回 `dev` 後直接推送（規則 9 的例外），有衝突時經 `merge/conflict-*` 的 PR 合回、用 merge commit（規則 18、37）。規則 10 的三個條件都滿足後手動改為 已完成（條件 ① 改為 `release` 已快轉到該 `origin/hotfix/*`） | 自動關閉 |
+| 未導入 dev／release 的 repo | PR 合併 → 已完成（預設自動化） | 自動關閉 |
+| 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（elf-team-rule 規則 18）與 hotfix 的 `release` → `dev` 合回（規則 26），開發分支不適用 | — |
 | 保留分支 | 維持 驗證中，留言原因 | 維持進行中 |
 | 捨棄 | 改為 已取消，留言原因 | 問使用者：一併取消或保留重新規劃 |
 
@@ -234,6 +243,11 @@ PR 合併或單取消後，在 Orca 刪除該工作區（移除 worktree 與分�
 - 不手動把 Spec 改為已完成，交給自動化關閉；Spec 已完成就代表整件事做完。
 - 一個 Spec 對應一個 Plan；範圍太大就拆成多個 Spec 並建里程碑。
 - 工作單**最多兩層**（Spec → Plan），Plan 底下不開子工作單，Task 一律是 Plan 描述裡的打勾清單。
-- 多個 AI 同時開發（Orca）：一個 AI 只負責一個 worktree、一張 Plan；先在 Plan 留言認領；不切分支、不碰主目錄、不改別人的 Plan；會改到同一個檔案就先問使用者。
+- 多個 AI 同時開發（Orca）：照 elf-team-rule 規則 31–36。一個 AI 只負責一個 worktree、一條分支、一張 Plan，兩個 session 不用同一條分支；先在 Plan 留言認領；不切分支、不碰主目錄、不改別人的 Plan；會改到同一個檔案就先問使用者。另外：
+  - 開始前確認工作目錄就是這張 Plan 的 worktree（repo 外同層、分支名稱符合規則 10），不在 Orca 自動建立的 `.ocrca/…` 目錄裡做事（規則 31）。
+  - 會改到同一批檔案的單用 blocked by 排序；同一專案有兩組以上未完成的單時，Spec 定案前在「## 並行」一節寫 `並行：可（與 E-xxx）` 或 `並行：不可（blocked by E-xxx）`，下一行 `理由：` 寫兩邊要改的檔案清單比對結果（規則 32）。
+  - 別張單只留言，不改它的描述，由負責那張單的 session 更新（規則 33）。
+  - 改動共用本機狀態（skillshare 設定與 `skillshare sync`、全域 git 設定、Credential Manager）或刪除、移動共用路徑前，先確認沒有其他 session 在用，並在里程碑或相關的單留言告知（規則 34、35）。
+  - 收尾時清理自己建立的 worktree 與分支，Orca 自動建立、沒用到的 `.ocrca/…` 目錄列進清理清單（規則 36）。
 - 狀態變更、偏離計畫、審查與驗證結果都要在 Linear 留言，保留完整紀錄，Deloitte 稽核可追溯。
-- 修改規則時改 Linear 正本，再同步本 skill；新增可檢查的規則時同步加進巡檢規則。
+- 修改規則時改 Linear 正本，再同步本 skill；改 skill 的 PR 先出核准稿，發版時才改正本。新增可檢查的規則時同步加進巡檢規則。
