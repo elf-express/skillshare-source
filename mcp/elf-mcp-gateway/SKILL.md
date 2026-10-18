@@ -288,7 +288,8 @@ docker compose run --rm registrar                               # mcpjungle/READ
    仍未解決：非書本註冊檔（`registry/*.json`、`optional/`）裡 `bearer_token` / `env` 的 `${VAR}` 能不能被 registrar 映像的 CLI 展開——fork 的 CLI 有此功能（`mcpjungle/gateway/cmd/config_reader_env_test.go`），但 registrar 以**上游** `ghcr.io/mcpjungle/mcpjungle:latest-stdio` 為基底（`registry/Dockerfile:4`）；以及非書本 server 需要的 token 怎麼傳進 registrar 容器（〈註冊〉規則 9、10）。硬化時需實測，在那之前照規則 10「需要 token 時停下來回報」。
 6. CI Node 版本：`.github/workflows/ci.yml:116`（dashboard 建置）用 `node-version: 20`，`:151`（registry 測試）、`:165`（docs-mcp-server build-test）用 Node 24；registrar 映像基底內建 Node 20（`registry/Dockerfile:1`）。
    與團隊 Node 24.18、docs-mcp Docker `node:26-alpine`（`mcpjungle/docs-mcp-server/Dockerfile:5,14`）、gateway Node 22（`mcpjungle/gateway/Dockerfile.fullbuild:49`）仍不一致。
-7. TZ 與 DB：gateway 設 `TZ=Asia/Taipei`；MCPJungle 寫入 Postgres 的時間欄位型別（timestamp vs timestamptz）未查證，是否符合團隊「DB 一律 UTC」。
+7. TZ 與 DB（**已解決**，2026-10-18 以 `-p mcp-test` 實跑 `origin/release` @ `73b8206`）：gateway 設 `TZ=Asia/Taipei`；原本未查證 MCPJungle 寫入 Postgres 的時間欄位型別（timestamp vs timestamptz），是否符合團隊「DB 一律 UTC」。
+   實測 `docker compose -p mcp-test exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\d mcp_servers"'`：`created_at`、`updated_at`、`deleted_at` 三欄都是 `timestamp with time zone`，PostgreSQL 內部以 UTC 儲存，符合「DB 一律 UTC」。只驗證了 `mcp_servers` 表；其他表（`tools`、`prompts`、`resources` 等）的時間欄位沒逐一查。
 8. **自包含端到端測試的 localtest compose**（**已解決**）：原本跟正式 stack 三處不一致（① 用上游 image、無 TZ / timeout 30 ② 雙網路（`shared-db` ＋ `mcpjungl`）寫法 ③ docs-mcp 的 build 路徑失效），已在 `e563c9e`（E-131）刪除。
    並存測試改用 `MCPJUNGLE_HOST_PORT=18900 IMAGE_TAG=mcp-test docker compose -p mcp-test up -d --build`（`compose.yaml:6`、`README.md:90-96`），見規則 2c。
 9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`（`README.md:64`）。靜態已確認：gateway 只有 `/mcp`、`/v0/groups/:name/mcp`、`/sse` 三個 MCP 路由（`mcpjungle/gateway/internal/api/server.go:213-230`），`/mcp/<corpus>` 不存在；
