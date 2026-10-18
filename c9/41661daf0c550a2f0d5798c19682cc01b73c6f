@@ -1,0 +1,19 @@
+mcp/elf-mcp-gateway/SKILL.md
+  s_1ce812ccb52424::t_2ce6b74e9a7f88 87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c941661daf0c550a2f0d5798c19682cc01b73c6f",
+  "prompts": {},
+  "sessions": {
+    "s_1ce812ccb52424": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d64a02a2-0754-40d7-ad89-c0c3f42006f6",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
