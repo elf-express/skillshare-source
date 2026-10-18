@@ -84,7 +84,7 @@ metadata:
   ```
 
   `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
-  接現有 gateway（`compose.attach.yaml`）時：attach 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`。`logs registrar` 要寫成 `docker compose -f compose.attach.yaml logs registrar`；`exec mcpjungle` 的三條要在現有 gateway 的 compose 專案執行。
+  接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`。
   不能只看 `list servers`。任一項不符就停，查 B 表。
 
 **B. 症狀 → 原因 → 處理（registrar 的四種行為）**
