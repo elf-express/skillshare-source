@@ -1,0 +1,19 @@
+workflow/elf-linear-superpowers/SKILL.md
+  s_94d34e2b504313::t_2d15d444de9edf 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "50e9b4b82ab72c22cd0bd6fe48cfd8d660d07362",
+  "prompts": {},
+  "sessions": {
+    "s_94d34e2b504313": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "761bcb56-936e-4629-93e3-3ecf95d671df",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
