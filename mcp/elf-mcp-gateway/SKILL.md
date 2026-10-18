@@ -88,8 +88,10 @@ metadata:
   docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"query":"<該領域關鍵字>"}'
   ```
 
+  Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
   `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
   接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`。
+  接現有 gateway 時，所有 `docker compose run --rm … registrar` 都要加 `-f compose.attach.yaml`，所有 `exec mcpjungle …`（含 `deregister`）都在現有 gateway 的 compose 專案執行；否則在預設 `compose.yaml` 上 `run` 會經 `depends_on` 一併起 `mcpjungle` 與 `postgres`（`compose.yaml:78-80`、`:33-35`），等於第二個 gateway，違反規則 8。
   不能只看 `list servers`。任一項不符就停，查 B 表。
 
 **B. 症狀 → 原因 → 處理（registrar 的四種行為）**
@@ -97,7 +99,7 @@ metadata:
 | 症狀 | 原因 | 處理 |
 |---|---|---|
 | registrar 印出「…(未註冊任何 server)」並 exit 1，整批都沒註冊 | 註冊前驗證失敗，由 `fail`（`registrar.sh:24`）整批中止：語料設定不合法（`:27`）；`registry/*.json` 跟語料 id 同名（`:34`）；`REGISTER_LIST` 列了找不到設定檔的名稱（`:54-56`）；群組設定不合法（`:29`） | 依訊息修正，再 `docker compose run --rm registrar` |
-| 新書沒註冊，其他書正常 | `REGISTER_LIST` 有值時只註冊列出的名稱（`registrar.sh:44-45`） | 清空 `REGISTER_LIST` 或補上 `<id>` |
+| 新書沒註冊，其他書正常 | `REGISTER_LIST` 有值時只註冊列出的名稱（`registrar.sh:44-45`） | 清空 `REGISTER_LIST`（規則 10）；已註冊的 server 不受影響，仍留在 gateway（E-316 mcp-test 實測） |
 | 改了 description／url 沒生效；改名後舊名還在 | 已註冊的直接略過（`registrar.sh:68-75`）；改名只新增、不移除 | `docker compose exec mcpjungle /mcpjungle deregister <名稱>`，再 `docker compose run --rm registrar` |
 | `gen-book-configs` exit 1，訊息指向 id | id 規則：`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`、最多 30 字元（`gen-book-configs.mjs:10-11`）；不可重複（`:40`）；`book` 等於書資料夾名，id 等於 `<book>-<language 小寫>` 或 `<book>-bi`（`:52-55`） | 改資料夾名或 `corpus.json` |
 
@@ -281,7 +283,7 @@ docker compose run --rm registrar                               # mcpjungle/READ
 1. **Action 版本策略衝突**（**已解決**）：本 repo org policy 要求 SHA 釘選（`83cb805`），其他團隊 skill 原寫 `actions/*` v5 版本標籤（未釘 SHA）；已決（E-302，2026-10-17）：團隊標準為釘 SHA，見 elf-stack 規則 9 與 3.5。
    另一處 `npm-publish.yml` 釘的 checkout（v6）/ setup-node（v4）與 ci.yml（v7 / v6）不一致（證據 E12），`npm-publish.yml` 已在 `cf42e88` 刪除。
 2. **PR AI review**：團隊標準要求 Claude AI review（`elf-cicd-review`），mcp-library `.github/workflows/` 目前（`origin/release` @ `73b8206`）只有 `ci.yml`、`docker-publish.yml`，**沒有** claude-review workflow。
-3. **發版流程**（**部分解決**）：分支部分已解決：mcp-library 已採用 `dev` / `release`（`5d00449`），CI 在 push `dev`、`release`、`hotfix/**` 時跑（`.github/workflows/ci.yml:19`），`docker-publish.yml` 只在 push `release` 時發佈、`latest` 只在 `refs/heads/release` 產生（`.github/workflows/docker-publish.yml:16-18,88`），符合 `elf-team-rule`；第 6 節「pull 法部署後內容沒更新」一列已改寫。
+3. **發版流程**（**部分解決**）：分支部分已解決：mcp-library 已採用 `dev` / `release`（`5d00449`），CI 在 push `dev`、`release`、`hotfix/**` 時跑（`.github/workflows/ci.yml:19`），`docker-publish.yml` 觸發發佈的分支只有 `release`（tag `v*.*.*` 與 `workflow_dispatch` 也會觸發，`.github/workflows/docker-publish.yml:15-21`）、`latest` 只在 `refs/heads/release` 產生（`.github/workflows/docker-publish.yml:16-18,88`），符合 `elf-team-rule`；第 6 節「pull 法部署後內容沒更新」一列已改寫。
    仍未解決：`release.yml` 已刪（證據 E1），沒有任何東西自動打 `v*.*.*` tag，tag 只能人工推；是否導入 `elf-cicd-versioning`。
 4. **公網存取模型**：gateway 目前 `SERVER_MODE=development`（`compose.yaml:39`，無用戶端驗證），nginx 範例也未加驗證；對外開放前要選 enterprise 模式或 nginx 層驗證。
 5. **`${VAR}` 展開與 token 傳遞**（**部分解決**）：書本的 token 已解決：設了 `DOCS_MCP_AUTH_TOKEN` 時由產生器自動加上 `bearer_token`（`56e67b6`，`gen-book-configs.mjs:65`），compose 也把它傳進 registrar（`compose.yaml:85`）。
@@ -292,7 +294,7 @@ docker compose run --rm registrar                               # mcpjungle/READ
    實測 `docker compose -p mcp-test exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\d mcp_servers"'`：`created_at`、`updated_at`、`deleted_at` 三欄都是 `timestamp with time zone`，PostgreSQL 內部以 UTC 儲存，符合「DB 一律 UTC」。只驗證了 `mcp_servers` 表；其他表（`tools`、`prompts`、`resources` 等）的時間欄位沒逐一查。
 8. **自包含端到端測試的 localtest compose**（**已解決**）：原本跟正式 stack 三處不一致（① 用上游 image、無 TZ / timeout 30 ② 雙網路（`shared-db` ＋ `mcpjungl`）寫法 ③ docs-mcp 的 build 路徑失效），已在 `e563c9e`（E-131）刪除。
    並存測試改用 `MCPJUNGLE_HOST_PORT=18900 IMAGE_TAG=mcp-test docker compose -p mcp-test up -d --build`（`compose.yaml:6`、`README.md:90-96`），見規則 2c。
-9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`（`README.md:64`）。靜態已確認：gateway 只有 `/mcp`、`/v0/groups/:name/mcp`、`/sse` 三個 MCP 路由（`mcpjungle/gateway/internal/api/server.go:213-230`），`/mcp/<corpus>` 不存在；
+9. 根 README 寫用戶端可連 `http://<host>:18800/mcp/<corpus>`（`README.md:64`）。靜態已確認：gateway 共六個 MCP 路由：`/mcp`、`/v0/groups/:name/mcp`、`/sse`（`mcpjungle/gateway/internal/api/server.go:213-230`），加上 SSE 的 `/message`、`/v0/groups/:name/sse`、`/v0/groups/:name/message`（`server.go:235-253`），整段 `:211-253`，`/mcp/<corpus>` 不存在；
    README 這句屬於 mcp-library 的文件漂移（見本節末）。連線還沒實測。
 10. 備援（`README.md:82`「公司一套、家裡一套」）：兩套 gateway 的 DB 與註冊同步方式未文件化。
 11a. **nginx 範例與 `AGENTS.md` 未納管**（**已解決**）：實測 2026-10-04 時它們在 mcp-library 從未 `git add`，規則 16 與禁止簡化 5 的權威出處重新 clone 拿不到；當時的選項是把它提交上去，或改以本 skill 的 `templates/nginx.example.conf` 為準。
