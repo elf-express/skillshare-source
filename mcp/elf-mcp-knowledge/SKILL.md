@@ -101,11 +101,11 @@ metadata:
 
 ### 註冊與部署
 
-12. **MUST** 新語料不手寫註冊檔：registrar 依 `corpus.json` 自動產生，見 `elf-mcp-gateway` 第 2 節〈註冊〉。本機先跑 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books <暫存目錄>`，印出的 id 要包含新語料。
+12. **MUST** 新語料不手寫註冊檔：registrar 依 `corpus.json` 自動產生，見 `elf-mcp-gateway` 第 2 節〈註冊〉。本機先跑 `node mcpjungle/registry/gen-book-configs.mjs mcpjungle/books <暫存目錄>`，印出的 id 要包含新語料。以 `elf-mcp-gateway` 第 2 節〈註冊〉A 步驟 1、2 為準。
     WHY：產生器依 capabilities 自動列齊工具（`gen-book-configs.mjs:57,62`），取代證據 E10 那種手寫漏列；任一語料不合法，registrar 不註冊任何 server 並以 1 結束（`:87-90`）。
     （`:87-90` 是產生器自己以 1 結束；registrar 收到後呼叫 `fail` 整批不註冊，見 `registrar.sh:24,27`、`books/README.md:171`。）
     gateway dashboard 與 AI 端只看得到這段描述（E10：當時手寫的 fc 註冊檔漏列 outline / symbol），所以描述的來源 `corpus.json` 的 `description` 要寫清楚涵蓋範圍。
-13. **MUST NOT** 為了新語料去改 `REGISTER_LIST`：它空白時 registrar 註冊全部書本＋`registry/*.json`，有值時只註冊它列的名字（`registrar.sh:44-52`；`REGISTER_EXTRAS=0` 時空白只註冊書本，`compose.attach.yaml:25` 預設 0）。細節見 `elf-mcp-gateway` 第 2 節〈註冊〉。
+13. **MUST NOT** 為了新語料去改 `REGISTER_LIST`：它空白時 registrar 註冊全部書本＋`registry/*.json`，有值時只註冊它列的名字（`registrar.sh:44-52`；`REGISTER_EXTRAS=0` 時空白只註冊書本，`compose.attach.yaml:25` 預設 0）。細節見 `elf-mcp-gateway` 第 2 節〈註冊〉。以 `elf-mcp-gateway` 規則 14、規則 10 為準。
     WHY：書本清單由 `gen-book-configs.mjs` 掃 `books/*/corpus/*/` 產生，registrar 映像也直接帶 `books/`（`mcpjungle/registry/Dockerfile:5`）；把新 id 寫進 `REGISTER_LIST` 只會讓它變成「只註冊這些」，**清單外的書反而不會註冊**。
 14. **MUST** 修改既有 server 的 `url` / `description` 時，先 `mcpjungle deregister <id>` 再重新註冊。
     WHY：`registrar.sh` 的 `is_registered` 看到同名就「已註冊，略過」（`registrar.sh:68-75`），改過的設定不會生效。改名既有語料時 registrar 只新增、不移除，舊名要手動 `deregister`（`books/README.md:179`）。
@@ -295,7 +295,7 @@ Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PAT
 |---|---|---|
 | dashboard / CLI 註冊報 `SQLSTATE 23505 idx_mcp_servers_name` | registrar 已自動註冊同名 server | 換 id，或先 `mcpjungle deregister <id>` |
 | 改了 `corpus.json` 的 description（或 `registry/*.json`）但 gateway 行為沒變 | registrar 冪等「已註冊略過」 | `deregister` 後重跑 registrar（`docker compose run --rm registrar`，mcp-library `CLAUDE.md:64`；或 `docker compose up -d --force-recreate registrar`） |
-| 新語料在本機有、gateway 查不到 | ① 設了 `REGISTER_LIST` 卻沒列新 id，或 `gen-book-configs` exit 1（任一語料不合法就整批不註冊）② pull 法（`compose.pull.yaml`）拉到舊 image（語料打包在 image 內） | 清空 `REGISTER_LIST` 或補上 id、修好 `corpus.json`；確認 Action 已 push 新 `latest`，`pull_policy: always` 重拉（`compose.pull.yaml:20,27`） |
+| 新語料在本機有、gateway 查不到 | ① 設了 `REGISTER_LIST` 卻沒列新 id，或 `gen-book-configs` exit 1（任一語料不合法就整批不註冊）② pull 法（`compose.pull.yaml`）拉到舊 image（語料打包在 image 內） | 清空 `REGISTER_LIST`（`elf-mcp-gateway` 規則 10）；已註冊的 server 不受影響，仍留在 gateway（E-316 mcp-test 實測）；修好 `corpus.json`；確認 Action 已 push 新 `latest`，`pull_policy: always` 重拉（`compose.pull.yaml:20,27`） |
 | `docs_read` 沒有「📖 官方文件來源」 | 來源行不在前 15 行或格式不符 | 依第 6 條改寫，或補 `sources.json` |
 | `docs_cheatsheet` 回「未啟用速查表」 | `corpus.json` 沒開 `cheatsheet` | 開啟並確認每篇有速查段落 |
 | `docs_symbol` 找不到明明存在的 API | 名稱在 `####` 或內文，不在 1–3 級標題 | 升為 `###` 以上標題，或改用 `docs_search` |
@@ -309,7 +309,7 @@ Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PAT
 1. （已決議）語料 id 禁止底線、格式 `<書名>-<語言>`、≤ 30 字元，見規則 2a。
 2. （已決議）見規則 2a。
 3. 新語料是否一律同時做策略 A（每書一個 server）與 B（`docs` 整包），或只做 A。
-   現況（`73b8206`）：A 是預設，registrar 自動註冊全部書本；B 要設 `REGISTER_LIST=docs`（設定在 `registry/optional/docs.json`，mcp-library `CLAUDE.md:116`），註冊後 `docs__docs_search` 用 `corpus` 參數選書，新語料自動出現在參數裡、不需任何改動。設 `REGISTER_LIST=docs` 時只註冊 docs、書本不註冊（`registrar.sh:44-45`）；A、B 要並存就得把書本 id 一起列進去。
+   現況（`73b8206`）：A 是預設，registrar 自動註冊全部書本；B 要設 `REGISTER_LIST=docs`（設定在 `registry/optional/docs.json`，mcp-library `CLAUDE.md:116`），註冊後 `docs__docs_search` 用 `corpus` 參數選書，新語料自動出現在參數裡、不需任何改動。設 `REGISTER_LIST=docs` 時只註冊 docs、書本不註冊（`registrar.sh:44-45`）；A、B 要並存時，依 `elf-mcp-gateway` 規則 10 用一次性指令 `docker compose run --rm -e REGISTER_LIST=docs registrar` 註冊 docs；已註冊的書本 server 仍留在 gateway（`elf-mcp-gateway`〈註冊〉B 表第 2 列，E-316 mcp-test 實測）。
 4. fc 語料檔名與標題為簡體、內文為繁中；已命名為 `fc-zh-tw`。檔名是否要轉繁體（會影響 `sources.json` 的鍵）仍待決定。
 5. `include_index`（legacy `sqlsugar_list_notes` 附 index.md 導航）是否要以 `docs_outline` 參數補回（證據 E5）。
 6. 每個新語料是否強制附一個 `tests/<id>.test.ts` smoke test（本 skill 建議強制）。
