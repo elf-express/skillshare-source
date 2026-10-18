@@ -62,7 +62,7 @@ metadata:
     - 已導入 dev／release 的 repo（有 `BRANCHING.md`，第 1–3 種）：
       - 開 PR → Plan「進行中」（自動）；PR 合進 `dev` → 「驗證中」（自動，Eddie 依目標分支設定）；Spec 維持「進行中」。
       - 「已完成」由 AI 在步驟 7（`workflow__elf-linear-superpowers`）**手動設定**，三個條件都要滿足：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。Plan 完成後 Spec 由父子自動化關閉。
-    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部手動，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。
+    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部手動，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
     - 還沒導入 dev／release 的 repo（沒有 `BRANCHING.md`、只有主線）：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
     - 過渡期：Eddie 在 E-310 留言確認自動化已設定之前，`dev` 合併後若被自動關單，AI 手動把 Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」。
 
@@ -183,7 +183,7 @@ metadata:
 
     | 時間點 | 做法 |
     | -- | -- |
-    | 第一次推送之前 | 可以整理：`git commit --fixup <SHA>`，再 `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/dev`，**在 Git Bash 執行**（`變數=值 指令` 的寫法在 PowerShell 不成立；AI 環境不支援互動式 rebase）。整理完 `git diff <整理前的 HEAD> HEAD` 輸出 MUST 為空，證明程式內容沒有變動 |
+    | 第一次推送之前 | 可以整理：`git commit --fixup <SHA>`，再 `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash "$(git merge-base HEAD origin/dev)"`，**在 Git Bash 執行**（`變數=值 指令` 的寫法在 PowerShell 不成立；AI 環境不支援互動式 rebase）。整理完 `git diff <整理前的 HEAD> HEAD` 輸出 MUST 為空，證明程式內容沒有變動。整理 fixup 不換基準點，所以 diff 必須為空。要跟上新的 `dev`（`git rebase origin/dev`）是另一個獨立步驟，也只能在第一次推送前做；做完不套用「diff 為空」的檢查，改成重跑該 Task 的測試與 repo 的驗證（例：skillshare-source 的 `scripts/validate.sh`）。推送後要跟上 `dev`，依規則 11 用 `git merge origin/dev`。 |
     | 已推送、還沒開 PR | 依規則 13 停下來問使用者；同意後才可對**自己的開發分支** `git push --force-with-lease` |
     | 已開 PR | MUST NOT 改寫歷史，一律新增 commit 修正（例 `fix(E-xx): address review — …`）。為什麼：PR 上的審查留言與 check runs 綁在當時的 SHA，改寫後審查紀錄對不上程式碼。這種 commit 不算零碎提交 |
 
@@ -257,7 +257,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
    1. 複製 `assets/gitattributes` 到 repo 根目錄，改名為 `.gitattributes`。repo 已有 `.gitattributes` 時，範本加在檔案**最前面**，原有規則一行都不動。
       為什麼：`.gitattributes` 後面的規則優先，加在前面，原有的特定規則（例如 LFS 的 `filter=lfs -text`）才會繼續生效。
       範本內容：文字檔一律 LF（第一行 `* text=auto eol=lf`，`.sh`、`.ps1` 也涵蓋在內，PowerShell 5.1 與 7 都讀得了）；`.bat`、`.cmd` 維持 CRLF（改成 LF 在 cmd 下會出錯）；圖片、字型、PDF、壓縮檔與 Office 檔明確標 `binary`，防止 `text=auto` 對少見格式誤判。中文編碼與 BOM 不在範本處理範圍。
-   2. `git add --renormalize .`
+   2. `git add .gitattributes && git add --renormalize .`（`--renormalize` 只重新處理已追蹤的檔案，不會把新加的 `.gitattributes` 加進 stage）
    3. `git diff --cached --ignore-cr-at-eol -- . ':!.gitattributes'` 輸出 MUST 為空，證明只改了行尾。
    4. `git diff --cached --name-only | wc -l` 的檔案數寫進 PR 描述；**超過 20 個**先停下來回報（初始值；只是停下確認，不是禁止提交）。要列出檔名時用 `git -c core.quotepath=false diff --cached --name-only`，中文路徑才不會變成八進位跳脫。
    5. 提交。

@@ -173,6 +173,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 |---|---|---|
 | 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中 |
 | 發版完成 | elf-team-rule 規則 10 的三個條件都滿足後，AI 手動改為 已完成：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`） | 自動關閉 |
+| hotfix | 不經 PR 合回 `dev`（elf-team-rule 規則 11）：依規則 25 快轉 `release`（repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開 draft PR，只用來觸發 CI）；依規則 26 在本機把 `release` 合回 `dev` 後直接推送（規則 9 的例外），有衝突時經 `merge/conflict-*` 的 PR 合回、用 merge commit（規則 18、37）。規則 10 的三個條件都滿足後手動改為 已完成（條件 ① 改為 `release` 已快轉到該 `origin/hotfix/*`） | 自動關閉 |
 | 未導入 dev／release 的 repo | PR 合併 → 已完成（預設自動化） | 自動關閉 |
 | 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（elf-team-rule 規則 18），開發分支不適用 | — |
 | 保留分支 | 維持 驗證中，留言原因 | 維持進行中 |
