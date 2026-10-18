@@ -165,12 +165,12 @@ metadata:
 22. **MUST** `.github/workflows/docker-publish.yml` 維持：matrix 每個 image 一筆，現有 2 筆、context 都是 `./mcpjungle`（`docs-mcp-server` → `dockerfile: ./mcpjungle/docs-mcp-server/Dockerfile`、`docs-registrar` → `dockerfile: ./mcpjungle/registry/Dockerfile`，`docker-publish.yml:44-54`）；
     `docs-mcp-server` 的 context 先隨 `f8b7416` 搬到 `mcp/`，再隨 `a196fdf` 搬進 `mcpjungle/`，image 名**不變**以免線上斷；fc、sqlsugar 兩個 legacy 映像（`0a37607` 移除）已不在 matrix。
     觸發：push `release`、`v*.*.*` tag、`workflow_dispatch`（`:15-21`）。`linux/amd64,linux/arm64`（`:103`）、
-    `metadata-action` tags（semver 三層、branch、`sha-<short>`、`latest` 只在 `refs/heads/release` 產生（`:88`）、手動 tag，`:82-89`）、GHA cache `scope=<image>`（`:107-108`）、`provenance: false`（`:109`）。
+    `metadata-action` tags（`:82-89`；semver 三層、branch、`sha-<short>`、`latest` 只在 `refs/heads/release` 產生（`:88`）、手動 tag）、GHA cache `scope=<image>`（`:107-108`）、`provenance: false`（`:109`）。
 23. **MUST** 新 server 同 PR 加進：`docker-publish.yml` matrix、`ci.yml` 的 `build-test` 與 `docker-build` matrix、`dependabot.yml`（含 `semver-major` ignore）。範本 `templates/docker-publish.matrix-entry.yml`。
     WHY：證據 E4——核心 `docs-mcp-server` 至今不在 CI matrix 與 dependabot；證據 E3——拿掉 major ignore 後主版本分岔。
     現況（mcp-library `origin/release` @ `73b8206`）：`dependabot.yml` 沒有 `semver-major` ignore，違反本規則，追蹤 E-323。
     現行位置：`build-test` matrix 在 `.github/workflows/ci.yml:161-166`；`docker-build` matrix 在 `ci.yml:214-224`，另含 `mcpjungle-gateway`；dependabot 的 ecosystem 清單在 `.github/dependabot.yml:4-51`。
-    證據 E4 已解決：`55153b2` 把 `docs-mcp-server` 納入 CI matrix 與 dependabot（`ci.yml:163,216`、`dependabot.yml:4-10`）。
+    證據 E4 已解決：`55153b2` 把 `docs-mcp-server` 納入 CI matrix（`ci.yml:163,216`）；dependabot 的條目由 `0a37607` 加入（`dependabot.yml:4-10`）。
 24. **MUST** commit / PR 標題走 Conventional Commits（CI `basics` 用 shell regex 只檢查 PR 裡的 commit，type 另外允許 `deploy`（`.github/workflows/ci.yml:40-60`，`55153b2`）；不檢查 PR 標題，PR 標題要人工確認）。
 
 ---
