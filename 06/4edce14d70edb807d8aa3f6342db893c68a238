@@ -1,0 +1,38 @@
+mcp/elf-mcp-server/SKILL.md
+  s_5ba9834caad6bc::t_daa1cb853614cd 204-208
+  s_5ba9834caad6bc::t_b4c13156ef64b2 90
+  s_5ba9834caad6bc::t_fc819c833b0a92 15-18
+  s_5ba9834caad6bc::t_f3768261c4731b 143,146,150
+  s_5ba9834caad6bc::t_fedc97be373ff5 159
+  s_5ba9834caad6bc::t_a00da50f9e0cc8 210-211
+  s_5ba9834caad6bc::t_d8c42121bdf545 134
+  s_5ba9834caad6bc::t_fa43b5bedf09de 180
+  s_5ba9834caad6bc::t_f10f1107c9ffea 162-163
+  s_5ba9834caad6bc::t_f50b9bcc69d272 84
+  s_5ba9834caad6bc::t_08616a3b8efe91 122
+  s_5ba9834caad6bc::t_7d4194440c3f60 59
+  s_5ba9834caad6bc::t_01e9338efde826 9
+  s_5ba9834caad6bc::t_c957e2ea51bf12 46-48
+  s_5ba9834caad6bc::t_ab00327a912bda 53-58
+  s_5ba9834caad6bc::t_b37ab48f540f0a 94
+  s_5ba9834caad6bc::t_89f2a244d20854 21
+  s_5ba9834caad6bc::t_bbd9533c487007 120
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_5ba9834caad6bc::t_307ba319f1ea26 5-7,11-27,33,44-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "064edce14d70edb807d8aa3f6342db893c68a238",
+  "prompts": {},
+  "sessions": {
+    "s_5ba9834caad6bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aaa29a4d-7fe5-4922-89b3-5fb71f56c4bf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}

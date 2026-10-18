@@ -1,0 +1,23 @@
+README.md
+  s_5ba9834caad6bc::t_c5695576f9ffb8 97
+agents/README.md
+  s_5ba9834caad6bc::t_81b5f87e310781 20,40
+agents/elf-mcp-knowledge.md
+  s_5ba9834caad6bc::t_6055171dcb71c2 3,19,28,34,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7a6eebf154dbf120ce09c4b21be1aff45c14b116",
+  "prompts": {},
+  "sessions": {
+    "s_5ba9834caad6bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aaa29a4d-7fe5-4922-89b3-5fb71f56c4bf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
