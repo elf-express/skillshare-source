@@ -1,6 +1,6 @@
 /**
  * <corpus-id>.test.ts — smoke test for a newly added corpus (uses the REAL bundled corpus, no fixtures).
- * Copy to docs-mcp-server/tests/<corpus-id>.test.ts and replace every <...> placeholder.
+ * Copy to mcpjungle/docs-mcp-server/tests/<corpus-id>.test.ts and replace every <...> placeholder.
  * Assertions must use real headings / keywords from the corpus (see evidence E7: no loosened matching).
  */
 import { beforeEach, describe, expect, it } from "vitest";

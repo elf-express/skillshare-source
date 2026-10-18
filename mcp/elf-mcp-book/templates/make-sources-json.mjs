@@ -3,10 +3,11 @@
 //
 // 為什麼不靠 docs-mcp 的自動抽取:自動抽取只認 `> Source: url` 與
 // `> 📖 官方文件:[文字](url)`,front matter 的 `source: "https://…"` 會把結尾的 `"`
-// 一起吃進網址(見 corpora/README.md 第五節)。
+// 一起吃進網址(見 mcp-library mcpjungle/books/README.md 第五節)。
 //
 // 用法(在語料資料夾的上一層或任何位置):
 //   node make-sources-json.mjs <語料目錄> > <語料目錄>/sources.json
+// 新書優先由 transform.ts 去引號(elf-mcp-book 規則 9);本工具給舊式語料,或 transform.ts 無法去引號時使用。
 //
 // 鍵是「相對語料根的路徑」,與 docs-mcp 的 sources.json 格式一致。
 import { readdirSync, readFileSync, statSync } from "node:fs";

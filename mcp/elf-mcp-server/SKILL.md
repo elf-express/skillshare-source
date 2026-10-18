@@ -6,17 +6,19 @@ description: |
   /health、stderr 日誌、測試、Dockerfile，以及「禁止簡化」清單。當任務涉及新建 MCP server、修改 src/index.ts 的 registerTool、
   tool description / inputSchema、http.ts transport、MCP 相關測試或 Dockerfile，或重構 / 精簡既有 MCP server 程式碼時觸發。
 metadata:
-  version: 1.2.0
+  version: 1.3.0
   owner: Elf Express
 ---
 
 # MCP Server 撰寫規範（Elf Express）
 
-> 參考實作：`elf-express/mcp-library` 的 `mcp/docs-mcp-server/`（核心、多語料）、`mcp/legacy/sqlsugar-mcp/sqlsugar-mcp-server/` 與
-> `mcp/legacy/fc-designer-mcp/`（legacy，工具描述寫得最完整）。路徑在 `fb1d578` 之後全部收進 `mcp/`，legacy 另歸 `mcp/legacy/`（不在根 compose 堆疊）。完整範本在 `templates/`，已在 Node 24.18 下實測 `tsc` 通過、9 個測試通過、stdio 可呼叫工具。
+> 參考實作：`elf-express/mcp-library` 的 `mcpjungle/docs-mcp-server/`（核心、多語料，`origin/release` @ `73b8206`）是**結構**參考；
+> 工具**描述寫法**的範例是已刪除的 legacy server（`0a37607` 刪除，E-126），用 `git show 0a37607^:mcp/legacy/sqlsugar-mcp/sqlsugar-mcp-server/src/index.ts`
+> 與 `git show 0a37607^:mcp/legacy/fc-designer-mcp/src/index.ts` 讀；docs-mcp 的描述還沒有「範例:」行（證據 E6）。
+> 完整範本在 `templates/`，已在 Node 24.18 下實測 `tsc` 通過、9 個測試通過、stdio 可呼叫工具；範本依賴的版本落差見規則 5。
 
 相關 skill：
-- **`elf-mcp-book`** — 來源是「一本書」時的素材與上架規範（`knowledge.books/`）
+- **`elf-mcp-book`** — 來源是「一本書」時的素材與上架規範（`mcpjungle/books/<書名>/source/`）
 - **`elf-mcp-knowledge`** — 「新增知識庫」主流程。**要掛新文件 / 新書時先看它**：90% 的情況是新增語料，不需要寫新 server
 - `elf-mcp-gateway` — 寫好的 server 如何註冊到 MCPJungle、部署、CI
 - `elf-stack`（版本）、`elf-unit`（測試放置 / 覆蓋率 55%）、`elf-cicd-docker`（映像）、`elf-cicd-review`（PR AI review）
@@ -41,13 +43,20 @@ metadata:
 2. **MUST** 純邏輯函式一律回傳 `string`（Markdown），handler 一行 `textResult(doX(...))`。
    WHY：邏輯可測、工具殼不長邏輯；現有 8 個工具全是這個形狀。
 3. **MUST** 新專案依團隊標準：Node 24.18、pnpm 11.x、TypeScript、`*.test.ts` 與原始碼同目錄、vitest 行覆蓋率 ≥ 55%（範本 `vitest.config.ts`）。
-   現況落差（**不要順手「統一」，列在待確認**）：`docs-mcp-server` 用 npm、`tests/` 目錄、無覆蓋率門檻、Docker `node:26-alpine`、CI `node-version: 20`、`engines >=18`。
+   現況落差（**不要順手「統一」，列在待確認**；`origin/release` @ `73b8206` 實測）：`mcpjungle/docs-mcp-server` 用 npm＋`package-lock.json`、`tests/` 目錄（15 個測試檔）、
+   無覆蓋率門檻（沒有 `vitest.config.*`，`test` script 是 `vitest run`，沒有 `--coverage`，`package.json:23`）、Docker `node:26-alpine`（`Dockerfile:5,14`）、
+   CI `node-version: 24`（`ci.yml:165` 的 `build-test` matrix；`ci.yml:116` 的 `node-version: 20` 是 gateway dashboard 建置，不是 docs-mcp-server）、`engines >=18`（`package.json:27`）。
 
 ### SDK 與版本（實際在用的）
 
 4. **MUST** 用 `@modelcontextprotocol/sdk` 的高階 API：`McpServer` + `server.registerTool(name, {title, description, inputSchema, annotations}, handler)`；
-   stdio 用 `StdioServerTransport`，HTTP 用 `StreamableHTTPServerTransport`。package.json 寫 `^1.12.0`，三個 server 的 lockfile 實際解析到 **1.29.0**。
-5. **MUST** zod 版本在同一個 repo 內一致。現況 `docs-mcp-server`/`sqlsugar` 是 zod 3.25.76、`fc-designer-mcp` 被 dependabot 升到 zod 4.4.3（證據 E3）。新 server 跟 `docs-mcp-server`（zod 3）。
+   stdio 用 `StdioServerTransport`，HTTP 用 `StreamableHTTPServerTransport`。package.json 宣告 `^1.32.1`；lockfile 實際解析到 **1.32.1**
+   （`mcpjungle/docs-mcp-server/package-lock.json:514`，`origin/release` @ `73b8206`；重現：`npm ci && npm ls @modelcontextprotocol/sdk --depth=0`）。
+5. **MUST** 新 server 的 zod、`@modelcontextprotocol/sdk` 主版本跟 docs-mcp-server 在 `origin/release` 上的 lockfile 解析值一致。
+   實測（`73b8206`，`npm ls zod express @modelcontextprotocol/sdk --depth=0`）：zod 4.6.6（`package-lock.json:3327`）、SDK 1.32.1（`:514`）、express 5.3.0（`:1775`）。之後再升級只更新實測值。
+   **注意**：`templates/package.json` 目前仍是 zod 3／express 4（`zod ^3.25.76`、`express ^4.21.2`），尚未驗證升級，見 E-321。
+   WHY：證據 E3——拿掉 semver-major ignore 後，主版本曾在同一 repo 內分岔；以參考實作的實測值為準，各 server 才不會各自漂移。
+   （分岔當時：`docs-mcp-server`／`sqlsugar` 是 zod 3.25.76、`fc-designer-mcp` 被 dependabot 升到 zod 4.4.3；legacy 兩個 server 已於 `0a37607` 刪除。）
 
 ### 工具設計
 
@@ -72,17 +81,17 @@ metadata:
 15. **MUST** HTTP 模式：每 session 一個 transport（以 `mcp-session-id` 為鍵、`onclose` 刪除）；`POST /mcp` 非 initialize 又無 session → 400；`GET`/`DELETE` 以 session 找 transport；`GET /health` **免驗證**並回載入數量。
 16. **MUST** `MCP_AUTH_TOKEN` 有設就要求 `Authorization: Bearer <token>`（401 + JSON-RPC `-32001`）；`/health` 永遠公開。
 17. **MUST** `/mcp*` 路由在驗證前限流：`express-rate-limit` 掛在每條 `/mcp*` 路由的第一個 middleware，且只計驗證失敗——`skip: (req) => isAuthorized(req)`，`skip` 與驗證共用同一個 `isAuthorized()`。
-    `trust proxy` 設 false；`standardHeaders: 'draft-8'`；預設 15 分鐘 20 次，用 `MCP_RATE_LIMIT_MAX`／`MCP_RATE_LIMIT_WINDOW_MS` 覆寫；每次回 429 寫 stderr 日誌（IP、次數／上限、時間窗）；`/health` 不限流（證據 E15）。
+    `trust proxy` 設 false；`standardHeaders: 'draft-8'`；預設 15 分鐘 20 次，用 `MCP_RATE_LIMIT_MAX`／`MCP_RATE_LIMIT_WINDOW_MS` 覆寫；每次回 429 寫 stderr 日誌（IP、次數／上限、時間窗）；`/health` 不限流（證據 E15，`mcpjungle/docs-mcp-server/src/http.ts`；docs-mcp-server 的環境變數用 `DOCS_MCP_` 前綴（`DOCS_MCP_RATE_LIMIT_MAX`／`_WINDOW_MS`，`http.ts:180-181`））。
     WHY：Bearer token 不能被無限次嘗試；經 gateway 部署時所有請求的來源 IP 都是 gateway，只計 401 才不會讓正常流量共用額度；限流只拖慢猜測並留下日誌，不能取代長的隨機 `MCP_AUTH_TOKEN`。
 18. **MUST** 所有日誌走 `console.error`（stderr），前綴 `[<server-name>]`。**MUST NOT** 在任何路徑 `console.log`。
     WHY：stdio 模式 stdout 就是 JSON-RPC 串流，一行 log 就讓用戶端解析失敗。
 19. **MUST** 環境變數一覽寫進 README：`TRANSPORT`、`PORT`、`MCP_AUTH_TOKEN`、`MCP_RATE_LIMIT_MAX`、`MCP_RATE_LIMIT_WINDOW_MS`、資料目錄覆寫（如 `DOCS_CORPORA_DIR`）、scope（如 `DOCS_SCOPE`）。
 20. **MUST** 啟動時印出：資料目錄、載入數量、找不到資料時的警告、HTTP 監聽位址、驗證是否啟用（`logStartupInfo` 模式）。
-21. `express.json({ limit: "8mb" })` 與 nginx `client_max_body_size 8m` 保持一致（`mcpjungle/nginx.example.conf` 註明對齊）。
+21. `express.json({ limit: "8mb" })` 與 nginx `client_max_body_size 8m` 保持一致（mcp-library 根目錄的 `nginx.example.conf:47-48` 註明對齊；docs-mcp-server 在 `mcpjungle/docs-mcp-server/src/http.ts:54`）。
 
 ### 時區
 
-22. 容器設 `TZ=${TZ:-Asia/Taipei}`（`bafd8e8`，gateway / docs-mcp / registrar 三者一致）。本 repo 的 server 不寫 DB；**若 server 會讀寫 PostgreSQL，時間一律以 UTC `timestamptz` 儲存（`elf-postgresql`），只在輸出給人看時轉台北時間**——TZ 只影響日誌與顯示。
+22. 容器設 `TZ=${TZ:-Asia/Taipei}`（`bafd8e8`；`73b8206` 的 `compose.yaml:16,42,61,89` 四個 service（postgres、gateway `mcpjungle`、docs-mcp `docs-mcp-server`、registrar）都設 `TZ=${TZ:-Asia/Taipei}`，四者一致）。本 repo 的 server 不寫 DB；**若 server 會讀寫 PostgreSQL，時間一律以 UTC `timestamptz` 儲存（`elf-postgresql`），只在輸出給人看時轉台北時間**——TZ 只影響日誌與顯示。
 
 ### 測試
 
@@ -108,9 +117,9 @@ metadata:
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` / `.env.example` | 多階段 build、prod-only deps、`TRANSPORT=http`、healthcheck、TZ |
 
 佔位符：`<server-name>`（kebab-case，= image 名 = container 名 = gateway server 名）、`<domain>`（工具前綴，snake_case）、
-`<PORT>`（現有：sqlsugar 5688、fc 5689、docs 5690；新 server 往後取號）、`<ENV_DATA_DIR>`、`<data-dir>`、`<NODE_IMAGE_TAG>`、`<PNPM_VERSION>`（見 `elf-stack`）。
+`<PORT>`（現有：docs 5690；已刪除的 legacy 曾用 sqlsugar 5688、fc 5689；新 server 往後取號）、`<ENV_DATA_DIR>`、`<data-dir>`、`<NODE_IMAGE_TAG>`、`<PNPM_VERSION>`（見 `elf-stack`）。
 
-stdio 冒煙（bash；PowerShell 改用 legacy `sqlsugar-mcp-server/test-client.mjs` 的 Node 寫法）：
+stdio 冒煙（bash；Windows 請在 Git Bash 執行，依據 mcp-library `CLAUDE.md:65`「需 sh,Windows 用 Git Bash」）：
 
 ```bash
 pnpm run build
@@ -122,7 +131,8 @@ pnpm run build
  | node dist/index.js
 ```
 
-HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PORT>/health`，再照 `mcp/docs-mcp-server/README.md`「驗證 MCP 流程」的 initialize → 帶 `mcp-session-id` 呼叫。
+HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PORT>/health`，再照 `mcpjungle/docs-mcp-server/README.md`「二、本機 Docker 測試」（`:131-160`）裡「驗證 MCP 流程」的 initialize → 帶 `mcp-session-id` 呼叫。
+（`$env:TRANSPORT="http"; pnpm start` 是 PowerShell 寫法；Git Bash 寫成 `TRANSPORT=http pnpm start`。）
 
 ---
 
@@ -131,14 +141,14 @@ HTTP 冒煙：`$env:TRANSPORT="http"; pnpm start` 後 `curl http://localhost:<PO
 > 使用者痛點：「AI 越寫越簡單」。以下每條附證據編號（見 `references/simplification-evidence.md`）或現行程式碼位置。
 > **任何 PR 讓下列基準值下降，必須在 PR 描述逐條說明並取得人工同意。**
 
-基準值（`mcp/docs-mcp-server`，HEAD `f05dcb1`，2026-10-04 實測未變）——修改前後都跑一次並貼到 PR：
+基準值（`mcpjungle/docs-mcp-server`，`origin/release` @ `73b8206`，2026-10-17 實測；前次基準為 HEAD `f05dcb1`、2026-10-04，測試 57 個（2+4+25+7+10+4+5））——修改前後都跑一次並貼到 PR：
 
 ```bash
-cd mcp/docs-mcp-server
+cd mcpjungle/docs-mcp-server
 grep -c 'registerTool(' src/index.ts          # 8
 grep -c '\.strict()' src/index.ts             # 8
 grep -c 'annotations: READ_ONLY' src/index.ts # 8
-cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
+cat tests/*.ts | grep -cE '^\s*it\('          # 128（2+4+25+7+7+7+10+4+12+5+19+4+4+13+5）
 ```
 
 1. **MUST NOT** 刪工具、合併工具、或把「收編」說成「簡化」。WHY：證據 E5——收斂成 docs-mcp 時丟了 C# 範例工具與 `include_index`，事後才補。任何工具變動要附「舊工具 → 新位置」對照表。
@@ -147,11 +157,11 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 4. **MUST NOT** 把友善文字錯誤改成 throw，或把錯誤訊息的「下一步建議」刪掉。WHY：證據 E8，`dd4853a` 補回被寫短的缺 corpus 訊息。
 5. **MUST NOT** 為了讓測試通過放寬比對或加 fallback；**MUST NOT** 刪測試、改成 `it.skip`、把斷言改寬（`toMatch(/./)`）。WHY：證據 E7（`e3d8808` 移除讓測試假通過的 token-OR fallback）。
 6. **MUST NOT** 移除 `truncateIfNeeded`、mtime 快取、BOM 處理、`SKIP_DIRS`、副檔名白名單。WHY：分別防爆 context、確保改檔即時生效、避免亂碼、避免掃進 `node_modules`/`bin`/`obj`。
-7. **MUST NOT** 移除 HTTP 模式的 `/health`、Bearer 驗證、404（未知 scope）、400（無 session）、500 包裝與 `onclose` 清理。WHY：gateway healthcheck、registrar 等待、MCPJungle 連線都依賴這些行為（`mcp/docs-mcp-server/src/http.ts`）。
+7. **MUST NOT** 移除 HTTP 模式的 `/health`、Bearer 驗證、404（未知 scope）、400（無 session）、500 包裝與 `onclose` 清理。WHY：gateway healthcheck、registrar 等待、MCPJungle 連線都依賴這些行為（`mcpjungle/docs-mcp-server/src/http.ts`）。
 8. **MUST NOT** 移除 stdio 或 HTTP 任一 transport。WHY：stdio 給本機 `.mcp.json` / `node <repo>/mcpjungle/docs-mcp-server/dist/index.js`（`<repo>` 是 elf-express/mcp-library 的本機 clone；先在 `mcpjungle/docs-mcp-server` 執行 `npm ci && npm run build` 才有 `dist/index.js`；npm 套件已停止發布，見證據 E16），HTTP 給 gateway 與遠端連接器（CLAUDE.md「A–D 四種接法」）。
 9. **MUST NOT** 用 `console.log`。WHY：stdio 串流污染。
-10. **MUST NOT** 只改程式不改檔頭註解 / README / servers/*.json 描述。WHY：證據 E8、E9、E10。
-11. **MUST NOT** 讓 dependabot 或「順手升級」跨主版本（zod、express、typescript、@types/node、SDK）而不經人工評估。WHY：證據 E3——拿掉 `semver-major` ignore 後三個 server 主版本分岔。
+10. **MUST NOT** 只改程式不改檔頭註解 / README / `corpus.json` 的 description（registrar 依它產生註冊描述，`gen-book-configs.mjs:62`）。WHY：證據 E8、E9、E10。
+11. **MUST NOT** 讓 dependabot 或「順手升級」跨主版本（zod、express、typescript、@types/node、SDK）而不經人工評估。WHY：證據 E3——拿掉 `semver-major` ignore 後，docs-mcp-server 與兩個 legacy server 的主版本分岔（legacy 於 `0a37607` 刪除後分岔才消失，沒有機制防止再發生）。
 12. **MUST NOT** 移除 `/mcp*` 限流、把它移到驗證之後、或改成計數所有請求。WHY：證據 E15——限流是 Bearer token 在應用層的防暴力猜測閘；移到驗證後等於沒擋，計數所有請求會讓 gateway 後的正常流量共用同一個 IP 額度。
 
 ---
@@ -168,7 +178,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 - [ ] 全部日誌 `console.error`；`grep -rn "console.log" src/` 無結果
 - [ ] 測試 colocated、覆蓋率 ≥ 55%（新專案）；第 4 節基準值未下降（既有專案）
 - [ ] stdio 冒煙輸出（tools/list 工具數、一次 tools/call）貼到 PR
-- [ ] README 環境變數表、檔頭工具清單、`servers/*.json` 描述已同步
+- [ ] README 環境變數表、檔頭工具清單、`corpus.json` 的 description（registrar 依它產生註冊描述，`gen-book-configs.mjs:62`）已同步
 - [ ] Dockerfile：多階段、prod-only deps、`TRANSPORT=http`、`EXPOSE <PORT>`；compose 有 healthcheck 與 TZ
 
 ---
@@ -192,11 +202,14 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 57（2+4+25+7+10+4+5）
 
 ## 7. 待確認
 
-1. Node 版本統一：團隊標準 24.18；現況 Docker `node:26-alpine`（三個 server）、CI `node-version: 20`、`engines: >=18`、gateway runtime Node 22。以哪個為準、何時遷移。
-2. 套件管理：團隊 pnpm 11.x（確切版號待 `elf-stack` 定案）；本 repo 三個 server 都是 npm + `package-lock.json`。既有 server 是否遷移。
-3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻。是否搬移並加門檻。
+1. Node 版本統一：團隊標準 24.18；現況（`origin/release` @ `73b8206`）docs-mcp-server Docker `node:26-alpine`（`mcpjungle/docs-mcp-server/Dockerfile:5,14`）、
+   CI `node-version: 24`（`ci.yml:165`；gateway dashboard 建置仍是 `node-version: 20`，`ci.yml:116`）、`engines: >=18`（`package.json:27`）、
+   gateway runtime Node 22（`mcpjungle/gateway/Dockerfile.fullbuild:49` 的 `setup_22.x`）。以哪個為準、何時遷移。
+2. 套件管理：團隊 pnpm 11.x（確切版號待 `elf-stack` 定案）；docs-mcp-server 是 npm＋`package-lock.json`（`73b8206`；legacy 兩個 server 已於 `0a37607` 刪除）。既有 server 是否遷移。
+3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻（`73b8206` 仍是如此：15 個測試檔、沒有 `vitest.config.*`）。是否搬移並加門檻。
 4. .NET 10 MCP server：repo 內**沒有**任何 C# MCP server（`.cs` 檔都是 SqlSugar 範例 / 效能測試資料），本 skill 不提供 .NET 範本；若要用官方 C# SDK，需另立規範。
-5. zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
+5. （已解決，2026-10-17）zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
+   依據：legacy 刪除後 repo 內只剩 docs-mcp-server（zod 4.6.6、express 5.3.0 @ `73b8206`），沒有分岔；範本的落差見規則 5 與 E-321。
 6. 應用層限流已落地（`f21c6f1`，證據 E15）；仍待確認：nginx 邊界是否也要限流、gateway 之後的多副本部署是否需要共用儲存（目前為單程序記憶體計數）。
 7. Bearer token 比對用 `===`（非 constant-time）；是否改 `crypto.timingSafeEqual`。
 8. 工具層逾時：現有工具都是同步檔案讀取、沒有 per-tool timeout；若新 server 會呼叫外部 API，逾時值與重試策略待定（gateway 端 `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30` 只管初始化）。

@@ -94,7 +94,7 @@ skillshare-source/
 │   └── elf-allure-report/         ★ Allure 3 報告
 ├── mcp/
 │   ├── elf-mcp-knowledge/         ★ 新增知識庫到 MCPJungle（主流程、命名 <書名>-<語言>）
-│   ├── elf-mcp-book/              ★ 書籍素材（knowledge.books/）與「挑一份上架成語料」
+│   ├── elf-mcp-book/              ★ 書籍素材（mcpjungle/books/<書名>/source/）與「挑一份」用 import.ts 上架成語料
 │   ├── elf-mcp-server/            ★ 寫 MCP server
 │   └── elf-mcp-gateway/           ★ MCPJungle 註冊與部署
 ├── workflow/
