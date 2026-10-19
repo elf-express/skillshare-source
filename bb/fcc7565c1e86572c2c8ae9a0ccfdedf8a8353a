@@ -1,0 +1,29 @@
+mcp/elf-mcp-server/templates/package.json
+  s_20cfebeb9a4c3c::t_bb8b5142a5e793 20-21,23,26
+mcp/elf-mcp-server/templates/src/http.ts
+  s_20cfebeb9a4c3c::t_fb5ae229a1b16c 163
+mcp/elf-mcp-server/templates/src/index.ts
+  s_20cfebeb9a4c3c::t_93310db11387fc 18,48,67,82
+mcp/elf-mcp-server/templates/src/protocol.test.ts
+  s_20cfebeb9a4c3c::t_ac1f6618e1cc06 1-118
+mcp/elf-mcp-server/templates/src/schema.test.ts
+  s_20cfebeb9a4c3c::t_7471c99a3257c4 1-105
+mcp/elf-mcp-server/templates/src/schemas.ts
+  s_20cfebeb9a4c3c::t_951b9336808d9e 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bbfcc7565c1e86572c2c8ae9a0ccfdedf8a8353a",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
