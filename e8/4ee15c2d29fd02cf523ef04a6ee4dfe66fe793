@@ -1,0 +1,23 @@
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_20cfebeb9a4c3c::t_4943e4426944db 248-300
+mcp/elf-mcp-server/templates/src/http.test.ts
+  s_20cfebeb9a4c3c::t_b4dd7b3221f100 5-8,112,118-119,137-170,271,280-283,286,294-295,304,342-351,353
+mcp/elf-mcp-server/templates/src/http.ts
+  s_20cfebeb9a4c3c::t_9f4199d76f3286 44-65,208-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e84ee15c2d29fd02cf523ef04a6ee4dfe66fe793",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
