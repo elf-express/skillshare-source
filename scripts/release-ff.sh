@@ -17,7 +17,7 @@
 #   bash scripts/release-ff.sh --dry-run       # 只做檢查與列清單，不切分支、不推送
 #   bash scripts/release-ff.sh --no-main       # 只快轉 release（第 1、2 種 repo）
 #
-# 需要：git、gh（已登入，能讀 check runs）。
+# 需要：git、gh（已登入，能讀 check runs），以及本腳本旁的 git-guard/install.sh。
 # 每次推送前都要輸入要發佈提交的前 8 碼；不提供跳過確認的參數。
 
 set -euo pipefail
@@ -49,6 +49,8 @@ confirm_sha() {
 }
 
 # ---------- 0. 環境 ----------
+# git-guard 的 installer 從本腳本旁邊找（切到目標 repo 前先解析），對別的 repo 發版時也檢查得到
+GUARD_INSTALL="$(cd "$(dirname "$0")" && pwd)/git-guard/install.sh"
 git rev-parse --show-toplevel >/dev/null 2>&1 || stop "這裡不是 git repo。"
 TOP=$(git rev-parse --show-toplevel)
 cd "$TOP"
@@ -62,18 +64,18 @@ printf '%s' "$R" | grep -Eq '^[^/]+/[^/]+$' || stop "無法從 origin 解析 own
 
 START_REF=$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)
 
-# git-guard（規則 30）：skillshare-source 內有 install.sh 時順便檢查
-if [ -f scripts/git-guard/install.sh ]; then
-  say "git-guard 檢查"
-  sh scripts/git-guard/install.sh --check . || stop "git-guard 檢查沒過，先修好再發版（規則 30）。"
-fi
+# git-guard（規則 30）：用本腳本旁的 install.sh 檢查目標 repo，找不到就停
+say "git-guard 檢查"
+[ -f "$GUARD_INSTALL" ] || stop "找不到 $GUARD_INSTALL，無法做 git-guard 檢查（規則 30）。請用 skillshare-source 裡的這支腳本。"
+sh "$GUARD_INSTALL" --check . || stop "git-guard 檢查沒過，先修好再發版（規則 30）。"
 
 # release／main 不能被其他 worktree 簽出（切不過去，也代表有人在用）
 GUARDED="release"
 [ "$DO_MAIN" = 1 ] && GUARDED="release main"
 for b in $GUARDED; do
-  # 和 git 自己印的路徑比（Git Bash 的 pwd 是 /e/…，git 是 E:/…）；路徑可能含空白
-  wt=$(git worktree list --porcelain | awk -v b="refs/heads/$b" '/^worktree /{p=substr($0, 10)} $0=="branch "b{print p}')
+  # 和 git 自己印的路徑比（Git Bash 的 pwd 是 /e/…，git 是 E:/…）；路徑可能含空白。
+  # 用 -z 讀未經跳脫的原始路徑
+  wt=$(git worktree list --porcelain -z | tr '\0' '\n' | awk -v b="refs/heads/$b" '/^worktree /{p=substr($0, 10)} $0=="branch "b{print p}')
   if [ -n "$wt" ] && [ "$wt" != "$TOP" ]; then
     stop "分支 $b 正在 worktree「$wt」簽出中，先在那裡切走再發版。"
   fi
@@ -120,6 +122,11 @@ if [ "$x" != 0 ]; then
   stop "release 不能快轉到 dev。若是 hotfix 發佈後尚未合回 dev（規則 26），先完成合回；其他情況回報，不要強制。"
 fi
 git merge-base --is-ancestor origin/release origin/dev || stop "origin/release 不是 origin/dev 的祖先，不能快轉。"
+# main 也要能快轉到這個提交，否則會發生「release 已推、main 停住」（第 5 步推送前會再檢查一次）
+if [ "$DO_MAIN" = 1 ]; then
+  git merge-base --is-ancestor origin/main "$DEV_SHA" ||
+    stop "origin/main 不是 origin/dev（$DEV8）的祖先：main 上有 release 沒有的提交（規則 27），快轉不了。release、main 都未動；回報。"
+fi
 
 say "這次要發佈的提交（git log --oneline origin/release..origin/dev）"
 git log --oneline origin/release..origin/dev
