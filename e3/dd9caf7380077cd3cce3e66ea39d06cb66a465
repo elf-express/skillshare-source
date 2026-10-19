@@ -1,0 +1,27 @@
+mcp/elf-mcp-knowledge/SKILL.md
+  s_0c6a28586b272c::t_60bbb4920f7c03 250
+  s_0c6a28586b272c::t_7e904bec81bb3f 10
+mcp/elf-mcp-gateway/references/simplification-evidence.md
+  s_0c6a28586b272c::t_456e21ba2d17db 52
+  s_0c6a28586b272c::t_ed2e643ea2415f 24-35
+mcp/elf-mcp-gateway/SKILL.md
+  s_0c6a28586b272c::t_48511eea72437f 121
+  s_0c6a28586b272c::t_69bb5c24bfb751 11
+  s_0c6a28586b272c::t_39ef8e4558623f 186-188,190-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e3dd9caf7380077cd3cce3e66ea39d06cb66a465",
+  "prompts": {},
+  "sessions": {
+    "s_0c6a28586b272c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d79d514-7d73-4884-974a-93baa2976c34",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
