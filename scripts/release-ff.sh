@@ -50,7 +50,8 @@ confirm_sha() {
 
 # ---------- 0. 環境 ----------
 git rev-parse --show-toplevel >/dev/null 2>&1 || stop "這裡不是 git repo。"
-cd "$(git rev-parse --show-toplevel)"
+TOP=$(git rev-parse --show-toplevel)
+cd "$TOP"
 command -v gh >/dev/null 2>&1 || stop "找不到 gh，無法查 check runs（規則 28）。"
 
 [ -z "$(git status --porcelain)" ] || stop "工作目錄有未提交的變更，先處理乾淨再發版。"
@@ -70,8 +71,9 @@ fi
 # release／main 不能被其他 worktree 簽出（切不過去，也代表有人在用）
 for b in release main; do
   if git worktree list --porcelain | grep -qx "branch refs/heads/$b"; then
-    wt=$(git worktree list --porcelain | awk -v b="refs/heads/$b" '/^worktree /{p=$2} $0=="branch "b{print p}')
-    [ "$wt" = "$(pwd)" ] || stop "分支 $b 正在 worktree「$wt」簽出中，先在那裡切走再發版。"
+    # 和 git 自己印的路徑比（Git Bash 的 pwd 是 /e/…，git 是 E:/…）；路徑可能含空白
+    wt=$(git worktree list --porcelain | awk -v b="refs/heads/$b" '/^worktree /{p=substr($0, 10)} $0=="branch "b{print p}')
+    [ "$wt" = "$TOP" ] || stop "分支 $b 正在 worktree「$wt」簽出中，先在那裡切走再發版。"
   fi
 done
 
