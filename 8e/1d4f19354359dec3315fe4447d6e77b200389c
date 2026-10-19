@@ -1,0 +1,21 @@
+mcp/elf-mcp-server/SKILL.md
+  s_20cfebeb9a4c3c::t_b6a2caa3374a80 9,18,57,113-115,118-120,216
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_20cfebeb9a4c3c::t_f640e35c3a1e77 27-122,140-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8e1d4f19354359dec3315fe4447d6e77b200389c",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
