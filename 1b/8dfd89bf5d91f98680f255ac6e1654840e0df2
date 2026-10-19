@@ -1,0 +1,19 @@
+mcp/elf-mcp-gateway/templates/registry/groups/group.json
+  s_0c6a28586b272c::t_39b82399f3796d 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1b8dfd89bf5d91f98680f255ac6e1654840e0df2",
+  "prompts": {},
+  "sessions": {
+    "s_0c6a28586b272c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d79d514-7d73-4884-974a-93baa2976c34",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
