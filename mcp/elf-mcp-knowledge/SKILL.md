@@ -7,7 +7,7 @@ description: |
   capabilities（cheatsheet / examples / symbol）、docs_* 工具、語料或 server 命名、gen-book-configs.mjs、registry/*.json、REGISTER_LIST、
   「讓 AI 查得到某份文件 / 某個框架的知識」時觸發。
 metadata:
-  version: 1.2.1
+  version: 1.2.2
   owner: Elf Express
 ---
 
@@ -216,12 +216,14 @@ build 法 `docker compose up -d --build`；pull 法 `docker compose -f compose.p
 docker compose logs registrar                                   # 應有「>> 註冊 <id>」
 docker compose ps -a registrar                                  # 應為 Exited (0)
 docker compose exec mcpjungle /mcpjungle list servers           # 有 <id>
-docker compose exec mcpjungle /mcpjungle list tools | grep '<id>__'        # 無條件工具 4 個 + 能力工具
+docker compose exec mcpjungle /mcpjungle list tools 2>&1 | grep '<id>__'   # 8 個
 docker compose exec mcpjungle /mcpjungle invoke <id>__docs_list_corpora --input '{}'
 docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"query":"<該領域關鍵字>"}'
 ```
 
 Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
+`list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加時 grep 0 筆、加了 8 筆）。
+docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-279`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
 `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
 接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
 退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
@@ -249,7 +251,7 @@ Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PAT
 2. 在根 `compose.yaml` 加 service：`networks: [mcpjungl]`、**不發佈 ports**、`TZ`、`TRANSPORT: http`、**不寫** `container_name`（`ci.yml:68`）。
 3. `mcpjungle/registry/<server-name>.json` 用 `elf-mcp-gateway` 的 `templates/registry/http-server.json`，`url: http://<service 名>:<PORT>/mcp`。
 4. 預設會註冊 `registry/*.json`（`registrar.sh:49-50`；接現有 gateway（`compose.attach.yaml` 的 `REGISTER_EXTRAS=0`）時見規則 13）；加進 `ci.yml` 的 `build-test` matrix（`:156-165`）、`docker-build`（`:216`）、`docker-publish.yml`、`dependabot.yml`（`elf-mcp-gateway` 規則 23）。
-5. Step 6 驗證方式相同：`docker compose exec mcpjungle /mcpjungle list tools | grep '<server-name>__'` ＋ 一次 `invoke`。
+5. Step 6 驗證方式相同：`docker compose exec mcpjungle /mcpjungle list tools 2>&1 | grep '<server-name>__'` ＋ 一次 `invoke`。
 
 ---
 
