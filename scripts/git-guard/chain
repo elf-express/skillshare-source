@@ -51,17 +51,18 @@ if [ "$NAME" != pre-push ]; then
 	exit 0
 fi
 
-TMP=$(mktemp "${TMPDIR:-/tmp}/git-guard.XXXXXX") || {
+# Not TMP: Windows exports it, and the next hook (git-lfs, Git Credential Manager) needs it.
+REFS=$(mktemp "${TMPDIR:-/tmp}/git-guard.XXXXXX") || {
 	echo "git-guard: 無法建立暫存檔，擋下推送。" >&2
 	exit 1
 }
-trap 'rm -f "$TMP"' EXIT
-cat > "$TMP"
+trap 'rm -f "$REFS"' EXIT
+cat > "$REFS"
 
-protected_in_push() { grep -Eq ' refs/heads/(release|main|dev) [0-9a-f]+$' "$TMP"; }
+protected_in_push() { grep -Eq ' refs/heads/(release|main|dev) [0-9a-f]+$' "$REFS"; }
 
 if [ -r "$GUARD" ]; then
-	sh "$GUARD" "$@" < "$TMP"
+	sh "$GUARD" "$@" < "$REFS"
 	_rc=$?
 else
 	echo "git-guard: 找不到 ${GUARD}；重新執行 skillshare-source 的 scripts/git-guard/install.sh。" >&2
@@ -75,7 +76,7 @@ elif [ "$_rc" -ne 0 ] && protected_in_push; then
 fi
 
 if [ -n "$NEXT" ]; then
-	"$NEXT" "$@" < "$TMP"
+	"$NEXT" "$@" < "$REFS"
 elif uses_lfs; then
-	git lfs pre-push "$@" < "$TMP"
+	git lfs pre-push "$@" < "$REFS"
 fi

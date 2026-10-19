@@ -471,6 +471,22 @@ t_chain_passes_stdin() {
 	}
 }
 
+# Windows exports TMP; the next hook (git-lfs, Git Credential Manager) must still see it.
+t_chain_keeps_tmp_env() {
+	fresh_home
+	sh "$INSTALL" > /dev/null
+	mkrepo_installed 3
+	mkdir -p "$D/tmpdir"
+	export TMP="$D/tmpdir"
+	printf '#!/bin/sh\nprintf "%%s\\n" "$TMP" > "%s/tmp.txt"\n' "$D" > .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+	git switch -q -c feat/e-1-x && commit f x
+	push_expect allow - -- origin feat/e-1-x || return 1
+	[ "$(cat "$D/tmp.txt")" = "$D/tmpdir" ] || {
+		echo "    hook saw TMP=$(cat "$D/tmp.txt")" >&2
+		return 1
+	}
+}
+
 t_repo_mode_husky() {
 	fresh_home
 	sh "$INSTALL" > /dev/null
