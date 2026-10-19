@@ -68,7 +68,7 @@ gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名
 
 ### B2. 發佈（`dev` → `release`）
 
-`dev` 測試通過、使用者同意發佈時：
+`dev` 測試通過、使用者同意後，由規則 39 決定的執行者快轉：
 
 ```
 git fetch origin

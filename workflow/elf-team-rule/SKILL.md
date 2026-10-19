@@ -8,7 +8,7 @@ description: |
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.2.0
+  version: 1.3.0
   owner: Elf Express
 ---
 
@@ -27,7 +27,7 @@ metadata:
 - 建立新 repo、新 fork、新私有 fork，或替既有 repo 補 `BRANCHING.md`
 - 要對原作者送 PR（第 1 種）
 - 要設定 GitHub 分支保護或 ruleset
-- 發版（版號與 tag 的做法見 `cicd/elf-cicd-versioning`）
+- 發版（由誰執行見規則 39；版號與 tag 的做法見 `cicd/elf-cicd-versioning`；沒有產品版號的 repo 見規則 40）
 - 「release 的 CI/CD 為什麼沒過」「發版後部署失敗」→ `references/04-release-ci-check.md`
 - 「main 跟上游有沒有對齊」「release 是不是 dev 測過的版本」「pr 分支跟 dev 改的一不一樣」→ `references/05-alignment-check.md`
 - 要建立或接手一個 Task 很多的 Plan
@@ -156,11 +156,15 @@ metadata:
 32. 會改到同一批檔案的單 MUST 用 blocked by 排序（例：E-308 blocked by E-307）。
     **並行標註**：同一專案有兩組以上未完成的單時（里程碑一定隸屬某個專案，所以也涵蓋同一里程碑的情況；與巡檢 W6 的範圍一致），Spec 定案前 MUST 在「## 並行」一節寫一行，格式固定（巡檢 W6 逐字判斷，與 Spec 模板的欄位文字完全一致）：
     - `並行：可（與 E-xxx）`（多張用 `、` 分隔，例 `並行：可（與 E-308、E-315）`）
-    - `並行：不可（blocked by E-xxx）`
+    - `並行：不可（blocked by E-xxx）`：本單被別張單擋住
+    - `並行：不可（blocks E-xxx）`：本單擋住別張單
+    - 兩種關係同時存在時寫在同一行：`並行：不可（blocked by E-xxx；blocks E-yyy）`
+    - 括號裡的單號寫關係另一端、Linear 上實際設定關係的那張單；關係設在 Plan 上就寫 Plan 號，不要換成 Spec 號。例：E-317 寫 `並行：不可（blocks E-338）`（Linear 上的關係是 E-338 blocked by E-318，E-318 是 E-317 的 Plan）。
     - 下一行 `理由：` 寫兩邊要改的檔案清單比對結果。
     - 里程碑描述列出整體順序與可並行的組合。
 
     為什麼：沒標 blocked by 不等於確認過可以並行，可能只是沒人檢查。
+    為什麼（blocks）：原本「不可」只有 `blocked by` 一種格式；E-315 擋住 E-318 時沒有格式可寫，只能塞進「理由：」，巡檢 W6 與其他 session 都看不到（2026-10-18）。
 33. 只改自己負責的單；對別張單 MUST 只用留言，由負責那張單的 session 更新描述。
     為什麼：Linear 描述是後寫的覆蓋先寫的，兩邊同時修改時，一邊的內容會悄悄消失（E-302 改了 E-303 的描述）。
 34. 會改動共用本機狀態的操作（skillshare 設定與 `skillshare sync`、全域 git 設定、Credential Manager）執行前，MUST 確認沒有其他 session 依賴它，並在里程碑或相關的單留言告知。
@@ -188,6 +192,22 @@ metadata:
     | 已開 PR | MUST NOT 改寫歷史，一律新增 commit 修正（例 `fix(E-xx): address review — …`）。為什麼：PR 上的審查留言與 check runs 綁在當時的 SHA，改寫後審查紀錄對不上程式碼。這種 commit 不算零碎提交 |
 
     - `dev`、`release`、`main` 任何情況 MUST NOT force push（既有規則 8、13、20、21 不變）。
+
+**發版**
+
+39. 本規則只適用於有 `release` 分支的 repo（已導入 dev／release，第 1–3 種）；還沒導入的 repo（沒有 `release` 分支）維持規則 10 的「merge → 已完成」，合進主線就等於發版。
+    發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由 Eddie 指定一個 session 負責，或由 Eddie 自己做；依規則 24 列出提交給使用者看時，一併確認由誰負責。快轉與實際派發由誰執行，依 repo 的規定：
+    - repo 允許 AI 推 `release`：由被指定的 session 執行。
+    - repo 規定 AI 不推 `release`／`main`（例：skillshare-source 的 `AGENTS.md`「AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.」）：快轉與實際派發由 Eddie 執行；被指定的 session 只負責快轉前列出提交（規則 24）、查 check runs（規則 28）、發版後驗證，以及通知其他相關的單。
+    - 沒被指定的 session MUST NOT 為發版快轉 `release`（第 3 種含接著快轉 `main`），也 MUST NOT 跑派發。
+    - 第 1、2 種同步上游時快轉 `main`（`references/01-contribution-fork.md` B1、`references/02-private-fork.md` B1）不是發版，不受本規則限制。
+    - 測試例外（不算派發，任何 session 都可以執行）：`skillshare sync --dry-run`，以及用拋棄式 `XDG_CONFIG_HOME`（`targets` 為空，或只指向暫存目錄）執行的 skillshare 指令或 `scripts/validate.sh`。這些都不會改動實際的目標。
+    - 其他相關的單合進 `dev` 後停在「驗證中」，等發版的 session 或 Eddie 通知，才做各自的發版後驗證、結單（規則 10）與清理（規則 19、36）。
+    - 單的範圍寫「不發版」時，MUST 同時寫明由哪張單或誰負責發版。
+
+    為什麼：E-316 與 E-309 一起發版時，兩個 session 都準備快轉 `release`／`main`，由審計員臨時指定 E-309 執行才沒有重複（2026-10-18）；nginxWebUI E-286／E-287 寫了「不發版」，合併後沒有任何一張單負責發版（後來另開 E-330）。
+40. 沒有產品版號的 repo（skillshare-source、mcp-library），目前的發版方式是：依規則 24、28 快轉 `release`，再快轉 `main`；有派發步驟的照做（skillshare-source：AI 不推 `release`／`main`，快轉與 `skillshare sync` 由 Eddie 執行，被指定的 session 依規則 39 負責列出提交、查 check runs、發版後驗證與通知；mcp-library：由 push `release` 觸發 Docker Publish）。不打 tag、不改版號。mcp-library 的 `docker-publish.yml` 已經接受 `v*.*.*` tag，但在 E-337 導入產品版號與 `vX.Y.Z` tag 之前不推 tag。
+    為什麼：`cicd/elf-cicd-versioning` 只涵蓋有產品版號與 `release.yml` 的應用程式，這兩個 repo 的發版方式原本沒有寫在任何規則裡（2026-10-19 查證：`gh api repos/elf-express/{mcp-library,skillshare-source}/tags` 都是空的）。
 
 ## 3. 標準範本
 
@@ -275,6 +295,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
 - MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
+- MUST NOT 未經 Eddie 指定就為發版快轉 `release`（第 3 種含接著快轉 `main`）或跑派發（規則 39）。
 - MUST NOT 以 squash 或 rebase 合併開發分支 PR，一律用「Create a merge commit」（規則 37）。
 - 已開 PR 後 MUST NOT 改寫歷史，一律新增 commit 修正（規則 38）。
 
@@ -290,6 +311,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
+- [ ] 發版前已由 Eddie 指定執行的 session；沒被指定的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）（規則 39）
+- [ ] 範圍寫「不發版」的單，已寫明由哪張單或誰負責發版（規則 39）
 - [ ] 拆成兩組以上 Spec＋Plan 時已建里程碑（規則 17）
 - [ ] 同一專案有兩組以上未完成的單時，Spec 定案前已在「## 並行」寫好並行標註（規則 32）
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
