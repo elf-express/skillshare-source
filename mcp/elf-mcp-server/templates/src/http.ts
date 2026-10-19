@@ -41,9 +41,28 @@ function envInt(name: string, fallback: number): number {
 /** Keep transport and body-parser failures in the public JSON-RPC error format. */
 export function sendInternalError(err: unknown, _req: Request, res: Response, next: NextFunction): void {
   const type = typeof err === "object" && err !== null && "type" in err ? err.type : undefined;
-  if (type === "entity.parse.failed" || type === "entity.too.large") {
-    // Parser errors can contain err.body and input text in their message.
-    console.error(LOG + " request failed: " + type);
+  // http-errors marks body-parser failures with matching status/statusCode and expose.
+  // A random status property on an internal error must not change its HTTP response.
+  const clientStatus = err instanceof Error &&
+    "status" in err && typeof err.status === "number" && Number.isInteger(err.status) &&
+    err.status >= 400 && err.status < 500 &&
+    "statusCode" in err && err.statusCode === err.status &&
+    "expose" in err && err.expose === true ? err.status : undefined;
+  const invalidScopeEncoding = err instanceof URIError && "status" in err && err.status === 400;
+  const [status, code, message] = type === "entity.parse.failed"
+    ? [400, -32700, "Parse error"] as const
+    : type === "entity.too.large"
+      ? [413, -32000, "Request body too large"] as const
+      : clientStatus === 415
+        ? [415, -32000, "Unsupported media type"] as const
+        : clientStatus !== undefined || invalidScopeEncoding
+          ? [clientStatus ?? 400, -32600, "Invalid request"] as const
+          : [500, -32603, "Internal server error"] as const;
+  if (status < 500) {
+    // Parser/URI errors can contain raw input in their body or message.
+    const label = type === "entity.parse.failed" || type === "entity.too.large" ||
+      type === "charset.unsupported" || type === "encoding.unsupported" ? type : `HTTP ${status}`;
+    console.error(LOG + " request failed: " + label);
   } else {
     console.error(LOG + " request failed:", err);
   }
@@ -51,11 +70,6 @@ export function sendInternalError(err: unknown, _req: Request, res: Response, ne
     next(err);
     return;
   }
-  const [status, code, message] = type === "entity.parse.failed"
-    ? [400, -32700, "Parse error"] as const
-    : type === "entity.too.large"
-      ? [413, -32000, "Request body too large"] as const
-      : [500, -32603, "Internal server error"] as const;
   res.status(status).json({ jsonrpc: "2.0", error: { code, message }, id: null });
 }
 
@@ -191,11 +205,18 @@ export async function runHttp(
   const rateLimitWindowMs = envInt("MCP_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000);
   const app = createHttpApp(createServer, deps);
 
-  app.listen(port, () => {
-    // stderr only — see SKILL.md rule: never write logs to stdout.
-    console.error(LOG + " HTTP server listening on http://0.0.0.0:" + port + " (/mcp, /mcp/<scope>)");
-    console.error(LOG + " health: " + JSON.stringify(deps.healthInfo()));
-    console.error(LOG + " auth: " + (authToken ? "Bearer token enabled" : "DISABLED (public access)"));
-    console.error(LOG + " rate limit: " + rateLimitMax + " failed auths per " + rateLimitWindowMs + "ms, then 429");
+  await new Promise<void>((resolve, reject) => {
+    app.listen(port, (error?: Error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      // stderr only — see SKILL.md rule: never write logs to stdout.
+      console.error(LOG + " HTTP server listening on http://0.0.0.0:" + port + " (/mcp, /mcp/<scope>)");
+      console.error(LOG + " health: " + JSON.stringify(deps.healthInfo()));
+      console.error(LOG + " auth: " + (authToken ? "Bearer token enabled" : "DISABLED (public access)"));
+      console.error(LOG + " rate limit: " + rateLimitMax + " failed auths per " + rateLimitWindowMs + "ms, then 429");
+      resolve();
+    });
   });
 }

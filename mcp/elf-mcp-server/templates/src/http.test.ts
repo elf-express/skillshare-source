@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { once } from "node:events";
 import { format } from "node:util";
 import type { Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import { createServer as createTcpServer, type AddressInfo } from "node:net";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -106,13 +109,14 @@ async function within<T>(promise: Promise<T>): Promise<T> {
   finally { clearTimeout(timer!); }
 }
 
-function raw(base: string, method: string, route = "/mcp", options: { auth?: string | null; sid?: string; version?: string; body?: string; forwarded?: string } = {}) {
+function raw(base: string, method: string, route = "/mcp", options: { auth?: string | null; sid?: string; version?: string; body?: string; forwarded?: string; contentType?: string; contentEncoding?: string } = {}) {
   const headers: Record<string, string> = { Accept: "application/json, text/event-stream" };
   if (options.auth !== null) headers.Authorization = options.auth ?? `Bearer ${token}`;
   if (options.sid) headers["MCP-Session-Id"] = options.sid;
   if (options.version) headers["MCP-Protocol-Version"] = options.version;
   if (options.forwarded) headers["X-Forwarded-For"] = options.forwarded;
-  if (method === "POST") headers["Content-Type"] = "application/json";
+  if (method === "POST") headers["Content-Type"] = options.contentType ?? "application/json";
+  if (options.contentEncoding) headers["Content-Encoding"] = options.contentEncoding;
   return fetch(new URL(route, base), { method, headers, body: method === "POST" ? options.body ?? JSON.stringify(initialize) : undefined, signal: AbortSignal.timeout(3000) });
 }
 
@@ -130,6 +134,40 @@ async function expectInternal(response: globalThis.Response) {
   expect(await wire.json()).toEqual(internalError);
 }
 
+async function expectStartupFailure() {
+  const blocker = createTcpServer();
+  // Match runHttp's default address family; IPv4 alone does not block it on Windows.
+  blocker.listen({ port: 0, exclusive: true });
+  await once(blocker, "listening");
+  const root = fileURLToPath(new URL("../", import.meta.url));
+  const child = spawn(process.execPath, ["--import", "tsx", path.join(root, "src/index.ts")], {
+    cwd: root, env: { ...process.env, TRANSPORT: "http", PORT: String((blocker.address() as AddressInfo).port) },
+    stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
+  });
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
+  child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+  const exited = once(child, "close");
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    const [code, signal] = await Promise.race([
+      exited,
+      new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new Error("HTTP startup did not fail within 5000ms")), 5000); }),
+    ]);
+    expect(code).toBe(1);
+    expect(signal).toBeNull();
+    expect(stderr).toContain("EADDRINUSE");
+    expect(stderr).toContain("failed to start");
+    expect(stderr).not.toContain("HTTP server listening");
+    expect(stdout).toBe("");
+  } finally {
+    clearTimeout(timer!);
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+    await exited.catch(() => {});
+    await new Promise<void>((resolve, reject) => blocker.close((error) => error ? reject(error) : resolve()));
+  }
+}
 describe("HTTP transport migration", () => {
   it("keeps health public and unlimited", async () => {
     process.env.MCP_RATE_LIMIT_MAX = "2";
@@ -230,6 +268,7 @@ describe("HTTP transport migration", () => {
   }, 15000);
 
   it("rejects unknown scopes and extra path segments", async () => {
+    const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
     const { base, scopes } = await start();
     const response = await raw(base, "POST", "/mcp/unknown");
     expect(response.status).toBe(404);
@@ -238,8 +277,13 @@ describe("HTTP transport migration", () => {
       const extra = await raw(base, method, "/mcp/alpha/extra");
       expect(extra.status).toBe(404);
       await extra.text();
+      const invalid = await raw(base, method, "/mcp/%ZZ-private-scope-sentinel");
+      expect(invalid.status).toBe(400);
+      expect(invalid.headers.get("content-type")).toContain("application/json");
+      expect(await invalid.json()).toEqual({ jsonrpc: "2.0", error: { code: -32600, message: "Invalid request" }, id: null });
     }
     expect(scopes).toEqual([]);
+    expect(stderr.mock.calls.map((args) => format(...args)).join("\n")).not.toContain("private-scope-sentinel");
   });
 
   it("formats post and synchronous setup failures", async () => {
@@ -247,6 +291,8 @@ describe("HTTP transport migration", () => {
     const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
     const scoped = await start({ hasScope: () => { throw new Error(secret); } });
     await expectInternal(await raw(scoped.base, "POST", "/mcp/alpha"));
+    const misleadingStatus = await start({ hasScope: () => { throw Object.assign(new Error(secret), { status: 415 }); } });
+    await expectInternal(await raw(misleadingStatus.base, "POST", "/mcp/alpha"));
     const factory = await start({}, () => { throw new Error(secret); });
     await expectInternal(await raw(factory.base, "POST"));
     const handle = await start();
@@ -255,6 +301,7 @@ describe("HTTP transport migration", () => {
     vi.spyOn(StreamableHTTPServerTransport.prototype, "handleRequest").mockRejectedValue(new Error(secret));
     await expectInternal(await raw(handle.base, "POST", "/mcp", { sid: session.transport.sessionId, version: session.transport.protocolVersion }));
     expect(stderr.mock.calls.map((args) => args.join(" ")).join("\n")).toContain(secret);
+    await expectStartupFailure();
   }, 15000);
 
   it("formats rejected session requests and stays alive", async () => {
@@ -292,7 +339,18 @@ describe("HTTP transport migration", () => {
     expect(response.status).toBe(400);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(await response.json()).toEqual({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: null });
+    for (const { options, status, code, message } of [
+      { options: { contentType: "application/json; charset=iso-8859-1" }, status: 415, code: -32000, message: "Unsupported media type" },
+      { options: { contentEncoding: "private-encoding-sentinel" }, status: 415, code: -32000, message: "Unsupported media type" },
+      { options: { contentEncoding: "gzip" }, status: 400, code: -32600, message: "Invalid request" },
+    ]) {
+      const unsupported = await raw(base, "POST", "/mcp", { auth: null, body: "{}", ...options });
+      expect(unsupported.status).toBe(status);
+      expect(unsupported.headers.get("content-type")).toContain("application/json");
+      expect(await unsupported.json()).toEqual({ jsonrpc: "2.0", error: { code, message }, id: null });
+    }
     const log = stderr.mock.calls.map((args) => format(...args)).join("\n");
+    expect(log).not.toContain("private-encoding-sentinel");
     expect(log).not.toContain(secret);
     expect(log).toContain("entity.parse.failed");
     expect((await raw(base, "GET", "/health")).status).toBe(200);
