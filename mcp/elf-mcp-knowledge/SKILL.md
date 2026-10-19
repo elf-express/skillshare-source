@@ -7,7 +7,7 @@ description: |
   capabilities（cheatsheet / examples / symbol）、docs_* 工具、語料或 server 命名、gen-book-configs.mjs、registry/*.json、REGISTER_LIST、
   「讓 AI 查得到某份文件 / 某個框架的知識」時觸發。
 metadata:
-  version: 1.2.0
+  version: 1.2.1
   owner: Elf Express
 ---
 
@@ -247,7 +247,7 @@ Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PAT
 
 1. 依 `elf-mcp-server` 建 server（`<server-name>` kebab-case、工具 `<domain>_<verb>`、雙 transport、`/health`）。
 2. 在根 `compose.yaml` 加 service：`networks: [mcpjungl]`、**不發佈 ports**、`TZ`、`TRANSPORT: http`、**不寫** `container_name`（`ci.yml:68`）。
-3. `mcpjungle/registry/<server-name>.json` 用 `elf-mcp-gateway` 的 `templates/servers/http-server.json`，`url: http://<service 名>:<PORT>/mcp`。
+3. `mcpjungle/registry/<server-name>.json` 用 `elf-mcp-gateway` 的 `templates/registry/http-server.json`，`url: http://<service 名>:<PORT>/mcp`。
 4. 預設會註冊 `registry/*.json`（`registrar.sh:49-50`；接現有 gateway（`compose.attach.yaml` 的 `REGISTER_EXTRAS=0`）時見規則 13）；加進 `ci.yml` 的 `build-test` matrix（`:156-165`）、`docker-build`（`:216`）、`docker-publish.yml`、`dependabot.yml`（`elf-mcp-gateway` 規則 23）。
 5. Step 6 驗證方式相同：`docker compose exec mcpjungle /mcpjungle list tools | grep '<server-name>__'` ＋ 一次 `invoke`。
 

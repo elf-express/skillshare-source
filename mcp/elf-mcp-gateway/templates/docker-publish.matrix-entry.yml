@@ -1,21 +1,24 @@
 # Add ONE entry per new server image to .github/workflows/docker-publish.yml -> jobs.build-and-push.strategy.matrix.include
-# (the workflow already pins every action to a full commit SHA — keep it that way, see SKILL.md rule 18).
+# (the workflow already pins every action to a full commit SHA — keep it that way, see SKILL.md rule 20).
           - image: <server-name>
-            context: ./<server-dir>
-            # dockerfile: ./<server-dir>/<Other>.Dockerfile   # only when not <context>/Dockerfile (docs-registrar uses this)
+            context: ./mcpjungle/<server-dir>             # ./mcpjungle when the Dockerfile copies books/ (docs-mcp-server does)
+            dockerfile: ./mcpjungle/<server-dir>/Dockerfile
             title: <Human readable title>
             description: <One sentence for the OCI label>
 
 # And, for PR verification, the same server in .github/workflows/ci.yml:
 #   jobs.build-test.strategy.matrix.include:
 #          - name: <server-name>
-#            dir: <server-dir>
+#            dir: mcpjungle/<server-dir>
+#            node: <Node major from stack/elf-stack>
+#            test_args: -- --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml   # same as docs-mcp-server (vitest)
 #   jobs.docker-build.strategy.matrix.include:
 #          - image: <server-name>
-#            context: ./<server-dir>
-# And in .github/dependabot.yml:
+#            context: ./mcpjungle/<server-dir>
+#            dockerfile: ./mcpjungle/<server-dir>/Dockerfile
+# And in .github/dependabot.yml (rule 23; mcp-library's current file has no semver-major ignore, tracked in E-323):
 #  - package-ecosystem: "npm"
-#    directory: "/<server-dir>"
+#    directory: "/mcpjungle/<server-dir>"
 #    schedule: { interval: "weekly" }
 #    open-pull-requests-limit: 5
 #    commit-message: { prefix: "chore(<short>-deps)" }
