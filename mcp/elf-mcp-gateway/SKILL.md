@@ -8,7 +8,7 @@ description: |
   mcpjungle/registry/、registrar.sh、gen-book-configs.mjs、gen-group-configs.mjs、registry/*.json、registry/groups/*.json、
   MCPJungle 設定或升級、nginx.example.conf、docker-publish.yml / ci.yml，或排查「gateway 看不到工具 / 註冊失敗 / 連不上」時觸發。
 metadata:
-  version: 1.3.0
+  version: 1.3.1
   owner: Elf Express
 ---
 
@@ -84,12 +84,14 @@ metadata:
   docker compose logs registrar                                   # 應有「>> 註冊 <id>」
   docker compose ps -a registrar                                  # 應為 Exited (0)
   docker compose exec mcpjungle /mcpjungle list servers           # 有 <id>
-  docker compose exec mcpjungle /mcpjungle list tools | grep '<id>__'        # 無條件工具 4 個 + 能力工具
+  docker compose exec mcpjungle /mcpjungle list tools 2>&1 | grep '<id>__'   # 8 個
   docker compose exec mcpjungle /mcpjungle invoke <id>__docs_list_corpora --input '{}'
   docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"query":"<該領域關鍵字>"}'
   ```
 
   Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
+  `list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加 `0`、加了 `8`）。
+  docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-264`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
   `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
   接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
   退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
@@ -128,8 +130,8 @@ metadata:
     - **MUST NOT** 把 `REGISTER_LIST` 寫進 `.env`（或 GitOps 工具的 env）。WHY：有值時只註冊列出的名稱（`registrar.sh:44-45`），之後新加的書都不會被註冊，也不會報錯。
     - 需要 token 的 server（如 github）：token 怎麼傳進 registrar 容器還沒驗證（待確認 5），維持停止條件：**需要 token 時停下來回報**。
     - **MUST NOT** 把 token 寫進 `registry/*.json`（含 `optional/`），也不能烤進映像。WHY：`registry/Dockerfile:6-7` 會把 `registry/*.json` 與 `optional/` 整包 COPY 進 `docs-registrar` 映像，推到 GHCR。
-      mcp-library `mcpjungle/README.md:95-100` 目前教人把 PAT 明文放進 `optional/`，不要照做，追蹤 E-325（高優先）。
-    - 範本細節見 E-317；CI 與 Dependabot 見 `elf-mcp-knowledge` 路線 C 與本 skill 規則 23。
+      mcp-library `mcpjungle/README.md` 教人把 PAT 明文放進 `optional/` 的寫法已由 E-325 修正（`5240cb1`，release `2f71743`）：現在 `:95-107` 改寫 `${變數名}` 佔位、由 registrar 的 CLI 代換。這個代換在 registrar 映像裡能不能用仍是待確認 5，上面的停止條件不變。
+    - 範本細節見第 3 節；CI 與 Dependabot 見 `elf-mcp-knowledge` 路線 C 與本 skill 規則 23。
 11. **MUST** 知識語料採**策略 A**：每本書一個 server，名稱＝語料 id，位址由產生器寫成 `${DOCS_MCP_URL}/mcp/<id>`（`gen-book-configs.mjs:63`），工具 `<id>__docs_search`；這是預設，不必設定（`mcpjungle/README.md:68`）。
     策略 B（整包一個 `docs`，`registry/optional/docs.json`，工具 `docs__docs_*`，用 `corpus` 參數選書）只當補充入口，依規則 10 點名註冊（`mcpjungle/README.md:69`）。
     B 是手寫檔，設了 `DOCS_MCP_AUTH_TOKEN` 也不會自動帶 `bearer_token`（`mcpjungle/README.md:69`）；要加就屬於規則 10 的「需要 token」，停下來回報。
@@ -183,7 +185,7 @@ metadata:
 
 | 檔案 | 用途 |
 |---|---|
-| `templates/registry/http-server.json`、`templates/registry/http-server-auth.json`、`templates/registry/stdio-server.json`、`templates/registry/stdio-server-env.json` | 四種非書本註冊檔骨架（欄位見規則 9）：複製成 mcp-library 的 `mcpjungle/registry/<name>.json` 或 `mcpjungle/registry/optional/<name>.json`，檔名＝`name`；書本不手寫（見〈註冊〉）。現行實例：`mcpjungle/registry/fetch.json`、`mcpjungle/registry/filesystem.json`、`mcpjungle/registry/time.json`（stdio）、`mcpjungle/registry/optional/docs.json`（streamable_http） |
+| `templates/registry/http-server.json`、`templates/registry/http-server-auth.json`、`templates/registry/stdio-server.json`、`templates/registry/stdio-server-env.json` | 四種非書本註冊檔骨架（欄位見規則 9；需要 token 的兩份（`http-server-auth.json`、`stdio-server-env.json`）見規則 10）：複製成 mcp-library 的 `mcpjungle/registry/<name>.json` 或 `mcpjungle/registry/optional/<name>.json`，檔名＝`name`；書本不手寫（見〈註冊〉）。現行實例：`mcpjungle/registry/fetch.json`、`mcpjungle/registry/filesystem.json`、`mcpjungle/registry/time.json`（stdio）、`mcpjungle/registry/optional/docs.json`（streamable_http） |
 | `templates/registry/groups/group.json` | tool group 骨架（端點 `/v0/groups/<name>/mcp`）：複製成 mcp-library 的 `mcpjungle/registry/groups/<name>.json`，檔名＝`name`，`included_servers` 可寫 `@books` 代表全部書本；格式由 `mcpjungle/registry/gen-group-configs.mjs` 驗證，registrar 建立或更新。現行實例：`mcpjungle/registry/groups/claude-tools.json` |
 | `templates/nginx.example.conf` | 對外反向代理（改 ① server_name ② 憑證 ③ `<GATEWAY_LAN_IP>`）；跟 mcp-library 根目錄的 `nginx.example.conf` 只差 ③ 的佔位 |
 | `templates/docker-publish.matrix-entry.yml` | 新 server 要加的 CI / publish / dependabot 片段（現行位置見規則 22、23） |
@@ -205,7 +207,7 @@ docker compose -f compose.pull.yaml up -d              # pull 法：docs-mcp-ser
 docker compose ps -a                                                  # mcpjungle、docs-mcp-server Up，registrar Exited (0)（README.md:92）
 docker compose logs registrar                                         # 「registrar: 完成」＋清單（README.md:93、registrar.sh:87）
 docker compose exec mcpjungle /mcpjungle list servers                 # （README.md:94）
-docker compose exec mcpjungle /mcpjungle list tools
+docker compose exec mcpjungle /mcpjungle list tools 2>&1 | grep 'sqlsugar-zh-tw__'   # 8 個；清單印在 stderr，要 2>&1（〈註冊〉A 步驟 3）
 docker compose exec mcpjungle /mcpjungle invoke sqlsugar-zh-tw__docs_list_corpora --input '{}'
 curl -s http://<host>:18800/health                                    # 外部可達性（經 nginx 則打 https://<domain>/health）
 ```
@@ -251,7 +253,7 @@ docker compose run --rm registrar                               # mcpjungle/READ
 - [ ] `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30`（`compose.yaml:41`）、四服務 `TZ`（`:16,42,61,89`）；`postgres` 有 healthcheck（`:19-23`）且 gateway `depends_on: service_healthy`（`:33-35`）；docs-mcp 也有 healthcheck（`:62-67`），registrar 等它 `service_healthy`（`:81-82`）
 - [ ] 書本依〈註冊〉A；非書本 `mcpjungle/registry/<name>.json` 依〈註冊〉規則 9、10：name 合規且唯一、description 列齊工具、無明文 token
 - [ ] 沒有為新 server 改 `REGISTER_LIST`（規則 14）；點名註冊只用一次性 `docker compose run --rm -e REGISTER_LIST=<名稱> registrar`（規則 10）
-- [ ] registrar `Exited (0)`；`list servers` / `list tools` / 一次 `invoke` 成功並貼到 PR（新書照〈註冊〉A 步驟 3 五條全跑）
+- [ ] registrar `Exited (0)`；`list servers` / `list tools` / 一次 `invoke` 成功並貼到 PR（新書照〈註冊〉A 步驟 3 六條全跑）
 - [ ] 對外：nginx 範本三處已改；dashboard 限內網；development 模式未直接暴露公網
 - [ ] workflow 新增的 `uses:` 皆為完整 SHA＋版本註解
 - [ ] 新 image 已加 docker-publish / ci / dependabot（含 semver-major ignore）
