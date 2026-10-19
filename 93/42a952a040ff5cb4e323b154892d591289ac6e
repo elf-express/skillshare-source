@@ -1,0 +1,22 @@
+workflow/elf-team-rule/SKILL.md
+  s_6933571efc8817::t_d1f14e51a6e8bb 314
+  s_6933571efc8817::t_d57af65812c360 199
+  s_6933571efc8817::t_303fb6faa54c3c 298
+  s_6933571efc8817::t_798c1ed7c732a7 202-203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9342a952a040ff5cb4e323b154892d591289ac6e",
+  "prompts": {},
+  "sessions": {
+    "s_6933571efc8817": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b4b238-260b-49d8-baeb-de560fa8007c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
