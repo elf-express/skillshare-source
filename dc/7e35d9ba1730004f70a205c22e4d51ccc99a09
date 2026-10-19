@@ -1,0 +1,20 @@
+scripts/release-ff.sh
+  s_2c0738a3516c92::t_216352a98d93bf 53-54
+  s_2c0738a3516c92::t_13fefda41546a3 74-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dc7e35d9ba1730004f70a205c22e4d51ccc99a09",
+  "prompts": {},
+  "sessions": {
+    "s_2c0738a3516c92": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98acb72e-c8bb-4953-86b1-07fbd1a7cf18",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
