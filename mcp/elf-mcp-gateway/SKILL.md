@@ -90,8 +90,8 @@ metadata:
   ```
 
   Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
-  `list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加 `0`、加了 `8`）。
-  docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-264`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
+  `list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加時 grep 0 筆、加了 8 筆）。
+  docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-279`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
   `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
   接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
   退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
@@ -207,7 +207,7 @@ docker compose -f compose.pull.yaml up -d              # pull 法：docs-mcp-ser
 docker compose ps -a                                                  # mcpjungle、docs-mcp-server Up，registrar Exited (0)（README.md:92）
 docker compose logs registrar                                         # 「registrar: 完成」＋清單（README.md:93、registrar.sh:87）
 docker compose exec mcpjungle /mcpjungle list servers                 # （README.md:94）
-docker compose exec mcpjungle /mcpjungle list tools 2>&1 | grep 'sqlsugar-zh-tw__'   # 8 個；清單印在 stderr，要 2>&1（〈註冊〉A 步驟 3）
+docker compose exec mcpjungle /mcpjungle list tools 2>&1                     # 全部 server 的工具；清單印在 stderr，接 grep 時一定要 2>&1（〈註冊〉A 步驟 3）
 docker compose exec mcpjungle /mcpjungle invoke sqlsugar-zh-tw__docs_list_corpora --input '{}'
 curl -s http://<host>:18800/health                                    # 外部可達性（經 nginx 則打 https://<domain>/health）
 ```
@@ -312,3 +312,4 @@ docker compose run --rm registrar                               # mcpjungle/READ
 - `README.md:64` 寫用戶端可連 `/mcp/<corpus>`，gateway 沒有這個路由（待確認 9）。
 - `README.md:78` 與 `compose.pull.yaml:1` 寫映像在 push `main` 時發佈，實際是 push `release`（`.github/workflows/docker-publish.yml:16-18`）。
 - `mcpjungle/books/README.md:116-117` 把 `book`、`language` 標成程式不讀取，但 `gen-book-configs.mjs:52-55` 用它們驗證語料 id（E-309 交接已提）。
+- `mcpjungle/books/README.md:177` 的部署後驗證寫 `list tools | grep '<id>__'`，沒加 `2>&1`，grep 一律 0 筆（見〈註冊〉A 步驟 3，E-338）。

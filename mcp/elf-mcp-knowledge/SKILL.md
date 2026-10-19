@@ -222,8 +222,8 @@ docker compose exec mcpjungle /mcpjungle invoke <id>__docs_search --input '{"que
 ```
 
 Windows Git Bash 下，`exec mcpjungle /mcpjungle …` 要加前綴 `MSYS_NO_PATHCONV=1`：Git Bash 會把 `/mcpjungle` 改寫成 Windows 路徑，指令會失敗（E-316 mcp-test 實跑觀察，2026-10-18）。
-`list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加 `0`、加了 `8`）。
-docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-264`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
+`list tools` 的清單印在 stderr（`mcpjungle/gateway/cmd/list.go:195-208` 用 cobra 的 `cmd.Printf`），`list servers` 印在 stdout（`:220-248` 用 `fmt.Println`）；少了 `2>&1`，grep 一律 0 筆也不報錯，終端機上卻看得到沒過濾的整份清單（E-338，mcp-test 實跑 mcp-library `2f71743`，2026-10-18：不加時 grep 0 筆、加了 8 筆）。
+docs-mcp-server 對每本書一律曝露全部 8 個工具，跟 `capabilities` 無關（`mcpjungle/docs-mcp-server/src/index.ts:145-279`，8 次 `registerTool` 都沒有條件），所以 `list tools` 驗不出能力設定；能力對不對看下一行。
 `docs_list_corpora` 在單書端點只會列 `<id>` 自己，且標題行要帶正確 badge（速查表 / 代碼範例 / 符號查）；`docs_search` 要有結果。
 接現有 gateway（`compose.attach.yaml`）時，`exec mcpjungle` 改在現有 gateway 的 compose 專案執行：`compose.attach.yaml` 只有 `docs-mcp-server`、`registrar` 兩個 service（`compose.attach.yaml:10`、`:16`），`gateway` 是外部網路（`:28-31`），沒有 `mcpjungle`；`logs registrar` 與 `ps -a registrar` 則寫成 `docker compose -f compose.attach.yaml logs registrar`、`docker compose -f compose.attach.yaml ps -a registrar`。
 退出碼只能用 `ps -a` 看，`logs` 不會顯示；registrar 在處理群組前就印「registrar: 完成,目前 servers:」（`registrar.sh:87`），之後群組失敗仍會 exit 1（`:90-105`），只看日誌會把失敗的部署誤判為通過。
