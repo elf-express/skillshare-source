@@ -80,6 +80,8 @@ git merge --ff-only origin/dev
 git push origin release
 ```
 
+也可以用 skillshare-source 的 `scripts/release-ff.sh`（Git Bash）／`scripts/release-ff.ps1`（PowerShell）執行 B2 與 B3：腳本含規則 24、28 的檢查（列提交、查 check runs），每次推送前要輸入發佈提交的前 8 碼確認，`--dry-run`／`-DryRun` 只檢查不推送。
+
 部署一律使用 `release`。
 
 * 發佈後依 `references/04-release-ci-check.md` 核對 `release` 指向的提交在 GitHub 上的 check runs 與部署結果，依 `references/05-alignment-check.md` 確認分支對齊。
@@ -96,6 +98,8 @@ git merge --ff-only origin/main   # 先把本機 main 更新到最新
 git merge --ff-only origin/release
 git push origin main
 ```
+
+用 `scripts/release-ff.sh`／`release-ff.ps1` 時，腳本在 B2 推送 `release` 後接著做這一步。
 
 ### 緊急修正（hotfix）
 
