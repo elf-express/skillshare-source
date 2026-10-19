@@ -24,7 +24,102 @@
 | E14 | 工作目錄（**未納管**，實測 2026-10-04） | `mcpjungle/nginx.example.conf`、`AGENTS.md`、`.mcp.json`、`docs/superpowers/**` | 這些檔案只存在於本機工作目錄，從未 `git add`。其中 `nginx.example.conf` 是 `elf-mcp-gateway` 規則 16 與禁止簡化 5 的權威出處——重新 clone 的人拿不到它 | 2026-10-04 當時用 `git ls-files --error-unmatch` 檢查（回非零＝未納管）；在歷史 commit 上重現：`git ls-tree --name-only f8b7416 -- mcpjungle/nginx.example.conf AGENTS.md`（無輸出＝當時未納管）；`git status --short \| grep '^??'`。**重測 2026-10-17：已解決** —— `nginx.example.conf`（已移到 repo 根目錄）與 `AGENTS.md` 已納管：`git ls-files --error-unmatch nginx.example.conf AGENTS.md` exit 0；`.mcp.json` 由 `.gitignore:11` 排除；`docs/superpowers/**` 不在版控（`git ls-files docs/superpowers` 0 筆）。沒有機制擋「權威檔留在本機不提交」，照實寫 |
 | E15 | `f21c6f1`（mcp-library PR #123，`fix(E-250)`） | `mcpjungle/docs-mcp-server/src/http.ts` | 若被簡化掉會失去的東西：`/mcp*` 在驗證前限流、且只計 401（`skip` 與驗證共用 `isAuthorized()`）。之前完全沒有限流，CodeQL `js/missing-rate-limiting` 4 筆（#86–#89），合併後在 dev 上全部 fixed | `gh api "repos/elf-express/mcp-library/contents/mcpjungle/docs-mcp-server/src/http.ts?ref=f21c6f16b9eb5e22fe8e311f00e984185443765f" -q .content \| base64 -d \| grep -n mcpLimiter`（預期 7 行：定義 1 + 6 條 `/mcp*` 路由）。**重測 2026-10-17：仍在（有測試在擋）** —— 上述 `gh api` 指令實跑仍是 7 行（`:80` 定義、`:162-164`、`:167-169` 六條路由）；`git merge-base --is-ancestor f21c6f1 73b8206` exit 0；`73b8206` 的同一檔 `grep -c mcpLimiter mcpjungle/docs-mcp-server/src/http.ts` → 7，`trust proxy` false 在 `:53`、預設 20 次／15 分鐘在 `:180-181`（環境變數名是 `DOCS_MCP_RATE_LIMIT_MAX`／`DOCS_MCP_RATE_LIMIT_WINDOW_MS`）。機制：`tests/http-ratelimit.test.ts` 7 個測試，在 `ci.yml:156-165` 的 `build-test` matrix 內、由 `:188` 的 `npm test` 執行（`cd mcpjungle/docs-mcp-server && npm test` → 128 passed） |
 | E16 | mcp-library `a020cd0`（`mcpjungle/docs-mcp-server/README.md`）、`5d00449`（`CLAUDE.md`） | `mcpjungle/docs-mcp-server/README.md`、`CLAUDE.md`「A. 本機 stdio」 | 本機 stdio 的用法是 node 直接跑 `dist/index.js`（上游文件寫 `npm install && npm run build`；本 skill 改用 `npm ci`，因為 `package-lock.json` 存在，已在 `a020cd0` 核對），npm 套件已停止發布；skillshare-source 舊版 `elf-mcp-server` 規則 8 仍寫成 npx 指令（`559e52a`），已改掉 | 照舊寫法的人會拿不到套件而連不上本機 stdio。重現：`gh api 'repos/elf-express/mcp-library/contents/mcpjungle/docs-mcp-server/README.md?ref=a020cd0' -H 'Accept: application/vnd.github.raw' \| grep -n 'dist/index.js'`（預期 1 行）；`gh api 'repos/elf-express/mcp-library/contents/CLAUDE.md?ref=5d00449' -H 'Accept: application/vnd.github.raw' \| grep -n 'dist/index.js'`（預期 1 行）；舊寫法：`git grep -nE '(npx|npm (i|install|exec)|pnpm (add|dlx|exec)|yarn (add|dlx)|bunx)[^|]*@elf-express[/]' 559e52a` → 1 筆。**重測 2026-10-17：仍成立（沒有機制在擋，靠文件）** —— 上述三條指令實跑：`a020cd0` 的 README 1 行（`:21`）、`5d00449` 的 `CLAUDE.md` 1 行（`:75`）、`559e52a` 舊寫法 1 筆；`git merge-base --is-ancestor a020cd0 73b8206`、`git merge-base --is-ancestor 5d00449 73b8206` 皆 exit 0；`73b8206` 仍是 `mcpjungle/docs-mcp-server/README.md:21`、`CLAUDE.md:75` 各 1 行 `dist/index.js`，上游仍寫 `npm install && npm run build`（`README.md:14`、`CLAUDE.md:73`） |
-| E17 | skillshare-source `mcp/elf-mcp-server/templates/package.json` vs mcp-library `origin/release` @ `73b8206` | `mcp/elf-mcp-server/templates/package.json`、`mcpjungle/docs-mcp-server/package-lock.json` | 範本依賴落後參考實作一個主版本：範本宣告 zod `^3.25.76`、express `^4.21.2`、SDK `^1.29.0`；docs-mcp-server lockfile 是 zod 4.6.6、express 5.3.0、SDK 1.32.1（`package-lock.json:3327,1775,514`） | **未解決（2026-10-17）** —— 照範本開新 server 會落在 zod 3／express 4，與規則 5 的實測值不一致。升級是有破壞性變更的遷移，未驗證，不在 E-309 範圍；追蹤 E-321（E-308 決策 16）。重現：`grep -nE '"(zod|express|@modelcontextprotocol/sdk)"' mcp/elf-mcp-server/templates/package.json`（3 行：`:20`、`:21`、`:23`）；在 mcp-library `cd mcpjungle/docs-mcp-server && npm ci && npm ls zod express @modelcontextprotocol/sdk --depth=0` |
+| E17 | skillshare-source `mcp/elf-mcp-server/templates/package.json` vs mcp-library `origin/release` @ `73b8206` | `mcp/elf-mcp-server/templates/package.json`、`mcpjungle/docs-mcp-server/package-lock.json` | 範本依賴落後參考實作一個主版本：範本宣告 zod `^3.25.76`、express `^4.21.2`、SDK `^1.29.0`；docs-mcp-server lockfile 是 zod 4.6.6、express 5.3.0、SDK 1.32.1（`package-lock.json:3327,1775,514`） | **歷史狀態：未解決（2026-10-17）** —— 照範本開新 server 會落在 zod 3／express 4，與規則 5 的實測值不一致。升級是有破壞性變更的遷移，未驗證，不在 E-309 範圍；追蹤 E-321（E-308 決策 16）。重現：`grep -nE '"(zod|express|@modelcontextprotocol/sdk)"' mcp/elf-mcp-server/templates/package.json`（3 行：`:20`、`:21`、`:23`）；在 mcp-library `cd mcpjungle/docs-mcp-server && npm ci && npm ls zod express @modelcontextprotocol/sdk --depth=0`  **最新狀態（E-321／E-322）：依賴落差已解決**。範本已遷移至 zod 4／express 5／SDK 1；候選各依賴實際解析值、原有 9＋新增 22、build／stdio／基線與候選逐檔 coverage 證據及提交 SHA，完整列在本檔「E-322 遷移驗證結果」與 E-322 留言。原 pnpm 11 安裝缺陷仍未修復；52.31% 的原始 coverage 基線保留，兩項交 E-353，不把驗證副本的處置寫成原範本已修。 |
+| E18 | mcp-library `73b8206` vs skillshare-source `fa331979` | `mcpjungle/docs-mcp-server/package-lock.json:3071,3210`、`stack/elf-stack/SKILL.md:57,64,69,97–101` | **mcp-library 違反中（TypeScript）**：lockfile TypeScript 7.0.2 不在 elf-stack:64 `^5.6.3`（解析 5.9.3）；Vitest 5.0.3 符合 :69 `^5.0.1`，不可誤標違反。:57 是前端／桌面，:97–101 的 MCP 節未規定這兩個版本 | 適用範圍與範本保留 Vitest 4 的治理交 [E-351](https://linear.app/elf-express/issue/E-351)。本單採 A，不升 TypeScript／Vitest／coverage-v8，不改 stack。重現：在 mcp-library 執行 `git show 73b8206:mcpjungle/docs-mcp-server/package-lock.json`，核對 3071、3210 行；在 skillshare-source 執行 `git show fa331979:stack/elf-stack/SKILL.md`，核對 57、64、69、97–101 行；逐行原文亦貼在 E-321 Spec |
+
+## E-322 開工前置：原範本基線不乾淨（2026-10-19）
+
+來源：skillshare-source `fa33197944f06b306bace08b387b7ec6645dfd33` 的 `mcp/elf-mcp-server/templates/`；Node `v24.18.0`、pnpm `11.28.3`。本節只記錄實際前置證據，不代表依賴遷移已實作或通過審計；原有 `knowledge.test.ts` 9 個測試及所有斷言未修改。
+
+### 安裝缺陷：E-353，未修復
+
+原 materialize 腳本僅替換範本佔位並固定本輪 TS／Vitest／coverage 配套，沒有 build script 核准；它的 SHA256 是 `CD38E8C08964DB53E79386635E8D71DB5A7244EF3405A70EF3A908B8E5A9AE5E`。原始副本執行：
+
+```powershell
+pnpm --dir E:/tmp/e322-verification/baseline install --no-frozen-lockfile
+```
+
+實際 exit `1`：`[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2`。pnpm 11 的 strictDepBuilds 檢查會對未核准的相依建置腳本報錯；範本沒有對應核准設定，這是原範本缺陷，不是本單遷移所致。錯誤單 [E-353](https://linear.app/elf-express/issue/E-353) related [E-321](https://linear.app/elf-express/issue/E-321)；Eddie 明確指定本單不修，除非另有指示。依據：[pnpm build settings](https://pnpm.io/settings/build#allowbuilds)。
+
+Eddie 核准的**驗證處置**：只改 repo 外 `e322-materialize.mjs`，對每個產生的基線／候選副本同樣寫入以下 `pnpm-workspace.yaml`，不跑互動式 approve-builds、不改全域設定，也不新增此檔到本 repo 的範本。
+
+```yaml
+allowBuilds:
+  esbuild: true
+```
+
+腳本新增內容（在 `render(resolved);` 後；完整腳本、diff、雜湊亦已貼 [E-322](https://linear.app/elf-express/issue/E-322)）：
+
+```js
+// Verification-only workaround: apply equally to baseline and candidate copies.
+// The shipped template's missing approval is tracked separately; do not fix it here.
+fs.writeFileSync(path.join(resolved,'pnpm-workspace.yaml'),'allowBuilds:\n  esbuild: true\n');
+```
+
+修改後 SHA256：`E233F40EB2008B70E770660390F3171CD16E4D05939970CDAC620295D02150D4`。原失敗副本保留，使用新目錄 `E:/tmp/e322-verification/baseline-esbuild-v2` 重跑；安裝採專用 `--store-dir E:/tmp/e322-verification/pnpm-store-v2`，候選亦須用相同腳本與設定。
+
+```powershell
+node E:/tmp/e322-materialize.mjs E:/tmp/e322-verification/baseline-source/mcp/elf-mcp-server/templates E:/tmp/e322-verification/baseline-esbuild-v2
+pnpm --dir E:/tmp/e322-verification/baseline-esbuild-v2 --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --no-frozen-lockfile
+pnpm --dir E:/tmp/e322-verification/baseline-esbuild-v2 --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --frozen-lockfile
+pnpm --dir E:/tmp/e322-verification/baseline-esbuild-v2 why esbuild
+```
+
+兩次安裝實際均 exit `0`；首次輸出包含 `esbuild@0.28.2 postinstall: Done`。此結果只能稱為「套用驗證處置後安裝成功」，**不能寫成原範本已修復或基線全綠**。
+
+`pnpm why esbuild` 原始輸出（exit `0`）：
+
+```text
+esbuild@0.28.2
+├─┬ tsx@4.23.15
+│ ├── @elf-express/e322-fixture@1.0.0 (devDependencies)
+│ └─┬ vite@8.3.4
+│   ├─┬ @vitest/mocker@4.1.9
+│   │ └─┬ vitest@4.1.9
+│   │   ├── @elf-express/e322-fixture@1.0.0 (devDependencies)
+│   │   └─┬ @vitest/coverage-v8@4.1.9
+│   │     ├── @elf-express/e322-fixture@1.0.0 (devDependencies)
+│   │     └── vitest@4.1.9 [circular]
+│   └── vitest@4.1.9 [deduped]
+└── vite@8.3.4 [deduped]
+
+Found 1 version of esbuild
+```
+
+### 調整後基線：9 個測試通過，coverage 仍不合格
+
+| 指令／檢查（於新副本） | exit | 實際結果 |
+| --- | --- | --- |
+| `pnpm run build` | 0 | `tsc` 通過 |
+| `pnpm exec vitest run src/knowledge.test.ts --reporter=json --outputFile=../results/baseline-v2-original9.json` | 0 | 9 passed、0 failed、0 pending |
+| `pnpm run test:coverage` | 1 | 9 passed，但 lines **52.31%（79/151）＜55%**；`http.ts` 0%、`knowledge.ts` 89.77% |
+| `node E:/tmp/e322-baseline-smoke.mjs`（同樣記錄在 E-322 的 SDK Client 冒煙） | 0 | initialize → initialized → tools/list → tools/call；3 工具 `fixture_list/search/read`，read 回 `# alpha.md` 與 `# Alpha`，protocol errors `[]` |
+
+coverage 門檻、排除清單與原測試均未改；目前基線**不乾淨**，不得把 9 個測試通過等同 coverage 通過。Task 1 等 Eddie 的審計對話通過後才能開始；自派審查者只算自審。
+
+量測副本實際解析：SDK `1.32.1`、express `4.22.3`、zod `3.25.76`、express-rate-limit `8.7.1`；TypeScript `5.9.3`、Vitest／coverage-v8 `4.1.9`、tsx `4.23.15`、@types/express `4.17.25`、@types/node `24.19.2`。這些是原宣告 range 的本輪解析結果，不是候選升級結果，也不取代參考實作 `73b8206` 的 lockfile 值。
+
+SHA256：新副本 lockfile `A7955C8228347E57B5498014B5E3F01D8BC6F76C7DA6B0C3EB2EF938EE58A38C`；原測試檔 `FC67B4DC8E5E9C064D7DC1B6096500FC5BDC454AF41BDC93300D68220BA89A86`。完整安裝、why、build、9 測試 JSON、coverage 與 stdio 輸出存於 repo 外 `E:/tmp/e322-verification/results/baseline-v2-*`，重點與命令已回寫 E-322。
+
+### 四處審計補正：防覆蓋與逐檔 coverage（待 Task 3 一併 commit）
+
+Eddie 確認前置處置後要求：Task 1 等其審計對話只複核4處後才開始；自派審查者只算自審。「E-322 開工前置」段已寫在本 repo 的本檔，但尚未 commit，連同本次補充全部併入 Task 3 的 commit，不能在 Task 1／2 提前 stage。
+
+本輪查證：`Test-Path mcp/elf-mcp-server/templates/pnpm-workspace.yaml` → `False`；`git ls-tree -r --name-only fa33197944f06b306bace08b387b7ec6645dfd33 -- mcp/elf-mcp-server/templates/pnpm-workspace.yaml` → 空白、exit0。原範本及固定基準都沒有此檔。
+
+repo 外 materialize 腳本現已加防覆蓋：來源含 `pnpm-workspace.yaml` 就在 copy 前停止；新副本建核准檔採 `{ flag: 'wx' }`，不能覆寫既有檔。原測量用腳本 SHA256 `E233F40EB2008B70E770660390F3171CD16E4D05939970CDAC620295D02150D4` 保留作上述 v2 基線來源；防覆蓋新版 SHA256 為 `5E76CDA95E64B5C6D3BC03CD9148294B90C82BC7011035902CBCAA4E23993B15`。完整 diff／原文在 E-322。`node --check` exit0，repo 外檢查 exit0：無既有檔建立成功；重用 output 停止且檔案雜湊不變；來源已有設定則停止、來源雜湊不變且不建立 output。沒有為此修改產品範本或開始 Task 1。
+
+E-353 標題已擴為「elf-mcp-server 範本兩項基線缺陷：pnpm 11 安裝失敗（esbuild 未核准）／coverage 52.31% 未達 55%」，related E-321 維持；第二個基線發現已在 E-353 留言，保留原始失敗報表。下表的基線逐檔分子／分母來自原 `coverage-final.json`，以該次已安裝的 istanbul-lib-coverage `toSummary().lines` 讀取，與原終端報表相符。
+
+| 來源檔案 | 基線 covered/total | 基線 lines% | 候選 covered/total／lines% | 狀態 |
+| --- | --- | --- | --- | --- |
+| `src/http.ts` | 0/63 | 0% | 尚未執行 | 正式審核後以新增 HTTP 測試實測，Task 3 填入 |
+| `src/knowledge.ts` | 79/88 | 89.77% | 尚未執行 | 原程式及原有9測試不改，Task 3 以實測填入 |
+| `src/schemas.ts` | 原基線無此檔 | 不適用 | 尚未執行 | 新來源檔須納入原coverage規則，不准另加exclude |
+| `src/index.ts` | 原設定排除 | 不適用 | 未實作；維持原排除設定 | stdio協定另有實測，不混入coverage分母 |
+| 所有納入來源合計 | 79/151 | 52.31%（FAIL） | 尚未執行 | 候選必須靠新增測試達到≥55%、命令exit0 |
+
+目前候選尚未執行，不能把表中的驗收要求寫成已通過；Task 3 必須填上候選每個檔案的實際 covered/total／百分比與整體數字，新增來源也逐一加列。55%門檻、排除清單、原有9測試及斷言不改；只調reporter、隱藏來源或更換分母都不能作改善證據。兩份原始 coverage 報告及 JSON 一起保留，E-353 的兩項基線事實不抹去。
 
 ## 不是退化、但常被誤判為「簡化」的變更（保留原樣）
 
@@ -42,4 +137,88 @@
 - E7 → 「不准為了讓測試過而放寬比對邏輯」
 - E9–E11 → 「改工具 / 改名 / 加語料必須同 PR 更新的文件清單」
 - E15、E16 → 規則 17、禁止簡化 8、12（限流與本機 stdio 用法）
-- E17 → 規則 5 的「注意」（範本依賴落差，E-321）
+- E17 → 規則 5 的範本落差註記（依賴落差由 E-321／E-322 驗證解決；原基線兩項缺陷交 E-353，歷史證據保留）
+
+## E-322 遷移驗證結果（2026-10-20）
+
+### 來源、寫集與處置邊界
+
+- 正式 Plan：[E-322](https://linear.app/elf-express/issue/E-322)，父 Spec：[E-321](https://linear.app/elf-express/issue/E-321)。Eddie 的審計對話複核四處通過後才開始產品 Task；自派程式審查只算自審。
+- 開工 worktree 在 Task 1 前以 `git merge origin/dev` 快轉到 `e1c665e1fefa6a2f5744554afed252d9b1f7f5cc`，`git merge-base --is-ancestor origin/dev HEAD` exit 0。`git diff fa33197944f06b306bace08b387b7ec6645dfd33 origin/dev -- mcp/elf-mcp-server/` 空白，原基線副本仍有效。
+- Task 1 程式提交 `bbfcc7565c1e86572c2c8ae9a0ccfdedf8a8353a`：遷移四項依賴宣告、原樣搬出三個 schema、完整 schema 註冊、8 個 schema 與 2 個真實 stdio 回歸；Task 2 提交 `31f923ec67dab6050e88a025388ace6d0611274b`：HTTP factory、錯誤包裝及 12 個真實 HTTP 回歸。
+- 只改 `mcp/elf-mcp-server/`；`knowledge.ts`、`knowledge.test.ts`、`vitest.config.ts`、`tsconfig.json`、Dockerfile、compose 及其餘套件宣告不變。`git diff --exit-code e1c665e -- mcp/elf-mcp-server/templates/src/knowledge.test.ts mcp/elf-mcp-server/templates/vitest.config.ts` exit 0。原測試 SHA256 仍為 `FC67B4DC8E5E9C064D7DC1B6096500FC5BDC454AF41BDC93300D68220BA89A86`。
+- 上述開工前置與審計補正 evidence 在 Task 1／2 均未 stage／commit，與本結果段一起併入 Task 3 文件提交。D01–D14 的完整舊行／新文字對照保留在 Plan；E17 歷史與原重現指令完整保留。
+- E-322 單獨發版，不併入 E-318／E-352 本次發版；只準備 PR 到 dev。release／main 快轉與實際 `skillshare sync` 由 Eddie 執行，結案與清理須等發版及所有 target 驗證完成。
+
+### 公平量測與實際版本
+
+兩份副本使用相同 Node `v24.18.0`、pnpm `11.28.3`、TS `5.9.3`、Vitest／coverage-v8 `4.1.9`，未改範本的工具鏈宣告。repo 外 materialize 程式及完整原文見 Plan；最終腳本 SHA256 `5E76CDA95E64B5C6D3BC03CD9148294B90C82BC7011035902CBCAA4E23993B15`。來源 YAML 在 copy 前檢查，存在即停；副本以 `{flag:'wx'}` 建立 `allowBuilds: { esbuild: true }`（實際多行 YAML），不覆蓋既有設定。原範本沒有 `pnpm-workspace.yaml`，本單也未新增；pnpm 11 安裝缺陷仍由 E-353 追蹤。
+
+基線 `baseline-esbuild-v2` 的舊腳本輸出與最終 guard 版的 `pnpm-workspace.yaml`／`package.json` 逐檔 `cmp` 都是 0；guard 只加停止條件，不改有效量測輸出。候選 `task2-candidate-v1` 使用最終 guard 版。兩者都依序 install、frozen-install，沒有執行互動式 approve-builds。副本及原始 JSON／log 留在 repo 外 `E:/tmp/e322-verification/`，不進版控或 skill targets。
+
+| 套件 | 原範本宣告 | 基線實際解析 | 候選宣告 | 候選實際解析 |
+|---|---|---|---|---|
+| @modelcontextprotocol/sdk | ^1.29.0 | 1.32.1 | ^1.32.1 | 1.32.1 |
+| express | ^4.21.2 | 4.22.3 | ^5.3.0 | 5.3.0 |
+| zod | ^3.25.76 | 3.25.76 | ^4.6.6 | 4.6.7 |
+| @types/express | ^4.17.21 | 4.17.25 | ^5.0.6 | 5.0.6 |
+| express-rate-limit | ^8.7.1（未改） | 8.7.1 | ^8.7.1 | 8.7.1 |
+| @types/node | ^24.0.0（未改） | 24.19.2 | ^24.0.0 | 24.19.2 |
+| tsx | ^4.19.2（未改） | 4.23.15 | ^4.19.2 | 4.23.15 |
+| typescript | ^5.9.3（未改；副本固定精確值） | 5.9.3 | ^5.9.3 | 5.9.3 |
+| vitest／@vitest/coverage-v8 | ^4.1.9（未改；副本固定精確值） | 4.1.9 | ^4.1.9 | 4.1.9 |
+
+候選解析值為本輪實際安裝結果，不是假稱 mcp-library `73b8206` lockfile 的版本（參考實作 Zod 為 4.6.6）。基線 lock SHA256 `A7955C8228347E57B5498014B5E3F01D8BC6F76C7DA6B0C3EB2EF938EE58A38C`；Task 1／2 候選 lock 均為 `B0A8311ED8EEC47A70E32C3BB8567DB8B95EB69ED43C2AED6BDB3C0B1EAA9D89`。完整解析值由各副本 `pnpm list --depth=0 --json` 保存。
+
+### RED／GREEN 與 9＋22＝31
+
+1. Task 1 RED：第一輪缺少 schema 模組；原樣搬出後，仍用 Zod 3 的 `task1-red-zod3-v1` install／build exit 0，新 10 個有 5 passed、5 failed。S1／S7 偵測到仍有 `.errors`，S2／S3 缺 `origin:'string'`；真實 P2 `tools/call` 的 `{query:'x',typo:true}` 被接受（`isError` 為 undefined）。不是把安裝失敗當 RED。
+2. Task 1 GREEN：改用 Zod 4 與完整 object schema 註冊後，原 9、新 10 分開皆通過；每個 `.strict()`／min／max／default／describe 及中文錯誤訊息保留。三個工具皆有未知欄位拒絕的實際協定測試。中間 coverage 仍 exit 1、82/154＝53.24%，HTTP 0/63；完整 55% 驗收在 Task 2，未把這次失敗寫成通過。
+3. Task 2 RED：只抽 app factory 後，H1–H8 原有行為通過，H9–H12 收到 HTML 而非 JSON-RPC（8 passed／4 failed）。證明 scope 同步例外、session rejection、壞 JSON、過大 body 的格式缺口。
+4. Task 2 GREEN：HTTP 12 通過，保留六路由、auth／限流、session、公開 health、8mb。只有驗證失敗耗額度，spoof X-Forwarded-For 無法換來源；正確 token 在額度耗盡後仍可呼叫。H12 同時驗接近 8 MiB 的有效 JSON 成功與超過上限的 413。headersSent 只 next(err)，公開錯誤回應不洩漏內部原因。
+5. 全新 Task 1／2 程式審查各為 Critical 0／Important 0／Minor 0；這是程式自審，不代替 Eddie 正式 Plan 審計。
+
+在各 materialized 副本執行（先依 Plan materialize 至尚不存在的新目錄，安裝時指定共用測試 store；結果檔輸出到旁邊 results）：
+
+```powershell
+pnpm --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --no-frozen-lockfile
+pnpm --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --frozen-lockfile
+pnpm run build
+pnpm exec vitest run src/knowledge.test.ts --reporter=json --outputFile=../results/task2-original9.json
+pnpm exec vitest run src/schema.test.ts src/protocol.test.ts --reporter=json --outputFile=../results/task2-new10.json
+pnpm exec vitest run src/http.test.ts --reporter=json --outputFile=../results/task2-http12.json
+pnpm exec vitest run src/schema.test.ts src/protocol.test.ts src/http.test.ts --reporter=json --outputFile=../results/task2-new22.json
+pnpm exec vitest run --reporter=json --outputFile=../results/task2-all31.json
+pnpm run test:coverage
+```
+
+實際候選輸出：install／frozen-install／build 均 exit 0；**原有 9 passed；schema/protocol 新 10 passed；HTTP 新 12 passed；新增合計 22 passed；總計 31 passed**，每份 failed／pending／todo 均 0，命令均 exit 0。沒有 skip／todo／only，不刪測試或放寬斷言。
+
+真實 stdio（SDK Client + StdioClientTransport）完成 initialize → notifications/initialized → tools/list → tools/call；`task2-stdio.log` exit 0 的原始回應如下。協定解析錯誤 `[]`，啟動日誌只在 stderr；兩個 stdio 回歸另驗正常關閉且子程序 exit 0。
+
+```json
+{
+  "toolCount": 3,
+  "names": ["fixture_list", "fixture_search", "fixture_read"],
+  "callResult": {
+    "content": [{"type":"text","text":"# alpha.md\n\n# Alpha\n\nKeyword one.\n"}]
+  },
+  "protocolErrors": []
+}
+```
+
+### 基線／候選逐檔 coverage（原門檻與排除清單未改）
+
+兩份 `coverage/coverage-final.json` 使用各自已安裝的 `istanbul-lib-coverage`：`createCoverageMap` → `fileCoverageFor(file).toSummary().lines`／`getCoverageSummary().lines`，保留分子與分母。
+
+| 檔案 | 基線 covered/total | 基線 lines% | 候選 covered/total | 候選 lines% |
+|---|---|---|---|---|
+| src/http.ts | 0/63 | 0% | 64/74 | 86.48% |
+| src/knowledge.ts | 79/88 | 89.77% | 79/88 | 89.77% |
+| src/schemas.ts | 原基線無此檔 | 不適用 | 3/3 | 100% |
+| src/index.ts | 原設定排除 | 不適用 | 維持原設定排除；另跑真實 stdio | 不適用 |
+| 整體 | 79/151 | **52.31%（FAIL，exit 1）** | 146/165 | **88.48%（PASS，exit 0）** |
+
+HTTP 因 factory／共用錯誤處理增加 11 個可覆蓋行，schema 新檔有 3 個頂層初始化可覆蓋行（V8 的實際計數），總分母 151 → 165；沒有改 include／exclude、55% 門檻或挪走來源規避。HTTP 尚未覆蓋的 10 行是 runHttp 監聽／啟動記錄，既有介面與日誌保留。knowledge 原碼／原測試與 79/88 均不變。
+
+原始資料：`results/baseline-v2-coverage.log`、`baseline-v2-file-coverage-summary.json`；`results/task1-coverage.log`（中間失敗）；`results/task2-coverage.log`、`task2-file-coverage-summary.json`（最終候選），及各副本完整 coverage HTML／JSON。基線第二個發現已補 [E-353](https://linear.app/elf-express/issue/E-353)；本單靠新增測試實際通過，沒有改門檻或排除清單，也沒有修原 pnpm 11 安裝缺陷。
