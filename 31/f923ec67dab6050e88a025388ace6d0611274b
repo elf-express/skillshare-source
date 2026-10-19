@@ -1,0 +1,21 @@
+mcp/elf-mcp-server/templates/src/http.test.ts
+  s_6933571efc8817::t_9df06f577f4353 1-314
+mcp/elf-mcp-server/templates/src/http.ts
+  s_6933571efc8817::t_0e5155bc9e23d8 21,41-57,60,115,118-125,153,167,171,175-188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "31f923ec67dab6050e88a025388ace6d0611274b",
+  "prompts": {},
+  "sessions": {
+    "s_6933571efc8817": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b4b238-260b-49d8-baeb-de560fa8007c",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
