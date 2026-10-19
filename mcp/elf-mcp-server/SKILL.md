@@ -6,7 +6,7 @@ description: |
   /health、stderr 日誌、測試、Dockerfile，以及「禁止簡化」清單。當任務涉及新建 MCP server、修改 src/index.ts 的 registerTool、
   tool description / inputSchema、http.ts transport、MCP 相關測試或 Dockerfile，或重構 / 精簡既有 MCP server 程式碼時觸發。
 metadata:
-  version: 1.3.0
+  version: 1.4.0
   owner: Elf Express
 ---
 
@@ -15,7 +15,7 @@ metadata:
 > 參考實作：`elf-express/mcp-library` 的 `mcpjungle/docs-mcp-server/`（核心、多語料，`origin/release` @ `73b8206`）是**結構**參考；
 > 工具**描述寫法**的範例是已刪除的 legacy server（`0a37607` 刪除，E-126），用 `git show 0a37607^:mcp/legacy/sqlsugar-mcp/sqlsugar-mcp-server/src/index.ts`
 > 與 `git show 0a37607^:mcp/legacy/fc-designer-mcp/src/index.ts` 讀；docs-mcp 的描述還沒有「範例:」行（證據 E6）。
-> 完整範本在 `templates/`，已在 Node 24.18 下實測 `tsc` 通過、9 個測試通過、stdio 可呼叫工具；範本依賴的版本落差見規則 5。
+> 完整範本在 `templates/`，Node 24.18 下已實測 `tsc`、原有 9＋新增 22 個測試與 stdio 通過；實際解析值及基線／候選逐檔 coverage 見證據 E17 與「E-322 遷移驗證結果」。原範本基線缺陷另見 E-353。
 
 相關 skill：
 - **`elf-mcp-book`** — 來源是「一本書」時的素材與上架規範（`mcpjungle/books/<書名>/source/`）
@@ -54,7 +54,7 @@ metadata:
    （`mcpjungle/docs-mcp-server/package-lock.json:514`，`origin/release` @ `73b8206`；重現：`npm ci && npm ls @modelcontextprotocol/sdk --depth=0`）。
 5. **MUST** 新 server 的 zod、`@modelcontextprotocol/sdk` 主版本跟 docs-mcp-server 在 `origin/release` 上的 lockfile 解析值一致。
    實測（`73b8206`，`npm ls zod express @modelcontextprotocol/sdk --depth=0`）：zod 4.6.6（`package-lock.json:3327`）、SDK 1.32.1（`:514`）、express 5.3.0（`:1775`）。之後再升級只更新實測值。
-   **注意**：`templates/package.json` 目前仍是 zod 3／express 4（`zod ^3.25.76`、`express ^4.21.2`），尚未驗證升級，見 E-321。
+   **已解決（E-321／E-322）**：`templates/` 已實測遷移至 zod 4／express 5，SDK 主版本與參考實作一致；依賴解析值、9＋N、coverage 與協定驗證證據見 E17。原範本的 pnpm 11 安裝與基線 coverage 缺陷由 E-353 追蹤，不與依賴落差混為已修復。
    WHY：證據 E3——拿掉 semver-major ignore 後，主版本曾在同一 repo 內分岔；以參考實作的實測值為準，各 server 才不會各自漂移。
    （分岔當時：`docs-mcp-server`／`sqlsugar` 是 zod 3.25.76、`fc-designer-mcp` 被 dependabot 升到 zod 4.4.3；legacy 兩個 server 已於 `0a37607` 刪除。）
 
@@ -110,10 +110,14 @@ metadata:
 | `package.json` | ESM、`bin`、scripts（build/test/test:coverage）、engines ≥24.18、`packageManager` |
 | `tsconfig.json` | 與 docs-mcp-server 相同（ES2022 / Node16 / strict），排除 `*.test.ts` |
 | `vitest.config.ts` | colocated 測試、v8 覆蓋率 lines 55 |
-| `src/index.ts` | 3 個唯讀工具（list/search/read）、模組層級 strict schema、完整四段描述、雙 transport 啟動 |
-| `src/http.ts` | Streamable HTTP（session map、/mcp 與 /mcp/:scope、401/404/400/500、`/mcp*` 驗證前限流（只計驗證失敗、回 429）、/health） |
+| `src/index.ts` | 3 個唯讀工具（list/search/read）、引用共用的模組層級 strict schema、完整四段描述、雙 transport 啟動 |
+| `src/schemas.ts` | 三個共用模組層級 strict schema，保留每個欄位的上下限、default 與 describe |
+| `src/http.ts` | Streamable HTTP（createHttpApp／runHttp、session map、/mcp 與 /mcp/:scope 六路由、401/404/400/413/500、`/mcp*` 驗證前限流（只計驗證失敗、回 429）、/health、JSON-RPC 錯誤包裝） |
 | `src/knowledge.ts` | 純邏輯：資料根解析、列舉、mtime 快取、去 BOM、模糊比對、AND 搜尋、截斷 |
 | `src/knowledge.test.ts` | 9 個測試：排序、AND、未命中提示、空查詢、讀檔、巢狀、路徑穿越、過濾、截斷 |
+| `src/schema.test.ts` | 新增 8 個 schema 回歸，涵蓋 Zod 4 issues 格式、strict、邊界、預設值與描述 |
+| `src/protocol.test.ts` | 新增 2 個真實 stdio 回歸，涵蓋三工具與錯誤輸入後session仍可用 |
+| `src/http.test.ts` | 新增 12 個 HTTP 回歸，涵蓋六路由、session、驗證／限流及 Express 5 錯誤處理 |
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` / `.env.example` | 多階段 build、prod-only deps、`TRANSPORT=http`、healthcheck、TZ |
 
 佔位符：`<server-name>`（kebab-case，= image 名 = container 名 = gateway server 名）、`<domain>`（工具前綴，snake_case）、
@@ -209,7 +213,7 @@ cat tests/*.ts | grep -cE '^\s*it\('          # 128（2+4+25+7+7+7+10+4+12+5+19+
 3. 測試放置：團隊標準 colocated `*.test.ts` + 55%；`docs-mcp-server` 用 `tests/` 且無覆蓋率門檻（`73b8206` 仍是如此：15 個測試檔、沒有 `vitest.config.*`）。是否搬移並加門檻。
 4. .NET 10 MCP server：repo 內**沒有**任何 C# MCP server（`.cs` 檔都是 SqlSugar 範例 / 效能測試資料），本 skill 不提供 .NET 範本；若要用官方 C# SDK，需另立規範。
 5. （已解決，2026-10-17）zod 3 vs 4、express 4 vs 5 在 repo 內分岔（證據 E3）——統一到哪一版。
-   依據：legacy 刪除後 repo 內只剩 docs-mcp-server（zod 4.6.6、express 5.3.0 @ `73b8206`），沒有分岔；範本的落差見規則 5 與 E-321。
+   依據：legacy 刪除後 repo 內只剩 docs-mcp-server（zod 4.6.6、express 5.3.0 @ `73b8206`），沒有分岔；範本的依賴落差已由 E-321／E-322 驗證解決，見規則 5 與證據 E17；原範本 pnpm 11 安裝及基線 coverage 缺陷另見 E-353。
 6. 應用層限流已落地（`f21c6f1`，證據 E15）；仍待確認：nginx 邊界是否也要限流、gateway 之後的多副本部署是否需要共用儲存（目前為單程序記憶體計數）。
 7. Bearer token 比對用 `===`（非 constant-time）；是否改 `crypto.timingSafeEqual`。
 8. 工具層逾時：現有工具都是同步檔案讀取、沒有 per-tool timeout；若新 server 會呼叫外部 API，逾時值與重試策略待定（gateway 端 `MCP_SERVER_INIT_REQ_TIMEOUT_SEC=30` 只管初始化）。
