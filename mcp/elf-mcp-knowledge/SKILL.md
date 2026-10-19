@@ -175,11 +175,13 @@ mcpjungle/books/<書名>/corpus/<id>/
 | `examples` | `docs_code_search` `docs_code_read` | `examples/` 下有白名單副檔名原始碼 |
 | `symbol` | `docs_symbol` | API / 組件名以 `#`/`##`/`###` 標題呈現 |
 
-出處（mcp-library `origin/release` @ `2f71743`）：8 個工具**一律無條件註冊**（`mcpjungle/docs-mcp-server/src/index.ts:145-279`，8 次 `registerTool` 都沒有條件；檔頭 `:5` 註解「故工具數恆為 8,capability-gated」），所以 **capability 決定的是「能不能回內容」，不是「工具會不會出現」**；capability 沒開時工具照樣可呼叫，只是回一段文字提示、不是錯誤：
+出處（mcp-library `origin/release` @ `2f71743`；`docs-mcp-server/src/` 自 `73b8206` 起未變，行號兩者通用）：8 個工具**一律無條件註冊**（`mcpjungle/docs-mcp-server/src/index.ts:145-279`，8 次 `registerTool` 都沒有條件；同檔 `:5` 註解「故工具數恆為 8,capability-gated」），所以 **capability 決定的是「能不能回內容」，不是「工具會不會出現」**；capability 沒開時工具照樣可呼叫，只是回一段文字提示、不是錯誤：
 
-- `cheatsheet` 未啟用 → `src/corpus.ts:545`「未啟用速查表功能。請改用 docs_read …」（gate 在 `:544`）
-- `examples` 未啟用 → `src/corpus.ts:572`「無代碼範例(未啟用 examples)。請改用 docs_search …」（gate 在 `:571`；`docs_code_search` 走 `:579`、`docs_code_read` 走 `:639`，兩個工具共用同一段 `requireExamples`）
-- `symbol` 未啟用 → `src/corpus.ts:729`「未啟用 symbol(無符號索引)。請改用 docs_search 或 docs_outline。」（gate 在 `:728`）
+未啟用時回提示的位置（`mcpjungle/docs-mcp-server/src/corpus.ts`）：
+
+- `cheatsheet` → `:545`「未啟用速查表功能。請改用 docs_read …」（gate 在 `:544`）
+- `examples` → `:572`「無代碼範例(未啟用 examples)。請改用 docs_search …」（gate 在 `:571`；`docs_code_search` 走 `:579`、`docs_code_read` 走 `:639`，兩個工具共用同一段 `requireExamples`）
+- `symbol` → `:729`「未啟用 symbol(無符號索引)。請改用 docs_search 或 docs_outline。」（gate 在 `:728`）
 
 **Step 3 — 本機驗證**（`cd mcpjungle/docs-mcp-server`；PowerShell 用 `$env:X="..."`，mcp-library `CLAUDE.md:50-55` 也是這個寫法）
 
