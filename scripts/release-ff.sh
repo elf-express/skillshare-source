@@ -41,11 +41,11 @@ say()  { printf '\n== %s\n' "$*"; }
 stop() { printf '\n[停止] %s\n' "$*" >&2; exit 1; }
 
 confirm_sha() {
-  # $1 = 提示文字，$2 = 期望輸入的 8 碼
+  # $1 = 提示文字，$2 = 期望輸入的 8 碼，$3 = 沒有確認時的停止訊息（省略時為「未做任何變更」）
   local answer
   printf '\n%s\n請輸入 %s 繼續（其他任何輸入都會停止）：' "$1" "$2"
   read -r answer
-  [ "$answer" = "$2" ] || stop "沒有確認，未做任何變更。"
+  [ "$answer" = "$2" ] || stop "${3:-沒有確認，未做任何變更。}"
 }
 
 # ---------- 0. 環境 ----------
@@ -91,7 +91,8 @@ done
 for b in release main; do
   [ "$b" = main ] && [ "$DO_MAIN" = 0 ] && continue
   if git rev-parse -q --verify "refs/heads/$b" >/dev/null; then
-    read -r ahead behind < <(git rev-list --left-right --count "$b...origin/$b")
+    c=$(git rev-list --left-right --count "$b...origin/$b") || stop "git rev-list $b...origin/$b 失敗。"
+    read -r ahead behind <<< "$c"
     if [ "$ahead" != 0 ]; then
       # 本機已快轉但還沒推：超前的提交都在 origin/dev 上就不是本機提交，可以繼續
       if git merge-base --is-ancestor "$b" origin/dev; then
@@ -109,7 +110,8 @@ DEV8=${DEV_SHA:0:8}
 REL_SHA=$(git rev-parse origin/release)
 
 say "origin/release...origin/dev（應為 0 y）"
-read -r x y < <(git rev-list --left-right --count origin/release...origin/dev)
+c=$(git rev-list --left-right --count origin/release...origin/dev) || stop "git rev-list origin/release...origin/dev 失敗。"
+read -r x y <<< "$c"
 echo "$x $y"
 [ "$y" != 0 ] || stop "origin/dev 沒有比 origin/release 新的提交，沒有東西要發。"
 if [ "$x" != 0 ]; then
@@ -173,7 +175,7 @@ else
   git switch -c release --track origin/release
 fi
 git merge --ff-only origin/release
-git merge --ff-only origin/dev || stop "release 無法快轉到 origin/dev（--ff-only 拒絕），沒有推送。回報，不要強制。"
+git merge --ff-only "$DEV_SHA" || stop "release 無法快轉到 origin/dev（--ff-only 拒絕），沒有推送。回報，不要強制。"
 git push origin release || stop "推送 release 被拒，origin/release 沒有變更；本機 release 已前移到 $DEV8 但沒推。照 git 或 git-guard 的訊息處理後重跑。"
 
 git fetch origin
@@ -185,7 +187,9 @@ if [ "$DO_MAIN" = 0 ]; then
 else
   # ---------- 5. 快轉 main（references/03 B3） ----------
   say "origin/main...origin/release（應為 0 y）"
-  read -r mx my < <(git rev-list --left-right --count origin/main...origin/release)
+  c=$(git rev-list --left-right --count origin/main...origin/release) ||
+    stop "git rev-list origin/main...origin/release 失敗（release 已發佈到 $DEV8，main 未動）。"
+  read -r mx my <<< "$c"
   echo "$mx $my"
   if [ "$mx" != 0 ]; then
     git log --oneline origin/release..origin/main
@@ -196,15 +200,16 @@ else
   else
     say "要帶進 main 的提交（git log --oneline origin/main..origin/release）"
     git log --oneline origin/main..origin/release
-    confirm_sha "確認把 main 快轉到 origin/release（$DEV8）並推送？" "$DEV8"
+    confirm_sha "確認把 main 快轉到 origin/release（$DEV8）並推送？" "$DEV8" \
+      "沒有確認：release 已發佈到 $DEV8，main 未動。之後依 references/03 B3 快轉 main。"
     if git rev-parse -q --verify refs/heads/main >/dev/null; then
       git switch main
     else
       git switch -c main --track origin/main
     fi
     git merge --ff-only origin/main
-    git merge --ff-only origin/release || stop "main 無法快轉到 origin/release，沒有推送（release 已發佈到 $DEV8）。回報。"
-    git push origin main || stop "推送 main 被拒：release 已發佈到 $DEV8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後重跑。"
+    git merge --ff-only "$DEV_SHA" || stop "main 無法快轉到 origin/release，沒有推送（release 已發佈到 $DEV8）。回報。"
+    git push origin main || stop "推送 main 被拒：release 已發佈到 $DEV8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後，依 references/03 B3 快轉 main（重跑本腳本會停在「沒有東西要發」）。"
     git fetch origin
     [ "$(git rev-parse origin/main)" = "$DEV_SHA" ] || stop "推送後 origin/main 不是 $DEV8，請檢查。"
   fi

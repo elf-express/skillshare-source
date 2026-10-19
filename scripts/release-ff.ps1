@@ -36,7 +36,7 @@ function Say([string]$msg) { Write-Host ""; Write-Host "== $msg" -ForegroundColo
 function Stop-Release([string]$msg) {
     Write-Host ""
     Write-Host "[停止] $msg" -ForegroundColor Red
-    if ($script:callerLocation) { Set-Location $script:callerLocation }
+    if ($script:callerLocation) { Set-Location $script:callerLocation -ErrorAction SilentlyContinue }
     exit 1
 }
 
@@ -46,11 +46,15 @@ function Stop-Release([string]$msg) {
 # 執行 git，失敗就停；回傳去掉頭尾空白的 stdout
 function G {
     $ErrorActionPreference = 'Continue'
-    $out = & git @args 2>&1
+    $out = @(& git @args 2>&1)
     $code = $LASTEXITCODE
-    $text = ($out | ForEach-Object { "$_" }) -join "`n"
-    if ($code -ne 0) { Stop-Release "git $($args -join ' ') 失敗（exit $code）：`n$text" }
-    return $text.Trim()
+    # stderr 只用在失敗訊息，回傳值只含 stdout
+    $stdout = ($out | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] } | ForEach-Object { "$_" }) -join "`n"
+    if ($code -ne 0) {
+        $text = ($out | ForEach-Object { "$_" }) -join "`n"
+        Stop-Release "git $($args -join ' ') 失敗（exit $code）：`n$text"
+    }
+    return $stdout.Trim()
 }
 
 # 執行 git 並把輸出直接印出（給使用者看的清單、推送過程）
@@ -71,11 +75,12 @@ function Get-Counts([string]$range) {
     return @([int]$parts[0], [int]$parts[1])
 }
 
-function Confirm-Sha([string]$prompt, [string]$sha8) {
+# $stopMsg：沒有確認時的停止訊息（省略時為「未做任何變更」）
+function Confirm-Sha([string]$prompt, [string]$sha8, [string]$stopMsg = '沒有確認，未做任何變更。') {
     Write-Host ""
     Write-Host $prompt -ForegroundColor Yellow
     $answer = Read-Host "請輸入 $sha8 繼續（其他任何輸入都會停止）"
-    if ("$answer".Trim() -cne $sha8) { Stop-Release "沒有確認，未做任何變更。" }
+    if ("$answer".Trim() -cne $sha8) { Stop-Release $stopMsg }
 }
 
 # ---------- 0. 環境 ----------
@@ -204,7 +209,7 @@ else {
 
 if ($DryRun) {
     Say "-DryRun：檢查完成，沒有切分支、沒有推送。"
-    Set-Location $script:callerLocation
+    Set-Location $script:callerLocation -ErrorAction SilentlyContinue
     exit 0
 }
 
@@ -222,7 +227,7 @@ try {
     if (GTest rev-parse -q --verify refs/heads/release) { GShow switch release }
     else { GShow switch -c release --track origin/release }
     GShow merge --ff-only origin/release
-    & git merge --ff-only origin/dev
+    & git merge --ff-only $devSha
     if ($LASTEXITCODE -ne 0) { Stop-Release "release 無法快轉到 origin/dev（--ff-only 拒絕），沒有推送。回報，不要強制。" }
     & git push origin release
     if ($LASTEXITCODE -ne 0) { Stop-Release "推送 release 被拒，origin/release 沒有變更；本機 release 已前移到 $dev8 但沒推。照 git 或 git-guard 的訊息處理後重跑。" }
@@ -249,14 +254,14 @@ try {
         else {
             Say "要帶進 main 的提交（git log --oneline origin/main..origin/release）"
             GShow log --oneline origin/main..origin/release
-            Confirm-Sha "確認把 main 快轉到 origin/release（$dev8）並推送？" $dev8
+            Confirm-Sha "確認把 main 快轉到 origin/release（$dev8）並推送？" $dev8 "沒有確認：release 已發佈到 $dev8，main 未動。之後依 references/03 B3 快轉 main。"
             if (GTest rev-parse -q --verify refs/heads/main) { GShow switch main }
             else { GShow switch -c main --track origin/main }
             GShow merge --ff-only origin/main
-            & git merge --ff-only origin/release
+            & git merge --ff-only $devSha
             if ($LASTEXITCODE -ne 0) { Stop-Release "main 無法快轉到 origin/release，沒有推送（release 已發佈到 $dev8）。回報。" }
             & git push origin main
-            if ($LASTEXITCODE -ne 0) { Stop-Release "推送 main 被拒：release 已發佈到 $dev8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後重跑。" }
+            if ($LASTEXITCODE -ne 0) { Stop-Release "推送 main 被拒：release 已發佈到 $dev8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後，依 references/03 B3 快轉 main（重跑本腳本會停在「沒有東西要發」）。" }
             GShow fetch origin
             if ((G rev-parse origin/main) -ne $devSha) { Stop-Release "推送後 origin/main 不是 $dev8，請檢查。" }
         }
@@ -287,5 +292,5 @@ finally {
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[注意] 沒能切回 $startRef，目前在 $(& git -C $top branch --show-current 2>$null)。" -ForegroundColor Yellow
     }
-    Set-Location $script:callerLocation
+    Set-Location $script:callerLocation -ErrorAction SilentlyContinue
 }
