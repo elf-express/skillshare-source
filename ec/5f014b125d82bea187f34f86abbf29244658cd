@@ -1,0 +1,23 @@
+mcp/elf-mcp-server/templates/src/http.test.ts
+  s_20cfebeb9a4c3c::t_349c82cb001020 3,288-289,291,295-297
+mcp/elf-mcp-server/templates/src/http.ts
+  s_20cfebeb9a4c3c::t_13fa74928297c5 43-49
+mcp/elf-mcp-server/templates/src/protocol.test.ts
+  s_20cfebeb9a4c3c::t_7c9bcfa1a62513 4-7,11-19,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ec5f014b125d82bea187f34f86abbf29244658cd",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
