@@ -245,3 +245,56 @@ Copilot 在 PR #27 指出兩項 Medium，先前程式自審漏掉；這些意見
 | 整體 | 79/151，52.31%（FAIL，exit 1） | **148/167，88.62%（PASS，exit 0）** |
 
 相較首次候選，HTTP 日誌分支增加 2 個可覆蓋行且都執行到，總分母 165 → 167；門檻仍 55%，排除清單完全沒改。首次候選 88.48%／146/165 保留為歷史，最新驗收採本表 88.62%／148/167。原安裝與原 coverage 基線仍交 E-353；沒有以副本 esbuild 核准處置宣稱原範本安裝缺陷已修復。
+
+## E-322：合併後 HTTP 回歸修復（基底 dev 27872f1d）
+
+PR #27 合進 dev 的 `27872f1d384ca8077dd121fe12bd63ee0ae10292` 仍有兩項回歸：Express 5 listen callback 收到 error 卻印出成功、以 exit 0 結束；新的錯誤 middleware 將既有 charset 415／scope 解碼 400 改為 500。Eddie 在本 session 明確回報正式審計核准兩項補正，再指示從最新 dev 開 `fix/e-322-http-regressions`。本段為最新修正驗收，前段失敗與歷次候選結果保留為歷史。程式寫集只有 `templates/src/http.ts`、`http.test.ts`；SKILL.md、工具鏈、依賴、原 9 測試、schema 限制、coverage 門檻與排除清單均未修改。
+
+### 重現與修復
+
+- 在原 H8／H9／H11 的 it 中加斷言；`http-fix-red-v1` 用舊 http.ts 跑 HTTP12，`results/http-fix-red12.json` 為 9 passed／3 failed：壞 scope 預期 400 卻 500、真實 port 衝突預期 exit 1 卻 0、charset 預期 415 卻 500。不是安裝或編譯失敗當 RED。
+- `runHttp` 等待 Express listen callback；只有 bind 成功才印既有啟動日誌並 resolve，error reject 交既有 index.ts 的 boot.catch 記錯並 exit 1。H9 用既有 tsx 依賴跑當前 src/index.ts 子程序，避免讀到舊 dist。占用預設 IPv6/dual-stack port（exclusive），與 runHttp 一致；IPv4-only 在 Windows 無法有效重現衝突，不採用。
+- body-parser 的 http-errors 需同時為 Error、4xx 整數 status、相同 statusCode、expose:true；415 回 `-32000 / Unsupported media type`，其他已確認的客戶端錯誤回 `-32600 / Invalid request`。Router 的 URIError/status400 固定回 400/-32600。不能只看任意 err.status；H9 額外驗內部 Error 只有 status415 仍回 500/-32603。
+- 原 parse 400/-32700、8mb 上限 413/-32000、headersSent→next、內部 500 斷言保留。H8 驗 POST/GET/DELETE 的壞 scope 與安全日誌；H11 保留原 malformed JSON sentinel，另測 charset415、encoding415、壞 gzip400 及不洩漏原始 encoding。六路由、認證、限流、session、health 與所有原斷言保留。
+
+### 可重現命令與結果
+
+所有依賴安裝／build／測試均在 repo 外副本進行。相同 guard materializer `E:/tmp/e322-materialize.mjs` SHA256 `5E76CDA95E64B5C6D3BC03CD9148294B90C82BC7011035902CBCAA4E23993B15`；來源 YAML 必須不存在，副本以 wx 建立 esbuild 核准設定。基線 `http-fix-baseline-v1` 與候選 `http-fix-candidate-v1` 都採同一處置，沒有互動 approve-builds。原範本 pnpm 11 缺陷與原 coverage 52.31% 仍由 E-353 追蹤，本次未修。
+
+在 `E:/tmp/e322-verification/http-fix-candidate-v1` 執行：
+
+```powershell
+pnpm --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --no-frozen-lockfile
+pnpm --store-dir E:/tmp/e322-verification/pnpm-store-v2 install --frozen-lockfile
+pnpm run build
+pnpm exec vitest run src/knowledge.test.ts --reporter=json --outputFile=../results/http-fix-original9.json
+pnpm exec vitest run src/schema.test.ts src/protocol.test.ts src/http.test.ts --reporter=json --outputFile=../results/http-fix-new22-v2.json
+pnpm test --reporter=json --outputFile=../results/http-fix-all31.json
+pnpm run test:coverage
+node E:/tmp/e322-http-fix-probe.mjs
+node E:/tmp/e322-http-fix-stdio.mjs
+```
+
+install／frozen-install／build 均 exit 0；原有 **9 passed**、新增 **22 passed**、全跑 **31 passed**，failed／pending／todo 都 0。HTTP12 單跑也全部通過。分組第一次誤寫 `schemas.test.ts`，只選到 protocol2＋HTTP12＝14，保留 `http-fix-new22.json`，不當作 22 的證據；改正既有檔名 `schema.test.ts` 後另存 `http-fix-new22-v2.json`，為 22 passed／exit 0。沒有新增／刪除 it 或放寬斷言。
+
+原有 knowledge.test.ts SHA256 仍 `FC67B4DC8E5E9C064D7DC1B6096500FC5BDC454AF41BDC93300D68220BA89A86`；候選 lock SHA256 仍 `B0A8311ED8EEC47A70E32C3BB8567DB8B95EB69ED43C2AED6BDB3C0B1EAA9D89`。Node 24.18.0／pnpm 11.28.3、TS 5.9.3／Vitest與coverage 4.1.9 未升；實際解析 SDK1.32.1／express5.3.0／zod4.6.7，完整 `results/http-fix-packages.json`。
+
+編譯後子程序（不是只有 mock）`results/http-fix-compiled-probe.json`：占同一個 port 時原 Express4 基線與修正候選都 exit1、reportedListening:false；修正候選 stderr 含 failed to start/EADDRINUSE。可用 port 時可啟動並服務：charset 回 415，完整 body 為 `{"jsonrpc":"2.0","error":{"code":-32000,"message":"Unsupported media type"},"id":null}`；壞 scope 回 400，完整 body 為 `{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid request"},"id":null}`。真實 SDK stdio initialize→notifications/initialized→tools/list→tools/call 成功，三個工具名稱維持 fixture_list/search/read，讀取 alpha 成功，protocolErrors=[]，啟動日誌只在 stderr（`results/http-fix-stdio.log`）。
+
+### 三個基線／候選的逐檔 line coverage
+
+本輪重新跑 dev 基線與候選，各自 `test:coverage` exit0。從 coverage-final.json 經 istanbul-lib-coverage toSummary().lines 讀取（`results/http-fix-file-coverage.json`）：
+
+| 檔案 | 原範本 fa33197 | 本輪 dev 基線 27872f1d | 修正候選 |
+|---|---|---|---|
+| src/http.ts | 0/63，0% | 66/76，86.84% | 69/84，82.14% |
+| src/knowledge.ts | 79/88，89.77% | 79/88，89.77% | 79/88，89.77% |
+| src/schemas.ts | 無 | 3/3，100% | 3/3，100% |
+| src/index.ts | 原設定排除 | 原設定排除 | 同原設定；另由真實子程序驗證 |
+| 全部 | 79/151，52.31% FAIL/exit1 | 148/167，88.62% PASS/exit0 | **151/175，86.28% PASS/exit0** |
+
+修正後 bind Promise／錯誤分類增加分母；runHttp 的成功與衝突都經子程序驗證，子程序的執行行不併入父程序 Vitest coverage。未改任何門檻或排除清單，仍實際超過 55%。E-322 維持驗證中；新 PR 目標 dev，發版與 skillshare sync 由 Eddie 依規則39執行，與 E-338 一起發；AI 不推 dev／release／main，也不刪分支。
+
+本輪 repo 驗證：以隔離 XDG_CONFIG_HOME=E:/tmp/e322-http-fix-xdg、source 指向修正 worktree、targets:{}，執行 bash scripts/validate.sh 與 skillshare sync --dry-run 均 exit0（results/http-fix-repo-validate.log、http-fix-dryrun.log）。metadata 未變，未執行實際 sync。git diff --check exit0；fetch 後 origin/dev 仍27872f1d，merge-base --is-ancestor origin/dev HEAD exit0。
+
+新一輪唯讀程式自審 http_fix_review：Critical0／Important0／Minor0；直接核對已安裝 Express／router／body-parser 行為與既有驗證輸出。這只算程式自審，不冒稱正式 Plan 審計。reviewer 列出的兩個實際界線：healthInfo() 在啟動 log 內拋錯屬既有獨立行為，本輪未改；實際執行證據限 Windows，其他平台僅檢視來源。Eddie 正式審計核准來源仍是本 session 使用者回報。
