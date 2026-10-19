@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { once } from "node:events";
+import { format } from "node:util";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { NextFunction, Request, Response } from "express";
@@ -284,11 +285,16 @@ describe("HTTP transport migration", () => {
   }, 15000);
 
   it("formats malformed JSON without changing the limit", async () => {
+    const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+    const secret = "e322-parser-private-sentinel";
     const { base } = await start();
-    const response = await raw(base, "POST", "/mcp", { body: "{" });
+    const response = await raw(base, "POST", "/mcp", { auth: null, body: `{"secret":"${secret}"` });
     expect(response.status).toBe(400);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(await response.json()).toEqual({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: null });
+    const log = stderr.mock.calls.map((args) => format(...args)).join("\n");
+    expect(log).not.toContain(secret);
+    expect(log).toContain("entity.parse.failed");
     expect((await raw(base, "GET", "/health")).status).toBe(200);
   });
 

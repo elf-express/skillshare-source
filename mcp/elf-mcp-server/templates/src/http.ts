@@ -40,12 +40,17 @@ function envInt(name: string, fallback: number): number {
 
 /** Keep transport and body-parser failures in the public JSON-RPC error format. */
 export function sendInternalError(err: unknown, _req: Request, res: Response, next: NextFunction): void {
-  console.error(LOG + " request failed:", err);
+  const type = typeof err === "object" && err !== null && "type" in err ? err.type : undefined;
+  if (type === "entity.parse.failed" || type === "entity.too.large") {
+    // Parser errors can contain err.body and input text in their message.
+    console.error(LOG + " request failed: " + type);
+  } else {
+    console.error(LOG + " request failed:", err);
+  }
   if (res.headersSent) {
     next(err);
     return;
   }
-  const type = typeof err === "object" && err !== null && "type" in err ? err.type : undefined;
   const [status, code, message] = type === "entity.parse.failed"
     ? [400, -32700, "Parse error"] as const
     : type === "entity.too.large"

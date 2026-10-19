@@ -1,11 +1,22 @@
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { describe, expect, it } from "vitest";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
+import { beforeAll, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
+const templateRoot = fileURLToPath(new URL("../", import.meta.url));
+const require = createRequire(import.meta.url);
+
+// Always exercise the current source, including a fresh install with no dist/.
+beforeAll(() => {
+  execFileSync(process.execPath, [require.resolve("typescript/bin/tsc"), "--project", path.join(templateRoot, "tsconfig.json")], {
+    cwd: templateRoot, timeout: 10000, stdio: "pipe",
+  });
+}, 15000);
 // Literal expectations copied from the pre-migration tool contract, not the server response.
 const descriptions = [
   "列出本 server 所有 <Domain> 文件的檔名(含分類路徑)。\n\n" +
@@ -32,7 +43,7 @@ async function withStdio(run: (client: Client) => Promise<void>) {
   const exitFile = path.join(dir, "exit.json");
   const launcher = `import { writeFileSync } from 'node:fs';
     process.on('exit', code => writeFileSync(${JSON.stringify(exitFile)}, JSON.stringify({ code })));
-    await import(${JSON.stringify(pathToFileURL(path.resolve("dist/index.js")).href)});`;
+    await import(${JSON.stringify(pathToFileURL(path.join(templateRoot, "dist/index.js")).href)});`;
   let exitStatus: unknown;
   const transport = new StdioClientTransport({
     command: process.execPath, args: ["--input-type=module", "-e", launcher],
