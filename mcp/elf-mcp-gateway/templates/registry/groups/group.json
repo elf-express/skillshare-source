@@ -1,0 +1,6 @@
+{
+  "name": "<group-name>",
+  "description": "<which clients use this group and why> (file name must equal name; included_servers may use \"@books\" for all books)",
+  "included_servers": ["<server-a>", "<server-b>"],
+  "excluded_tools": []
+}
