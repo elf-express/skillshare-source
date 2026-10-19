@@ -1,0 +1,23 @@
+scripts/git-guard/tests/run.sh
+  s_296988be007b37::t_070093a037699d 474-489
+scripts/git-guard/VERSION
+  s_296988be007b37::t_5644fd18e9cbb6 1
+scripts/git-guard/chain
+  s_296988be007b37::t_8f4d4b613040ca 54-55,59-60,62,65,79,81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ec7fc157b108ccd75f8eeaa75ab33756f7e359ad",
+  "prompts": {},
+  "sessions": {
+    "s_296988be007b37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bcee95e-3d36-485c-91c1-d434e4a04261",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
