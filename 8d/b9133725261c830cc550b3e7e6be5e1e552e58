@@ -1,0 +1,38 @@
+scripts/release-ff.sh
+  s_2c0738a3516c92::t_013479eecc0e64 24-27
+  s_2c0738a3516c92::t_95f54474c51685 48,216-220
+  s_2c0738a3516c92::t_0d742fa7e8068b 34
+  s_2c0738a3516c92::t_48406d7dd9a72c 1-23,28-33,35-47,49-215,221
+scripts/release-ff.ps1
+  s_2c0738a3516c92::t_915cf3cc69e543 15-23
+  s_296988be007b37::t_906b7b7e3947bc 1-14,24-266
+workflow/elf-team-rule/references/03-own-project.md
+  s_2c0738a3516c92::t_8183f14adb04dd 102-103
+  s_2c0738a3516c92::t_68f88b8d7d9bf0 83-84
+AGENTS.md
+  s_2c0738a3516c92::t_f26bc6028256e7 196-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8db9133725261c830cc550b3e7e6be5e1e552e58",
+  "prompts": {},
+  "sessions": {
+    "s_296988be007b37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bcee95e-3d36-485c-91c1-d434e4a04261",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    },
+    "s_2c0738a3516c92": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98acb72e-c8bb-4953-86b1-07fbd1a7cf18",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
