@@ -21,6 +21,18 @@
 | E13 | 工作目錄（**仍未 commit**，實測 2026-10-04） | `mcp/docs-mcp-server/package.json` | 加了 `express-rate-limit ^8.5.2` 依賴，但 `src/` 沒有任何 import；`mcpjungle/nginx.example.conf` 註解寫「rate limit 放 nginx、不放應用層」 | 決策未定就半套落地，且這個改動從 `f8b7416` 起就一直掛在工作目錄。重現：`git show HEAD:mcp/docs-mcp-server/package.json \| grep -c express-rate-limit` → **0**；`git diff mcp/docs-mcp-server/package.json` 看得到該行；`grep -rn express-rate-limit mcp/docs-mcp-server/src/` 無。**狀態 2026-10-18：已解決**（mcp-library `origin/release` @ `73b8206`）—— `fa891a6`（E-250）正式 commit 這個依賴（`mcpjungle/docs-mcp-server/package.json:50`，`^8.7.1`），並在 `mcpjungle/docs-mcp-server/src/http.ts:19` import：只對 `/mcp*` 驗證失敗的請求限流（`src/http.ts:11-13`）；一般流量的 rate limit 仍在 nginx（`nginx.example.conf:8,19-20`）。上面的重現指令以 2026-10-04 的工作目錄為準，路徑已不存在。重現：`git show --stat fa891a6`；`git show origin/release:mcpjungle/docs-mcp-server/src/http.ts \| grep -n express-rate-limit` |
 | E14 | 工作目錄（**未納管**，實測 2026-10-04） | `mcpjungle/nginx.example.conf`、`AGENTS.md`、`.mcp.json`、`docs/superpowers/**` | 這些檔案只存在於本機工作目錄，從未 `git add`。其中 `nginx.example.conf` 是 `elf-mcp-gateway` 規則 16 與禁止簡化 5 的權威出處——重新 clone 的人拿不到它 | `git ls-files --error-unmatch mcpjungle/nginx.example.conf`（回非零＝未納管）；`git status --short \| grep '^??'`。**狀態 2026-10-18：已解決**（mcp-library `origin/release` @ `73b8206`）—— `fb4a0ed` 把 nginx 範例、`AGENTS.md` 與 `docs/superpowers/**` 的 dashboard plan / spec 納管；nginx 範例之後隨 `e563c9e`（E-131）搬到根目錄 `nginx.example.conf`；`docs/superpowers/**` 在 `cf42e88` 刪除；`.mcp.json` 改由 `.gitignore:11` 排除（`d22cfbf`）。重現：`git show --stat fb4a0ed`；`git ls-tree --name-only origin/release nginx.example.conf AGENTS.md`（兩個都列出） |
 
+## 範本移除（E-317，2026-10-19）
+
+> 本 skill 的 `templates/` 移除了下面 4 個部署檔，改成在 SKILL.md 第 3 節直接指向 `elf-express/mcp-library` 的現行檔。
+> 移除前的原文：`git show fa331979:mcp/elf-mcp-gateway/templates/<檔名>`（skillshare-source）。mcp-library 一律以 `73b8206` 為準。
+
+| # | 移除的範本 | mcp-library 現行檔（`elf-express/mcp-library`） | 為什麼指過去就夠 | 重現 |
+|---|---|---|---|---|
+| T1 | `templates/docker-compose.mcpjungle.yml` | `compose.yaml`、`compose.attach.yaml`、`compose.pull.yaml` | 範本是 `e563c9e`（E-131，compose 收斂成根目錄三份）之前的單檔 compose，還留著 3 個 `container_name` 和 `./MCPJungle` 路徑；之後 `56e67b6`（E-132）、`9c6374c`（E-193）、`e1c3abf`（E-204）又各改過一次。mcp-library 的 CI（`basics` 的 Validate compose files）只允許這三份 compose、擋 `container_name`，並跑 `docker compose config -q`，現行檔本身就是驗證過、可直接部署的版本；skill 留複本只會再落後 | `git show fa331979:mcp/elf-mcp-gateway/templates/docker-compose.mcpjungle.yml \| grep -c container_name`（3）；`git -C <mcp-library> show 73b8206:compose.yaml \| grep -c container_name`（0）；`git -C <mcp-library> log --oneline 73b8206 -- compose.yaml` |
+| T2 | `templates/.env.example` | `.env.example` | 範本缺 `IMAGE_TAG`、`MCPJUNGLE_NETWORK`（`e563c9e` 加入）與 `REGISTER_GROUPS`（`e1c3abf` 加入）等 compose.attach.yaml 用到的變數。這份檔說明的是上面三份 compose 讀的變數，跟 compose 放在同一個 repo 才會一起改，指過去就不會兩邊對不上 | `diff <(git show fa331979:mcp/elf-mcp-gateway/templates/.env.example) <(git -C <mcp-library> show 73b8206:.env.example)` |
+| T3 | `templates/Dockerfile.registrar` | `mcpjungle/registry/Dockerfile` | 範本 COPY 的 `servers/` 在 `56e67b6`（E-132）刪除；現行版 COPY `books/`、`registry/`、`gen-book-configs.mjs`、`gen-group-configs.mjs`，build context 是 mcp-library 的 `mcpjungle/`，離開 mcp-library 就 build 不起來。基底映像 `FROM` 改釘 digest 由 E-312 在 mcp-library 處理，指過去的人直接拿到修好的版本 | `git show fa331979:mcp/elf-mcp-gateway/templates/Dockerfile.registrar \| grep -n '^COPY'`（`servers/`）；`git -C <mcp-library> show 73b8206:mcpjungle/registry/Dockerfile \| grep -n -e '^FROM' -e '^COPY'`；`git -C <mcp-library> ls-tree 73b8206 mcpjungle/servers`（無輸出） |
+| T4 | `templates/registrar.sh` | `mcpjungle/registry/registrar.sh` | 現行版會呼叫同目錄的 `gen-book-configs.mjs`、`gen-group-configs.mjs`（`56e67b6`、`e1c3abf`），單獨複製一份跑不起來；連產生器一起抄過來等於 vendor 應用程式碼（skillshare-source `AGENTS.md`「No application code lives here」）。等待、重試、冪等三段由 `elf-mcp-gateway` 規則 13 與禁止簡化 1 直接規範現行檔，不靠範本 | `git -C <mcp-library> show 73b8206:mcpjungle/registry/registrar.sh \| grep -n 'gen-'`；`git show fa331979:mcp/elf-mcp-gateway/templates/registrar.sh \| grep -c 'gen-'`（0） |
+
 ## 不是退化、但常被誤判為「簡化」的變更（保留原樣）
 
 | Commit | 內容 | 為什麼不是退化 |
@@ -37,3 +49,4 @@
 - E5、E6、E8、E10 → 工具描述、錯誤訊息、capability 收編規則
 - E7 → 「不准為了讓測試過而放寬比對邏輯」
 - E9–E11 → 「改工具 / 改名 / 加語料必須同 PR 更新的文件清單」
+- T1–T4 → `elf-mcp-gateway` 第 3 節範本表：部署檔不放範本，直接指向 mcp-library 現行檔

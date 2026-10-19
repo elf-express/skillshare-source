@@ -8,7 +8,7 @@ description: |
   mcpjungle/registry/、registrar.sh、gen-book-configs.mjs、gen-group-configs.mjs、registry/*.json、registry/groups/*.json、
   MCPJungle 設定或升級、nginx.example.conf、docker-publish.yml / ci.yml，或排查「gateway 看不到工具 / 註冊失敗 / 連不上」時觸發。
 metadata:
-  version: 1.2.0
+  version: 1.3.0
   owner: Elf Express
 ---
 
@@ -118,7 +118,7 @@ metadata:
    | `command` / `args` / `env` | `stdio` | `env` 值也用 `${ENV_NAME}` |
    | `session_mode` | 選用 | `stateless`（預設）/ `stateful` |
 
-   範本：`templates/servers/http-server.json`、`http-server-auth.json`、`stdio-server.json`、`stdio-server-env.json`。
+   範本：`templates/registry/http-server.json`、`http-server-auth.json`、`stdio-server.json`、`stdio-server-env.json`。
    mcp-library 現行對照：stdio 看 `mcpjungle/registry/fetch.json`、`filesystem.json`、`time.json`；streamable_http 看 `registry/optional/docs.json`。
    檔名（不含 `.json`）就是 `name`，不可跟語料 id 同名（`registrar.sh:34`）。`bearer_token` 的 `${ENV_NAME}` 能不能在 registrar 映像裡展開還沒驗證（待確認 5）。
 10. **MUST** 非書本 server 依需求走下面兩條路之一，並遵守後面的限制：
@@ -183,13 +183,12 @@ metadata:
 
 | 檔案 | 用途 |
 |---|---|
-| `templates/docker-compose.mcpjungle.yml` | 正式 compose；mcp-library 現行是根目錄 `compose.yaml`（`compose.yaml:7-98`） |
-| `templates/.env.example` | 所有 env 與預設值說明 |
-| `templates/Dockerfile.registrar`、`templates/registrar.sh` | registrar（**不可精簡**）；mcp-library 現行是 `mcpjungle/registry/Dockerfile` 與 `mcpjungle/registry/registrar.sh` |
-| `templates/servers/*.json` | 四種註冊檔；mcp-library 現行的非書本註冊檔在 `mcpjungle/registry/*.json`，書本不手寫（見〈註冊〉） |
-| `templates/group.json` | tool group（端點 `/v0/groups/<name>/mcp`）；mcp-library 現行放 `mcpjungle/registry/groups/<name>.json`，格式由 `mcpjungle/registry/gen-group-configs.mjs:13-50` 驗證，registrar 建立或更新（`registrar.sh:90-104`） |
-| `templates/nginx.example.conf` | 對外反向代理（改 ① server_name ② 憑證 ③ `<GATEWAY_LAN_IP>`）；mcp-library 現行是根目錄 `nginx.example.conf` |
+| `templates/registry/http-server.json`、`templates/registry/http-server-auth.json`、`templates/registry/stdio-server.json`、`templates/registry/stdio-server-env.json` | 四種非書本註冊檔骨架（欄位見規則 9）：複製成 mcp-library 的 `mcpjungle/registry/<name>.json` 或 `mcpjungle/registry/optional/<name>.json`，檔名＝`name`；書本不手寫（見〈註冊〉）。現行實例：`mcpjungle/registry/fetch.json`、`mcpjungle/registry/filesystem.json`、`mcpjungle/registry/time.json`（stdio）、`mcpjungle/registry/optional/docs.json`（streamable_http） |
+| `templates/registry/groups/group.json` | tool group 骨架（端點 `/v0/groups/<name>/mcp`）：複製成 mcp-library 的 `mcpjungle/registry/groups/<name>.json`，檔名＝`name`，`included_servers` 可寫 `@books` 代表全部書本；格式由 `mcpjungle/registry/gen-group-configs.mjs` 驗證，registrar 建立或更新。現行實例：`mcpjungle/registry/groups/claude-tools.json` |
+| `templates/nginx.example.conf` | 對外反向代理（改 ① server_name ② 憑證 ③ `<GATEWAY_LAN_IP>`）；跟 mcp-library 根目錄的 `nginx.example.conf` 只差 ③ 的佔位 |
 | `templates/docker-publish.matrix-entry.yml` | 新 server 要加的 CI / publish / dependabot 片段（現行位置見規則 22、23） |
+| 不放範本：`elf-express/mcp-library` 的 `compose.yaml`、`compose.attach.yaml`、`compose.pull.yaml`、`.env.example` | 正式 compose、接現有 gateway、拉 GHCR 映像，以及三份共用的 env 說明；直接用 mcp-library 現行檔（證據 T1、T2） |
+| 不放範本：`elf-express/mcp-library` 的 `mcpjungle/registry/Dockerfile`、`mcpjungle/registry/registrar.sh` | registrar（**不可精簡**，見規則 12、13 與禁止簡化 1、2）；依賴同目錄的 `mcpjungle/registry/gen-book-configs.mjs`、`mcpjungle/registry/gen-group-configs.mjs`，只能在 mcp-library 裡 build（證據 T3、T4） |
 
 部署（mcp-library repo 根目錄）：
 
