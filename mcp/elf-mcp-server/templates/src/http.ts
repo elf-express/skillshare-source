@@ -18,7 +18,7 @@
 
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import express, { type Request, type Response } from "express";
+import express, { type Request, type Response, type Express, type NextFunction } from "express";
 import { rateLimit, type AugmentedRequest } from "express-rate-limit";
 import { randomUUID } from "node:crypto";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -38,11 +38,26 @@ function envInt(name: string, fallback: number): number {
   return Number.isInteger(n) && n > 0 ? n : fallback;
 }
 
-export async function runHttp(
+/** Keep transport and body-parser failures in the public JSON-RPC error format. */
+export function sendInternalError(err: unknown, _req: Request, res: Response, next: NextFunction): void {
+  console.error(LOG + " request failed:", err);
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+  const type = typeof err === "object" && err !== null && "type" in err ? err.type : undefined;
+  const [status, code, message] = type === "entity.parse.failed"
+    ? [400, -32700, "Parse error"] as const
+    : type === "entity.too.large"
+      ? [413, -32000, "Request body too large"] as const
+      : [500, -32603, "Internal server error"] as const;
+  res.status(status).json({ jsonrpc: "2.0", error: { code, message }, id: null });
+}
+
+export function createHttpApp(
   createServer: (scope?: string) => McpServer,
   deps: HttpDeps
-): Promise<void> {
-  const port = parseInt(process.env.PORT || "<PORT>", 10);
+): Express {
   const authToken = process.env.MCP_AUTH_TOKEN?.trim();
   const rateLimitMax = envInt("MCP_RATE_LIMIT_MAX", 20);
   const rateLimitWindowMs = envInt("MCP_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000);
@@ -97,17 +112,17 @@ export async function runHttp(
     },
   });
 
-  async function handlePost(scope: string | undefined, req: Request, res: Response): Promise<void> {
+  async function handlePost(scope: string | undefined, req: Request, res: Response, next: NextFunction): Promise<void> {
     if (!checkAuth(req, res)) return;
-    if (scope !== undefined && !deps.hasScope(scope)) {
-      res.status(404).json({
-        jsonrpc: "2.0",
-        error: { code: -32004, message: `Unknown scope: ${scope}` },
-        id: null,
-      });
-      return;
-    }
     try {
+      if (scope !== undefined && !deps.hasScope(scope)) {
+        res.status(404).json({
+          jsonrpc: "2.0",
+          error: { code: -32004, message: `Unknown scope: ${scope}` },
+          id: null,
+        });
+        return;
+      }
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
       let transport: StreamableHTTPServerTransport;
 
@@ -135,14 +150,7 @@ export async function runHttp(
       }
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
-      console.error(LOG + " request failed:", err);
-      if (!res.headersSent) {
-        res.status(500).json({
-          jsonrpc: "2.0",
-          error: { code: -32603, message: "Internal server error" },
-          id: null,
-        });
-      }
+      sendInternalError(err, req, res, next);
     }
   }
 
@@ -156,13 +164,27 @@ export async function runHttp(
     await transports[sessionId].handleRequest(req, res);
   };
 
-  app.post("/mcp", mcpLimiter, (req, res) => handlePost(undefined, req, res));
+  app.post("/mcp", mcpLimiter, (req, res, next) => handlePost(undefined, req, res, next));
   app.get("/mcp", mcpLimiter, handleSessionRequest);
   app.delete("/mcp", mcpLimiter, handleSessionRequest);
 
-  app.post("/mcp/:scope", mcpLimiter, (req: Request<{ scope: string }>, res) => handlePost(req.params.scope, req, res));
+  app.post("/mcp/:scope", mcpLimiter, (req: Request<{ scope: string }>, res, next) => handlePost(req.params.scope, req, res, next));
   app.get("/mcp/:scope", mcpLimiter, handleSessionRequest);
   app.delete("/mcp/:scope", mcpLimiter, handleSessionRequest);
+
+  app.use(sendInternalError);
+  return app;
+}
+
+export async function runHttp(
+  createServer: (scope?: string) => McpServer,
+  deps: HttpDeps
+): Promise<void> {
+  const port = parseInt(process.env.PORT || "<PORT>", 10);
+  const authToken = process.env.MCP_AUTH_TOKEN?.trim();
+  const rateLimitMax = envInt("MCP_RATE_LIMIT_MAX", 20);
+  const rateLimitWindowMs = envInt("MCP_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000);
+  const app = createHttpApp(createServer, deps);
 
   app.listen(port, () => {
     // stderr only — see SKILL.md rule: never write logs to stdout.
