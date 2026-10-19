@@ -141,6 +141,8 @@ E-353 標題已擴為「elf-mcp-server 範本兩項基線缺陷：pnpm 11 安裝
 
 ## E-322 遷移驗證結果（2026-10-20）
 
+> 下列保留首次候選 task2-candidate-v1 的實測歷史；PR #27 審查後的最終候選、修正 SHA 與最新 coverage 見本節末「PR #27 審查補正：最終候選」。
+
 ### 來源、寫集與處置邊界
 
 - 正式 Plan：[E-322](https://linear.app/elf-express/issue/E-322)，父 Spec：[E-321](https://linear.app/elf-express/issue/E-321)。Eddie 的審計對話複核四處通過後才開始產品 Task；自派程式審查只算自審。
@@ -222,3 +224,24 @@ pnpm run test:coverage
 HTTP 因 factory／共用錯誤處理增加 11 個可覆蓋行，schema 新檔有 3 個頂層初始化可覆蓋行（V8 的實際計數），總分母 151 → 165；沒有改 include／exclude、55% 門檻或挪走來源規避。HTTP 尚未覆蓋的 10 行是 runHttp 監聽／啟動記錄，既有介面與日誌保留。knowledge 原碼／原測試與 79/88 均不變。
 
 原始資料：`results/baseline-v2-coverage.log`、`baseline-v2-file-coverage-summary.json`；`results/task1-coverage.log`（中間失敗）；`results/task2-coverage.log`、`task2-file-coverage-summary.json`（最終候選），及各副本完整 coverage HTML／JSON。基線第二個發現已補 [E-353](https://linear.app/elf-express/issue/E-353)；本單靠新增測試實際通過，沒有改門檻或排除清單，也沒有修原 pnpm 11 安裝缺陷。
+
+### PR #27 審查補正：最終候選
+
+Copilot 在 PR #27 指出兩項 Medium，先前程式自審漏掉；這些意見在修正前保留為待修，沒有把 check run 成功當成「沒有意見」。修正提交 `ec5f014b125d82bea187f34f86abbf29244658cd`，範圍仍只有本 skill，未升工具鏈或增加 it，原有 9＋新增 22＝31 維持。
+
+1. **Parser 日誌**：body-parser 的 parse error 帶 `err.body`，訊息也可能含輸入。H11 在原 it 內加未驗證請求的敏感 sentinel，使用 `node:util.format` 觀察真實 stderr 格式。修正前 `review-red-parser.json` exit 1，sentinel 實際出現在日誌；修正後只記 `entity.parse.failed`／`entity.too.large` 固定標籤，內部意外仍保留診斷。公開 400／413／500 格式、限流與 headersSent→next(err) 不變。
+2. **當前 stdio 程式**：保留原 Plan 的 `dist/index.js`／真 SDK subprocess；原兩個 protocol it 在沒有 dist 的副本皆 Connection closed（`review-red-no-dist.json` exit 1）。新增檔案層級 beforeAll，以本專案已安裝的 TypeScript 5.9.3 編譯當前來源，再啟動 dist；編譯限時 10 秒，hook 限時 15 秒。沒有改 package scripts 或新增套件。初次試跑曾因測試 helper 的 root 路徑多取一層而 hook 失敗，已修正並保留 `review-fresh-dist.json`；後續 `review-fresh-dist-v2.json` 兩個通過，最終另開乾淨副本重測。
+3. **缺少與過期 dist 都實測**：最終副本 `E:/tmp/e322-verification/review-candidate-v2` 由同一 guard materializer 重新產生；install／frozen-install exit 0。`Test-Path dist` 是 False，直接 `pnpm test --reporter=json --outputFile=../results/review-v2-fresh-all31.json`（不先 build）→ 31 passed／0 failed／pending／todo，exit 0。再將副本 dist/index.js 改成 `throw new Error("E322_STALE_DIST_SENTINEL")`，跑原兩個 protocol it → 2 passed／exit 0，重建後 dist SHA256 回到破壞前相同值，證明沒有讀到舊產物；測試程式碼與來源未為此改動。
+4. **最終完整驗證**：`pnpm run build`、原有9、另計新增22、直接全跑31、`pnpm run test:coverage`、真實 stdio smoke 全部 exit 0；原有測試與 threshold／exclude 不變，沒有弱化任何斷言。完整輸出為 `results/review-v2-{build,original9,new22,fresh-all31,stale-protocol2,coverage,stdio}` 的 JSON／log。最新 lock SHA256 仍為 `B0A8311ED8EEC47A70E32C3BB8567DB8B95EB69ED43C2AED6BDB3C0B1EAA9D89`，Node／pnpm／套件解析值與上表相同。
+
+最終逐檔 coverage 仍從該副本 coverage-final.json 的 `.toSummary().lines` 讀取（原始 `results/review-v2-file-coverage-summary.json`）：
+
+| 檔案 | 原基線 covered/total、lines% | PR 審查補正後 covered/total、lines% |
+|---|---|---|
+| src/http.ts | 0/63，0% | 66/76，86.84% |
+| src/knowledge.ts | 79/88，89.77% | 79/88，89.77% |
+| src/schemas.ts | 原基線無此檔 | 3/3，100% |
+| src/index.ts | 原設定排除 | 維持原排除；真實 stdio 另外驗證 |
+| 整體 | 79/151，52.31%（FAIL，exit 1） | **148/167，88.62%（PASS，exit 0）** |
+
+相較首次候選，HTTP 日誌分支增加 2 個可覆蓋行且都執行到，總分母 165 → 167；門檻仍 55%，排除清單完全沒改。首次候選 88.48%／146/165 保留為歷史，最新驗收採本表 88.62%／148/167。原安裝與原 coverage 基線仍交 E-353；沒有以副本 esbuild 核准處置宣稱原範本安裝缺陷已修復。
