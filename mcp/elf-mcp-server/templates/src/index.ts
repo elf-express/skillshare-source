@@ -15,37 +15,11 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { ListInputSchema, SearchInputSchema, ReadInputSchema } from "./schemas.js";
 import { runHttp } from "./http.js";
 import { listFiles, resolveDataDir, doList, doSearch, doRead } from "./knowledge.js";
 
 const LOG = "[<server-name>]";
-
-// ---------------------------------------------------------------------------
-// zod schemas — module level (NOT inside createServer; see dd4853a), all .strict(), every field bounded + described.
-// ---------------------------------------------------------------------------
-
-const ListInputSchema = z
-  .object({
-    filter: z.string().max(100).optional().describe("選填:只列出檔名包含此字串的文件(不分大小寫)"),
-  })
-  .strict();
-
-const SearchInputSchema = z
-  .object({
-    query: z.string().min(1, "查詢字串不可為空").max(200, "查詢字串不可超過 200 字元")
-      .describe("關鍵字,以空白分隔可指定多個關鍵字 (AND,需全部出現於同一篇文件)"),
-    limit: z.number().int().min(1).max(50).default(15).describe("最多回傳幾篇命中的文件 (預設 15)"),
-    context_lines: z.number().int().min(0).max(5).default(1).describe("每個命中片段前後附帶的上下文行數 (預設 1)"),
-  })
-  .strict();
-
-const ReadInputSchema = z
-  .object({
-    filename: z.string().min(1, "filename 不可為空").max(300)
-      .describe('文件檔名或相對路徑,可省略 .md。支援模糊比對 (結尾 / 包含)。例如 "<real-file>" 或 "<category>/<real-file>.md"'),
-  })
-  .strict();
 
 const READ_ONLY = {
   readOnlyHint: true,
@@ -71,7 +45,7 @@ function createServer(_scope?: string): McpServer {
         "參數:\n  - filter (string,選填):只列出檔名包含此字串的文件。\n\n" +
         "回傳:Markdown 檔名清單。\n\n" +
         '範例:filter="<real-keyword>"',
-      inputSchema: ListInputSchema.shape,
+      inputSchema: ListInputSchema,
       annotations: READ_ONLY,
     },
     async (p) => textResult(doList(p.filter))
@@ -90,7 +64,7 @@ function createServer(_scope?: string): McpServer {
         "  - context_lines (number):片段上下文行數,0-5,預設 1。\n\n" +
         "回傳:Markdown,依命中次數排序,列出檔名、命中次數與含關鍵字片段 (附行號)。\n\n" +
         '範例:query="<real-keyword-1>" / query="<real-keyword-2> <real-keyword-3>"',
-      inputSchema: SearchInputSchema.shape,
+      inputSchema: SearchInputSchema,
       annotations: READ_ONLY,
     },
     async (p) => textResult(doSearch(p.query, p.limit, p.context_lines))
@@ -105,7 +79,7 @@ function createServer(_scope?: string): McpServer {
         "參數:\n  - filename (string):檔名或相對路徑,.md 可省略,支援模糊比對。\n\n" +
         "回傳:該文件完整內容。多筆符合時回傳候選清單;無符合時回傳提示。\n\n" +
         '範例:filename="<real-file>"',
-      inputSchema: ReadInputSchema.shape,
+      inputSchema: ReadInputSchema,
       annotations: READ_ONLY,
     },
     async (p) => textResult(doRead(p.filename))

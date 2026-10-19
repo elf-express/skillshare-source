@@ -160,7 +160,7 @@ export async function runHttp(
   app.get("/mcp", mcpLimiter, handleSessionRequest);
   app.delete("/mcp", mcpLimiter, handleSessionRequest);
 
-  app.post("/mcp/:scope", mcpLimiter, (req, res) => handlePost(req.params.scope, req, res));
+  app.post("/mcp/:scope", mcpLimiter, (req: Request<{ scope: string }>, res) => handlePost(req.params.scope, req, res));
   app.get("/mcp/:scope", mcpLimiter, handleSessionRequest);
   app.delete("/mcp/:scope", mcpLimiter, handleSessionRequest);
 
