@@ -25,4 +25,3 @@ export const ReadInputSchema = z
       .describe('文件檔名或相對路徑,可省略 .md。支援模糊比對 (結尾 / 包含)。例如 "<real-file>" 或 "<category>/<real-file>.md"'),
   })
   .strict();
-
