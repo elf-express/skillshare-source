@@ -1,0 +1,19 @@
+mcp/elf-mcp-knowledge/SKILL.md
+  s_20cfebeb9a4c3c::t_4eb12035b75b46 178,180-184
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cd7fd16dfc390e1537833bfae536052ed89caad8",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
