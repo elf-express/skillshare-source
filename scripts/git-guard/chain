@@ -4,7 +4,7 @@
 # (elfguard.chainHooksPath, e.g. husky's .husky/_, or .git/hooks).
 set -u
 
-NAME=$(basename "$0")
+HOOK=$(basename "$0")
 HERE=$(cd "$(dirname "$0")" && pwd)
 GUARD="$HERE/../git-guard.sh"
 
@@ -23,19 +23,19 @@ next_hook() {
 		esac
 		_d="${_d}/hooks"
 	fi
-	if [ -x "${_d}/${NAME}" ]; then
-		printf '%s\n' "${_d}/${NAME}"
+	if [ -x "${_d}/${HOOK}" ]; then
+		printf '%s\n' "${_d}/${HOOK}"
 		return 0
 	fi
 	# The global hooks dir that git-guard replaced.
 	_p=$(git config --global --get elfguard.previousHooksPath 2>/dev/null)
-	[ -n "${_p}" ] && [ -x "${_p}/${NAME}" ] && printf '%s\n' "${_p}/${NAME}"
+	[ -n "${_p}" ] && [ -x "${_p}/${HOOK}" ] && printf '%s\n' "${_p}/${HOOK}"
 	return 0
 }
 
 # Git LFS cannot install its own hooks while ours occupy core.hooksPath, so run them here.
 uses_lfs() {
-	case "$NAME" in
+	case "$HOOK" in
 		pre-push | post-checkout | post-commit | post-merge) ;;
 		*) return 1 ;;
 	esac
@@ -45,13 +45,13 @@ uses_lfs() {
 
 NEXT=$(next_hook)
 
-if [ "$NAME" != pre-push ]; then
+if [ "$HOOK" != pre-push ]; then
 	[ -n "$NEXT" ] && exec "$NEXT" "$@"
-	uses_lfs && exec git lfs "$NAME" "$@"
+	uses_lfs && exec git lfs "$HOOK" "$@"
 	exit 0
 fi
 
-# Not TMP: Windows exports it, and the next hook (git-lfs, Git Credential Manager) needs it.
+# Pushed refs. Globals here must not reuse exported env names (TMP, NAME) that child hooks read.
 REFS=$(mktemp "${TMPDIR:-/tmp}/git-guard.XXXXXX") || {
 	echo "git-guard: 無法建立暫存檔，擋下推送。" >&2
 	exit 1
