@@ -1,0 +1,19 @@
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_20cfebeb9a4c3c::t_8007ee235c1eb6 144-145,227-247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c0bbff6707a5498853a44178ee708a72d2cb3d55",
+  "prompts": {},
+  "sessions": {
+    "s_20cfebeb9a4c3c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1545c-4287-7b22-9bc6-58c08ac796ad",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
