@@ -28,6 +28,7 @@ frontend/design/ui-ux-pro-max/     tracked third-party skill, installed from an 
 _superpowers/                      tracked repo obra/superpowers (own .git, gitignored)
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
+scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
 docs/                              screenshots only — not a skill
 ```
 

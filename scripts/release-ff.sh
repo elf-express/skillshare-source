@@ -18,7 +18,7 @@
 #   bash scripts/release-ff.sh --no-main       # 只快轉 release（第 1、2 種 repo）
 #
 # 需要：git、gh（已登入，能讀 check runs）。
-# 每一步都會停下來要你輸入要發佈提交的前 8 碼才繼續；不提供跳過確認的參數。
+# 每次推送前都要輸入要發佈提交的前 8 碼；不提供跳過確認的參數。
 
 set -euo pipefail
 
@@ -69,11 +69,13 @@ if [ -f scripts/git-guard/install.sh ]; then
 fi
 
 # release／main 不能被其他 worktree 簽出（切不過去，也代表有人在用）
-for b in release main; do
-  if git worktree list --porcelain | grep -qx "branch refs/heads/$b"; then
-    # 和 git 自己印的路徑比（Git Bash 的 pwd 是 /e/…，git 是 E:/…）；路徑可能含空白
-    wt=$(git worktree list --porcelain | awk -v b="refs/heads/$b" '/^worktree /{p=substr($0, 10)} $0=="branch "b{print p}')
-    [ "$wt" = "$TOP" ] || stop "分支 $b 正在 worktree「$wt」簽出中，先在那裡切走再發版。"
+GUARDED="release"
+[ "$DO_MAIN" = 1 ] && GUARDED="release main"
+for b in $GUARDED; do
+  # 和 git 自己印的路徑比（Git Bash 的 pwd 是 /e/…，git 是 E:/…）；路徑可能含空白
+  wt=$(git worktree list --porcelain | awk -v b="refs/heads/$b" '/^worktree /{p=substr($0, 10)} $0=="branch "b{print p}')
+  if [ -n "$wt" ] && [ "$wt" != "$TOP" ]; then
+    stop "分支 $b 正在 worktree「$wt」簽出中，先在那裡切走再發版。"
   fi
 done
 
@@ -122,15 +124,15 @@ git log --oneline origin/release..origin/dev
 
 # ---------- 3. check runs（規則 28、references/04 第 0 節） ----------
 say "origin/dev $DEV8 的 check runs（filter=latest）"
-CHECKS=$(gh api "repos/$R/commits/$DEV_SHA/check-runs?filter=latest&per_page=100" \
+CHECKS=$(gh api --paginate "repos/$R/commits/$DEV_SHA/check-runs?filter=latest&per_page=100" \
   --jq '.check_runs[] | "\(.status) \(.conclusion) \(.name)"') || stop "gh api 查詢失敗，無法判斷 check runs。"
 
 CI_EXCEPTION=0
 if [ -z "$CHECKS" ]; then
-  if [ -d .github/workflows ] && [ -n "$(ls -A .github/workflows 2>/dev/null)" ]; then
-    stop "這個提交一個 check run 都沒有，但 repo 有 workflow：代表 CI 沒被觸發，不是沒有 CI（references/04 第 0 節）。先查原因，不發版。"
+  if [ -n "$(git ls-tree --name-only "$DEV_SHA" .github/workflows/)" ]; then
+    stop "這個提交一個 check run 都沒有，但這個提交有 workflow：代表 CI 沒被觸發，不是沒有 CI（references/04 第 0 節）。先查原因，不發版。"
   fi
-  echo "（一個 check run 都沒有，repo 也沒有任何 workflow）"
+  echo "（一個 check run 都沒有，這個提交也沒有任何 workflow）"
   echo "判斷：專案沒有 CI → 發佈內容未經自動測試。只有你明確同意這次例外才繼續，並建議開 Linear 單依 elf-cicd-* 補 CI。"
   CI_EXCEPTION=1
 else
@@ -158,7 +160,10 @@ else
 fi
 
 # ---------- 4. 快轉 release（references/03 B2） ----------
-restore_branch() { git switch -q "$START_REF" 2>/dev/null || git switch -q --detach "$START_REF" 2>/dev/null || true; }
+restore_branch() {
+  git switch -q "$START_REF" 2>/dev/null || git switch -q --detach "$START_REF" 2>/dev/null ||
+    printf '\n[注意] 沒能切回 %s，目前在 %s。\n' "$START_REF" "$(git branch --show-current)" >&2
+}
 trap restore_branch EXIT
 
 say "快轉 release"
@@ -169,7 +174,7 @@ else
 fi
 git merge --ff-only origin/release
 git merge --ff-only origin/dev || stop "release 無法快轉到 origin/dev（--ff-only 拒絕），沒有推送。回報，不要強制。"
-git push origin release
+git push origin release || stop "推送 release 被拒，origin/release 沒有變更；本機 release 已前移到 $DEV8 但沒推。照 git 或 git-guard 的訊息處理後重跑。"
 
 git fetch origin
 [ "$(git rev-parse origin/release)" = "$DEV_SHA" ] || stop "推送後 origin/release 不是 $DEV8，請檢查。"
@@ -198,9 +203,10 @@ else
       git switch -c main --track origin/main
     fi
     git merge --ff-only origin/main
-    git merge --ff-only origin/release || stop "main 無法快轉到 origin/release，沒有推送。回報。"
-    git push origin main
+    git merge --ff-only origin/release || stop "main 無法快轉到 origin/release，沒有推送（release 已發佈到 $DEV8）。回報。"
+    git push origin main || stop "推送 main 被拒：release 已發佈到 $DEV8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後重跑。"
     git fetch origin
+    [ "$(git rev-parse origin/main)" = "$DEV_SHA" ] || stop "推送後 origin/main 不是 $DEV8，請檢查。"
   fi
 fi
 
@@ -219,5 +225,4 @@ echo "3. 通知負責驗證的 session 做發版後驗證與結單。"
 
 }
 
-main "$@"
-exit
+main "$@"; exit

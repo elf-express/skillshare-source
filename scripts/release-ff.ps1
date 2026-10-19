@@ -36,11 +36,16 @@ function Say([string]$msg) { Write-Host ""; Write-Host "== $msg" -ForegroundColo
 function Stop-Release([string]$msg) {
     Write-Host ""
     Write-Host "[停止] $msg" -ForegroundColor Red
+    if ($script:callerLocation) { Set-Location $script:callerLocation }
     exit 1
 }
 
+# G、GTest 在函式內把 ErrorActionPreference 設成 Continue：
+# Windows PowerShell 5.1 在 Stop 下會把導向的 stderr 當成例外
+
 # 執行 git，失敗就停；回傳去掉頭尾空白的 stdout
 function G {
+    $ErrorActionPreference = 'Continue'
     $out = & git @args 2>&1
     $code = $LASTEXITCODE
     $text = ($out | ForEach-Object { "$_" }) -join "`n"
@@ -56,6 +61,7 @@ function GShow {
 
 # git 指令只看成功與否（例如 --verify、--is-ancestor）
 function GTest {
+    $ErrorActionPreference = 'Continue'
     & git @args 2>$null | Out-Null
     return ($LASTEXITCODE -eq 0)
 }
@@ -69,13 +75,15 @@ function Confirm-Sha([string]$prompt, [string]$sha8) {
     Write-Host ""
     Write-Host $prompt -ForegroundColor Yellow
     $answer = Read-Host "請輸入 $sha8 繼續（其他任何輸入都會停止）"
-    if ($answer -ne $sha8) { Stop-Release "沒有確認，未做任何變更。" }
+    if ("$answer".Trim() -cne $sha8) { Stop-Release "沒有確認，未做任何變更。" }
 }
 
 # ---------- 0. 環境 ----------
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Stop-Release "找不到 git。" }
 if (-not (GTest rev-parse --show-toplevel)) { Stop-Release "這裡不是 git repo。" }
-Set-Location (G rev-parse --show-toplevel)
+$top = G rev-parse --show-toplevel
+$script:callerLocation = Get-Location
+Set-Location $top
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { Stop-Release "找不到 gh，無法查 check runs（規則 28）。" }
 
 if (G status --porcelain) { Stop-Release "工作目錄有未提交的變更，先處理乾淨再發版。" }
@@ -92,20 +100,26 @@ $startRef = "$startRef".Trim()
 # git-guard（規則 30）：skillshare-source 內有 install.sh 時順便檢查（需要 Git for Windows 的 sh）
 if (Test-Path 'scripts/git-guard/install.sh') {
     Say "git-guard 檢查"
-    if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
+    # PATH 沒有 sh 時（Git for Windows 預設只加 Git\cmd），改用 git.exe 所在 Git 目錄下的 bin\sh.exe
+    $shCmd = Get-Command sh -ErrorAction SilentlyContinue
+    if ($shCmd) { $shPath = $shCmd.Source }
+    else { $shPath = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\sh.exe' }
+    if (-not (Test-Path $shPath)) {
         Stop-Release "找不到 sh，無法執行 git-guard 檢查。把 Git for Windows 的 usr\bin 或 bin 加進 PATH 後再跑（規則 30）。"
     }
-    & sh scripts/git-guard/install.sh --check .
+    & $shPath scripts/git-guard/install.sh --check .
     if ($LASTEXITCODE -ne 0) { Stop-Release "git-guard 檢查沒過，先修好再發版（規則 30）。" }
 }
 
 # release／main 不能被其他 worktree 簽出
 $here = (G rev-parse --show-toplevel) -replace '\\', '/'
 $wtLines = (G worktree list --porcelain) -split "`n"
+$guarded = @('release')
+if (-not $NoMain) { $guarded += 'main' }
 $currentWt = $null
 foreach ($line in $wtLines) {
     if ($line -like 'worktree *') { $currentWt = ($line.Substring(9)).Trim() -replace '\\', '/' }
-    foreach ($b in @('release', 'main')) {
+    foreach ($b in $guarded) {
         if ($line.Trim() -eq "branch refs/heads/$b" -and $currentWt -ne $here) {
             Stop-Release "分支 $b 正在 worktree「$currentWt」簽出中，先在那裡切走再發版。"
         }
@@ -157,17 +171,19 @@ GShow log --oneline origin/release..origin/dev
 
 # ---------- 3. check runs（規則 28、references/04 第 0 節） ----------
 Say "origin/dev $dev8 的 check runs（filter=latest）"
-$checksRaw = & gh api "repos/$R/commits/$devSha/check-runs?filter=latest&per_page=100" --jq '.check_runs[] | "\(.status) \(.conclusion) \(.name)"'
+# jq 用 @tsv 輸出，不含雙引號：Windows PowerShell 5.1 傳給 gh.exe 時不會跳脫參數裡的雙引號。
+# conclusion 為 null（還在跑）時是空欄位，下面判成未通過
+$checksRaw = & gh api --paginate "repos/$R/commits/$devSha/check-runs?filter=latest&per_page=100" --jq '.check_runs[] | [.status, .conclusion, .name] | @tsv'
 if ($LASTEXITCODE -ne 0) { Stop-Release "gh api 查詢失敗，無法判斷 check runs。" }
-$checks = @($checksRaw | Where-Object { "$_".Trim() -ne '' } | ForEach-Object { "$_".Trim() })
+$checks = @($checksRaw | Where-Object { "$_".Trim() -ne '' } | ForEach-Object { "$_".Trim() -replace "`t", ' ' })
 
 $ciException = $false
 if ($checks.Count -eq 0) {
-    $hasWorkflows = (Test-Path '.github/workflows') -and (@(Get-ChildItem '.github/workflows' -Force -ErrorAction SilentlyContinue).Count -gt 0)
+    $hasWorkflows = [bool](G ls-tree --name-only $devSha .github/workflows/)
     if ($hasWorkflows) {
-        Stop-Release "這個提交一個 check run 都沒有，但 repo 有 workflow：代表 CI 沒被觸發，不是沒有 CI（references/04 第 0 節）。先查原因，不發版。"
+        Stop-Release "這個提交一個 check run 都沒有，但這個提交有 workflow：代表 CI 沒被觸發，不是沒有 CI（references/04 第 0 節）。先查原因，不發版。"
     }
-    Write-Host "（一個 check run 都沒有，repo 也沒有任何 workflow）"
+    Write-Host "（一個 check run 都沒有，這個提交也沒有任何 workflow）"
     Write-Host "判斷：專案沒有 CI → 發佈內容未經自動測試。只有你明確同意這次例外才繼續，並建議開 Linear 單依 elf-cicd-* 補 CI。"
     $ciException = $true
 }
@@ -188,6 +204,7 @@ else {
 
 if ($DryRun) {
     Say "-DryRun：檢查完成，沒有切分支、沒有推送。"
+    Set-Location $script:callerLocation
     exit 0
 }
 
@@ -207,7 +224,8 @@ try {
     GShow merge --ff-only origin/release
     & git merge --ff-only origin/dev
     if ($LASTEXITCODE -ne 0) { Stop-Release "release 無法快轉到 origin/dev（--ff-only 拒絕），沒有推送。回報，不要強制。" }
-    GShow push origin release
+    & git push origin release
+    if ($LASTEXITCODE -ne 0) { Stop-Release "推送 release 被拒，origin/release 沒有變更；本機 release 已前移到 $dev8 但沒推。照 git 或 git-guard 的訊息處理後重跑。" }
 
     GShow fetch origin
     if ((G rev-parse origin/release) -ne $devSha) { Stop-Release "推送後 origin/release 不是 $dev8，請檢查。" }
@@ -236,9 +254,11 @@ try {
             else { GShow switch -c main --track origin/main }
             GShow merge --ff-only origin/main
             & git merge --ff-only origin/release
-            if ($LASTEXITCODE -ne 0) { Stop-Release "main 無法快轉到 origin/release，沒有推送。回報。" }
-            GShow push origin main
+            if ($LASTEXITCODE -ne 0) { Stop-Release "main 無法快轉到 origin/release，沒有推送（release 已發佈到 $dev8）。回報。" }
+            & git push origin main
+            if ($LASTEXITCODE -ne 0) { Stop-Release "推送 main 被拒：release 已發佈到 $dev8，origin/main 沒有變更。照 git 或 git-guard 的訊息處理後重跑。" }
             GShow fetch origin
+            if ((G rev-parse origin/main) -ne $devSha) { Stop-Release "推送後 origin/main 不是 $dev8，請檢查。" }
         }
     }
 
@@ -260,7 +280,12 @@ try {
     Write-Host "3. 通知負責驗證的 session 做發版後驗證與結單。"
 }
 finally {
-    # 切回執行前的分支
-    & git switch -q $startRef 2>$null
-    if ($LASTEXITCODE -ne 0) { & git switch -q --detach $startRef 2>$null }
+    # 切回執行前的分支（原本是 detached HEAD 就切回那個提交）
+    $ErrorActionPreference = 'Continue'
+    if ($startRef -match '^[0-9a-f]{40}$') { & git -C $top switch -q --detach $startRef 2>$null }
+    else { & git -C $top switch -q $startRef 2>$null }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[注意] 沒能切回 $startRef，目前在 $(& git -C $top branch --show-current 2>$null)。" -ForegroundColor Yellow
+    }
+    Set-Location $script:callerLocation
 }
