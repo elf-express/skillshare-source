@@ -1,0 +1,23 @@
+AGENTS.md
+  s_2c0738a3516c92::t_1fa0cf6182e636 31
+scripts/release-ff.ps1
+  s_2c0738a3516c92::t_ef2271c6d24ad4 39,43-45,48,64,78,84-86,103-107,110,117-118,122,174-176,178,182,184,186,207,227-228,257-259,261,283-290
+scripts/release-ff.sh
+  s_2c0738a3516c92::t_441fa9dffbcd5a 21,72-78,127,132-133,135,163-166,177,206-207,209,228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7e7272ccfa7c64fb3b6ae9afaa38a6661d10f3ec",
+  "prompts": {},
+  "sessions": {
+    "s_2c0738a3516c92": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98acb72e-c8bb-4953-86b1-07fbd1a7cf18",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
