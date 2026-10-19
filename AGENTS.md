@@ -28,6 +28,7 @@ frontend/design/ui-ux-pro-max/     tracked third-party skill, installed from an 
 _superpowers/                      tracked repo obra/superpowers (own .git, gitignored)
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
+scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
 docs/                              screenshots only — not a skill
 ```
 
@@ -192,6 +193,11 @@ git switch release && git merge --ff-only origin/dev     && git push origin rele
 git log --oneline origin/main..origin/release
 git switch main    && git merge --ff-only origin/release && git push origin main
 ```
+
+`scripts/release-ff.sh` (Git Bash) and `scripts/release-ff.ps1` (Windows PowerShell 5.1 / PowerShell 7) run the
+same steps with the rule 24 and 28 checks (commit list, check runs on `origin/dev`) and ask for the first 8 characters
+of the SHA before each push; `--dry-run` / `-DryRun` only checks. They are for the maintainer: the rule below still
+applies to AI agents.
 
 Do **not** commit on `main` or `release` — it breaks the FF chain. AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.
 
