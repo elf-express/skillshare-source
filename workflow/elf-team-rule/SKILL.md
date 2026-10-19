@@ -193,6 +193,21 @@ metadata:
 
     - `dev`、`release`、`main` 任何情況 MUST NOT force push（既有規則 8、13、20、21 不變）。
 
+**發版**
+
+39. 本規則只適用於有 `release` 分支的 repo（已導入 dev／release，第 1–3 種）；還沒導入的 repo（沒有 `release` 分支）維持規則 10 的「merge → 已完成」，合進主線就等於發版。
+    發版是獨立的一步，包括快轉 `release`／`main`，以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由 Eddie 指定一個 session 負責，或由 Eddie 自己做；依規則 24 列出提交給使用者看時，一併確認由誰負責。快轉與實際派發由誰執行，依 repo 的規定：
+    - repo 允許 AI 推 `release`：由被指定的 session 執行。
+    - repo 規定 AI 不推 `release`／`main`（例：skillshare-source 的 `AGENTS.md`「AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.」）：快轉與實際派發由 Eddie 執行；被指定的 session 只負責快轉前列出提交（規則 24）、查 check runs（規則 28）、發版後驗證，以及通知其他相關的單。
+    - 沒被指定的 session MUST NOT 快轉 `release`／`main`，也 MUST NOT 跑派發。
+    - 測試例外（不算派發，任何 session 都可以執行）：`skillshare sync --dry-run`，以及用拋棄式 `XDG_CONFIG_HOME`（`targets` 為空，或只指向暫存目錄）執行的 skillshare 指令或 `scripts/validate.sh`。這些都不會改動實際的目標。
+    - 其他相關的單合進 `dev` 後停在「驗證中」，等發版的 session 或 Eddie 通知，才做各自的發版後驗證、結單（規則 10）與清理（規則 19、36）。
+    - 單的範圍寫「不發版」時，MUST 同時寫明由哪張單或誰負責發版。
+
+    為什麼：E-316 與 E-309 一起發版時，兩個 session 都準備快轉 `release`／`main`，由審計員臨時指定 E-309 執行才沒有重複（2026-10-18）；nginxWebUI E-286／E-287 寫了「不發版」，合併後沒有任何一張單負責發版（後來另開 E-330）。
+40. 沒有產品版號的 repo（skillshare-source、mcp-library），目前的發版方式是：依規則 24、28 快轉 `release`，再快轉 `main`；有派發步驟的照做（skillshare-source：AI 不推 `release`／`main`，快轉與 `skillshare sync` 由 Eddie 執行，被指定的 session 依規則 39 負責列出提交、查 check runs、發版後驗證與通知；mcp-library：由 push `release` 觸發 Docker Publish）。不打 tag、不改版號。mcp-library 的 `docker-publish.yml` 已經接受 `v*.*.*` tag，但在 E-337 導入產品版號與 `vX.Y.Z` tag 之前不推 tag。
+    為什麼：`cicd/elf-cicd-versioning` 只涵蓋有產品版號與 `release.yml` 的應用程式，這兩個 repo 的發版方式原本沒有寫在任何規則裡（2026-10-19 查證：`gh api repos/elf-express/{mcp-library,skillshare-source}/tags` 都是空的）。
+
 ## 3. 標準範本
 
 ### 每次操作前
