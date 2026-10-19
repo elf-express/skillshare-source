@@ -8,7 +8,7 @@ description: |
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.2.0
+  version: 1.3.0
   owner: Elf Express
 ---
 
@@ -27,7 +27,7 @@ metadata:
 - 建立新 repo、新 fork、新私有 fork，或替既有 repo 補 `BRANCHING.md`
 - 要對原作者送 PR（第 1 種）
 - 要設定 GitHub 分支保護或 ruleset
-- 發版（版號與 tag 的做法見 `cicd/elf-cicd-versioning`）
+- 發版（由誰執行見規則 39；版號與 tag 的做法見 `cicd/elf-cicd-versioning`；沒有產品版號的 repo 見規則 40）
 - 「release 的 CI/CD 為什麼沒過」「發版後部署失敗」→ `references/04-release-ci-check.md`
 - 「main 跟上游有沒有對齊」「release 是不是 dev 測過的版本」「pr 分支跟 dev 改的一不一樣」→ `references/05-alignment-check.md`
 - 要建立或接手一個 Task 很多的 Plan
@@ -294,6 +294,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
 - MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
+- MUST NOT 未經 Eddie 指定就快轉 `release`／`main` 或跑派發（規則 39）。
 - MUST NOT 以 squash 或 rebase 合併開發分支 PR，一律用「Create a merge commit」（規則 37）。
 - 已開 PR 後 MUST NOT 改寫歷史，一律新增 commit 修正（規則 38）。
 
@@ -309,6 +310,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
+- [ ] 發版前已由 Eddie 指定執行的 session；沒被指定的 session 沒有快轉 `release`／`main`、沒有跑派發（規則 39 的測試例外不算派發）（規則 39）
+- [ ] 範圍寫「不發版」的單，已寫明由哪張單或誰負責發版（規則 39）
 - [ ] 拆成兩組以上 Spec＋Plan 時已建里程碑（規則 17）
 - [ ] 同一專案有兩組以上未完成的單時，Spec 定案前已在「## 並行」寫好並行標註（規則 32）
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
