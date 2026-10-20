@@ -6,6 +6,8 @@
 > 寫明現況、靠什麼機制維持（沒有機制就照實寫）與重現指令；原本的歷史描述保留。歷史路徑一律用 `git show <sha>:<路徑>` 引用。
 > E1–E14 與 `elf-mcp-knowledge` 的同名列逐字一致（兩份 MUST 同步改）；E15、E16 是本檔專有的列，同日各自重跑；E17 為 2026-10-17 新增。
 
+> **目前狀態（2026-10-20）**：pnpm 11 安裝缺陷已由 E-353 加入範本的 esbuild 核准並驗證解決，見末節「E-353 安裝核准驗證結果」。coverage 已由 E-322 解決（86.28%），不再列為 E-353 待修項。下列 E-322 前置、審計補正及各輪遷移結果皆為當時歷史；「未修復／仍交 E-353」記錄保留，不能解讀為目前狀態。
+
 | # | Commit / 位置 | 檔案 | 被拿掉或變弱的東西 | 後果 / 重現方式 |
 |---|---|---|---|---|
 | E1 | `0115d50`（ci: monorepo 統一 CI） | `sqlsugar-mcp/.github/workflows/release.yml`（199 行，整檔刪除） | 發版流程：解析 `release: vX.Y.Z`、檢查 tag 不重複、建 annotated tag、產生 release notes、建 GitHub Release、以 `gh workflow run` dispatch docker-publish（繞過 GITHUB_TOKEN 不觸發 workflow 的限制） | 之後 repo 沒有任何建 tag / Release 的 workflow；`docker-publish.yml`、`npm-publish.yml` 雖監聽 `v*.*.*` tag，但沒有東西會產生 tag。`git show e024be8:sqlsugar-mcp/.github/workflows/release.yml`。**重測 2026-10-17：未解決** —— `.github/workflows/` 只剩 `ci.yml`、`docker-publish.yml`（`npm-publish.yml` 已由 `cf42e88` 刪除，E-125）；`docker-publish.yml:19-20` 仍監聽 `v*.*.*` tag，但沒有任何 workflow 建 tag / Release（`grep -cE 'git tag\|gh release\|create-release' .github/workflows/*.yml` 皆 0） |
@@ -24,14 +26,14 @@
 | E14 | 工作目錄（**未納管**，實測 2026-10-04） | `mcpjungle/nginx.example.conf`、`AGENTS.md`、`.mcp.json`、`docs/superpowers/**` | 這些檔案只存在於本機工作目錄，從未 `git add`。其中 `nginx.example.conf` 是 `elf-mcp-gateway` 規則 16 與禁止簡化 5 的權威出處——重新 clone 的人拿不到它 | 2026-10-04 當時用 `git ls-files --error-unmatch` 檢查（回非零＝未納管）；在歷史 commit 上重現：`git ls-tree --name-only f8b7416 -- mcpjungle/nginx.example.conf AGENTS.md`（無輸出＝當時未納管）；`git status --short \| grep '^??'`。**重測 2026-10-17：已解決** —— `nginx.example.conf`（已移到 repo 根目錄）與 `AGENTS.md` 已納管：`git ls-files --error-unmatch nginx.example.conf AGENTS.md` exit 0；`.mcp.json` 由 `.gitignore:11` 排除；`docs/superpowers/**` 不在版控（`git ls-files docs/superpowers` 0 筆）。沒有機制擋「權威檔留在本機不提交」，照實寫 |
 | E15 | `f21c6f1`（mcp-library PR #123，`fix(E-250)`） | `mcpjungle/docs-mcp-server/src/http.ts` | 若被簡化掉會失去的東西：`/mcp*` 在驗證前限流、且只計 401（`skip` 與驗證共用 `isAuthorized()`）。之前完全沒有限流，CodeQL `js/missing-rate-limiting` 4 筆（#86–#89），合併後在 dev 上全部 fixed | `gh api "repos/elf-express/mcp-library/contents/mcpjungle/docs-mcp-server/src/http.ts?ref=f21c6f16b9eb5e22fe8e311f00e984185443765f" -q .content \| base64 -d \| grep -n mcpLimiter`（預期 7 行：定義 1 + 6 條 `/mcp*` 路由）。**重測 2026-10-17：仍在（有測試在擋）** —— 上述 `gh api` 指令實跑仍是 7 行（`:80` 定義、`:162-164`、`:167-169` 六條路由）；`git merge-base --is-ancestor f21c6f1 73b8206` exit 0；`73b8206` 的同一檔 `grep -c mcpLimiter mcpjungle/docs-mcp-server/src/http.ts` → 7，`trust proxy` false 在 `:53`、預設 20 次／15 分鐘在 `:180-181`（環境變數名是 `DOCS_MCP_RATE_LIMIT_MAX`／`DOCS_MCP_RATE_LIMIT_WINDOW_MS`）。機制：`tests/http-ratelimit.test.ts` 7 個測試，在 `ci.yml:156-165` 的 `build-test` matrix 內、由 `:188` 的 `npm test` 執行（`cd mcpjungle/docs-mcp-server && npm test` → 128 passed） |
 | E16 | mcp-library `a020cd0`（`mcpjungle/docs-mcp-server/README.md`）、`5d00449`（`CLAUDE.md`） | `mcpjungle/docs-mcp-server/README.md`、`CLAUDE.md`「A. 本機 stdio」 | 本機 stdio 的用法是 node 直接跑 `dist/index.js`（上游文件寫 `npm install && npm run build`；本 skill 改用 `npm ci`，因為 `package-lock.json` 存在，已在 `a020cd0` 核對），npm 套件已停止發布；skillshare-source 舊版 `elf-mcp-server` 規則 8 仍寫成 npx 指令（`559e52a`），已改掉 | 照舊寫法的人會拿不到套件而連不上本機 stdio。重現：`gh api 'repos/elf-express/mcp-library/contents/mcpjungle/docs-mcp-server/README.md?ref=a020cd0' -H 'Accept: application/vnd.github.raw' \| grep -n 'dist/index.js'`（預期 1 行）；`gh api 'repos/elf-express/mcp-library/contents/CLAUDE.md?ref=5d00449' -H 'Accept: application/vnd.github.raw' \| grep -n 'dist/index.js'`（預期 1 行）；舊寫法：`git grep -nE '(npx|npm (i|install|exec)|pnpm (add|dlx|exec)|yarn (add|dlx)|bunx)[^|]*@elf-express[/]' 559e52a` → 1 筆。**重測 2026-10-17：仍成立（沒有機制在擋，靠文件）** —— 上述三條指令實跑：`a020cd0` 的 README 1 行（`:21`）、`5d00449` 的 `CLAUDE.md` 1 行（`:75`）、`559e52a` 舊寫法 1 筆；`git merge-base --is-ancestor a020cd0 73b8206`、`git merge-base --is-ancestor 5d00449 73b8206` 皆 exit 0；`73b8206` 仍是 `mcpjungle/docs-mcp-server/README.md:21`、`CLAUDE.md:75` 各 1 行 `dist/index.js`，上游仍寫 `npm install && npm run build`（`README.md:14`、`CLAUDE.md:73`） |
-| E17 | skillshare-source `mcp/elf-mcp-server/templates/package.json` vs mcp-library `origin/release` @ `73b8206` | `mcp/elf-mcp-server/templates/package.json`、`mcpjungle/docs-mcp-server/package-lock.json` | 範本依賴落後參考實作一個主版本：範本宣告 zod `^3.25.76`、express `^4.21.2`、SDK `^1.29.0`；docs-mcp-server lockfile 是 zod 4.6.6、express 5.3.0、SDK 1.32.1（`package-lock.json:3327,1775,514`） | **歷史狀態：未解決（2026-10-17）** —— 照範本開新 server 會落在 zod 3／express 4，與規則 5 的實測值不一致。升級是有破壞性變更的遷移，未驗證，不在 E-309 範圍；追蹤 E-321（E-308 決策 16）。重現：`grep -nE '"(zod|express|@modelcontextprotocol/sdk)"' mcp/elf-mcp-server/templates/package.json`（3 行：`:20`、`:21`、`:23`）；在 mcp-library `cd mcpjungle/docs-mcp-server && npm ci && npm ls zod express @modelcontextprotocol/sdk --depth=0`  **最新狀態（E-321／E-322）：依賴落差已解決**。範本已遷移至 zod 4／express 5／SDK 1；候選各依賴實際解析值、原有 9＋新增 22、build／stdio／基線與候選逐檔 coverage 證據及提交 SHA，完整列在本檔「E-322 遷移驗證結果」與 E-322 留言。原 pnpm 11 安裝缺陷仍未修復；52.31% 的原始 coverage 基線保留，兩項交 E-353，不把驗證副本的處置寫成原範本已修。 |
+| E17 | skillshare-source `mcp/elf-mcp-server/templates/package.json` vs mcp-library `origin/release` @ `73b8206` | `mcp/elf-mcp-server/templates/package.json`、`mcpjungle/docs-mcp-server/package-lock.json` | 範本依賴落後參考實作一個主版本：範本宣告 zod `^3.25.76`、express `^4.21.2`、SDK `^1.29.0`；docs-mcp-server lockfile 是 zod 4.6.6、express 5.3.0、SDK 1.32.1（`package-lock.json:3327,1775,514`） | **歷史狀態：未解決（2026-10-17）** —— 照範本開新 server 會落在 zod 3／express 4，與規則 5 的實測值不一致。升級是有破壞性變更的遷移，未驗證，不在 E-309 範圍；追蹤 E-321（E-308 決策 16）。重現：`grep -nE '"(zod|express|@modelcontextprotocol/sdk)"' mcp/elf-mcp-server/templates/package.json`（3 行：`:20`、`:21`、`:23`）；在 mcp-library `cd mcpjungle/docs-mcp-server && npm ci && npm ls zod express @modelcontextprotocol/sdk --depth=0`  **最新狀態（E-321／E-322）：依賴落差已解決**。範本已遷移至 zod 4／express 5／SDK 1；候選各依賴實際解析值、原有 9＋新增 22、build／stdio／基線與候選逐檔 coverage 證據及提交 SHA，完整列在本檔「E-322 遷移驗證結果」與 E-322 留言。**E-322 當時歷史**：原 pnpm 11 安裝缺陷仍未修復；52.31% 的原始 coverage 基線保留，兩項交 E-353，不把驗證副本的處置寫成原範本已修。**目前狀態（E-353）**：安裝缺陷已加入範本 esbuild 核准並驗證解決；coverage 已由 E-322 解決（86.28%）。全新副本的安裝、build、原有 9＋新增 22 與逐檔 coverage 證據見末節「E-353 安裝核准驗證結果」。 |
 | E18 | mcp-library `73b8206` vs skillshare-source `fa331979` | `mcpjungle/docs-mcp-server/package-lock.json:3071,3210`、`stack/elf-stack/SKILL.md:57,64,69,97–101` | **mcp-library 違反中（TypeScript）**：lockfile TypeScript 7.0.2 不在 elf-stack:64 `^5.6.3`（解析 5.9.3）；Vitest 5.0.3 符合 :69 `^5.0.1`，不可誤標違反。:57 是前端／桌面，:97–101 的 MCP 節未規定這兩個版本 | 適用範圍與範本保留 Vitest 4 的治理交 [E-351](https://linear.app/elf-express/issue/E-351)。本單採 A，不升 TypeScript／Vitest／coverage-v8，不改 stack。重現：在 mcp-library 執行 `git show 73b8206:mcpjungle/docs-mcp-server/package-lock.json`，核對 3071、3210 行；在 skillshare-source 執行 `git show fa331979:stack/elf-stack/SKILL.md`，核對 57、64、69、97–101 行；逐行原文亦貼在 E-321 Spec |
 
 ## E-322 開工前置：原範本基線不乾淨（2026-10-19）
 
 來源：skillshare-source `fa33197944f06b306bace08b387b7ec6645dfd33` 的 `mcp/elf-mcp-server/templates/`；Node `v24.18.0`、pnpm `11.28.3`。本節只記錄實際前置證據，不代表依賴遷移已實作或通過審計；原有 `knowledge.test.ts` 9 個測試及所有斷言未修改。
 
-### 安裝缺陷：E-353，未修復
+### 安裝缺陷：E-353，當時未修復（歷史）
 
 原 materialize 腳本僅替換範本佔位並固定本輪 TS／Vitest／coverage 配套，沒有 build script 核准；它的 SHA256 是 `CD38E8C08964DB53E79386635E8D71DB5A7244EF3405A70EF3A908B8E5A9AE5E`。原始副本執行：
 
@@ -137,7 +139,7 @@ E-353 標題已擴為「elf-mcp-server 範本兩項基線缺陷：pnpm 11 安裝
 - E7 → 「不准為了讓測試過而放寬比對邏輯」
 - E9–E11 → 「改工具 / 改名 / 加語料必須同 PR 更新的文件清單」
 - E15、E16 → 規則 17、禁止簡化 8、12（限流與本機 stdio 用法）
-- E17 → 規則 5 的範本落差註記（依賴落差由 E-321／E-322 驗證解決；原基線兩項缺陷交 E-353，歷史證據保留）
+- E17 → 規則 5 的範本落差註記（依賴落差及 coverage 由 E-321／E-322 驗證解決；安裝缺陷由 E-353 驗證解決，原基線歷史證據保留）
 
 ## E-322 遷移驗證結果（2026-10-20）
 
@@ -298,3 +300,74 @@ install／frozen-install／build 均 exit 0；原有 **9 passed**、新增 **22 
 本輪 repo 驗證：以隔離 XDG_CONFIG_HOME=E:/tmp/e322-http-fix-xdg、source 指向修正 worktree、targets:{}，執行 bash scripts/validate.sh 與 skillshare sync --dry-run 均 exit0（results/http-fix-repo-validate.log、http-fix-dryrun.log）。metadata 未變，未執行實際 sync。git diff --check exit0；fetch 後 origin/dev 仍27872f1d，merge-base --is-ancestor origin/dev HEAD exit0。
 
 新一輪唯讀程式自審 http_fix_review：Critical0／Important0／Minor0；直接核對已安裝 Express／router／body-parser 行為與既有驗證輸出。這只算程式自審，不冒稱正式 Plan 審計。reviewer 列出的兩個實際界線：healthInfo() 在啟動 log 內拋錯屬既有獨立行為，本輪未改；實際執行證據限 Windows，其他平台僅檢視來源。Eddie 正式審計核准來源仍是本 session 使用者回報。
+
+## E-353 安裝核准驗證結果（2026-10-20）
+
+**已解決**：範本新增 `templates/pnpm-workspace.yaml`，只有 `allowBuilds.esbuild: true`；`templates/Dockerfile` 的 build／runtime 兩階段都在 install 前複製該檔。SKILL metadata.version 升為 1.4.1。寫集只有本 skill 四檔；依賴宣告、所有來源程式、原有 9＋新增 22 測試、55% 門檻與 exclude 都未改。原 coverage 52.31% 已由 E-322 解決，最新 86.28%；本單只修安裝，前述失敗與暫時處置歷史保留。
+
+開工方案先貼 [E-353 留言](https://linear.app/elf-express/issue/E-353#comment-993586da)，Eddie 於本 session 回報「通過」後才改檔。來源基準 `4663734e32f2ad6ced297a3e95e597cbf3fc013a`，repo 外 worktree `E:/source/skillshare-source-e353-esbuild`；量測副本與所有原始報表在 repo 外 `E:/tmp/e353-verification/`。本次為 Windows 實測；Docker 兩階段僅核對 COPY 次序，未宣稱跑過容器建置。
+
+### 複製方法與設定隔離
+
+`materialize.mjs` 只遞迴複製並替換佔位，再建 `data/alpha.md` fixture；不改依賴宣告、不建立／覆寫核准檔。基線在修檔前複製，YAML 不存在；候選在修檔後另建新目錄，YAML 由來源原樣帶入。沒有沿用 E-322 會注入核准／固定工具鏈解析的 materializer。程式 SHA256 `d01031700c05561b77a258bf535cd2baa19774f8b80b248190c7a989d38b1463`，完整原文另貼本單。
+
+設定：`XDG_CONFIG_HOME=E:/tmp/e353-verification/config`，其中 `pnpm/config.yaml` 為空 mapping `{}`；`NPM_CONFIG_USERCONFIG=E:/tmp/e353-verification/empty.npmrc` 為空檔。初次 install 移除 CI 環境變數，使用各自全新的 `store-baseline`／`store-candidate`，未共用已建置 store。後續命令以 `PNPM_CONFIG_STORE_DIR=E:/tmp/e353-verification/store-candidate` 指向候選 store；沒有改全域設定、關閉 strictDepBuilds、略過 scripts 或執行互動 approve-builds。
+
+候選 `pnpm config list --json` 過濾建置設定後，只有 `allowBuilds: {esbuild:true}`；`strictDepBuilds`、`ignoreScripts`、`dangerouslyAllowAllBuilds`、`onlyBuiltDependencies`、`ignoredBuiltDependencies` 皆未覆寫（保留預設）。安裝原始輸出含 `esbuild postinstall$ node install.js` 與 `postinstall: Done`。只核准 esbuild 的理由：本次錯誤只點名此套件，且 `pnpm why esbuild` 確認它來自 tsx／Vite 工具鏈；沒有其他套件獲授權。參考 [pnpm allowBuilds／strictDepBuilds](https://pnpm.io/settings/build#allowbuilds)、[esbuild 安裝機制](https://esbuild.github.io/getting-started/#installing-esbuild)。
+
+### 命令與結果
+
+先執行 `node E:/tmp/e353-verification/materialize.mjs <source-templates> <new-output>` 產生副本；兩次輸出分別為 `baseline`、`candidate`。以下均在上述隔離設定下執行：
+
+```powershell
+# RED：修檔前全新基線
+pnpm --dir E:/tmp/e353-verification/baseline --store-dir E:/tmp/e353-verification/store-baseline install
+# GREEN：修檔後另一份全新副本
+pnpm --dir E:/tmp/e353-verification/candidate --store-dir E:/tmp/e353-verification/store-candidate install
+pnpm --dir E:/tmp/e353-verification/candidate --store-dir E:/tmp/e353-verification/store-candidate install --frozen-lockfile
+$env:PNPM_CONFIG_STORE_DIR = 'E:/tmp/e353-verification/store-candidate'
+pnpm --dir E:/tmp/e353-verification/candidate run build
+pnpm --dir E:/tmp/e353-verification/candidate exec vitest run src/knowledge.test.ts --reporter=json --outputFile=../results/original9.json
+pnpm --dir E:/tmp/e353-verification/candidate exec vitest run src/schema.test.ts src/protocol.test.ts src/http.test.ts --reporter=json --outputFile=../results/new22.json
+pnpm --dir E:/tmp/e353-verification/candidate test --reporter=json --outputFile=../results/all31.json
+pnpm --dir E:/tmp/e353-verification/candidate run test:coverage
+pnpm --dir E:/tmp/e353-verification/candidate why esbuild
+pnpm --dir E:/tmp/e353-verification/candidate list --depth=0 --json
+```
+
+| 驗證 | exit | 實際結果／原始檔（`results/`） |
+|---|---|---|
+| 基線 install | 1 | `ERR_PNPM_IGNORED_BUILDS: esbuild@0.28.2`；`baseline-install.log` |
+| 候選 install | 0 | esbuild postinstall 實際執行；`install.log` |
+| frozen install | 0 | `frozen-install.log` |
+| build | 0 | `tsc` 通過；`build.log` |
+| 原有 9 | 0 | 9 passed；`original9.json` |
+| 新增 22 | 0 | 22 passed；`new22.json` |
+| 完整 31 | 0 | 31 passed；`all31.json` |
+| coverage | 0 | 151/175＝86.28% ≥55%；`coverage.log` |
+| why／解析版本 | 0 | `why-esbuild.log`、`packages.log` |
+
+每組測試 failed／pending／todo 都為 0；完整 31 包含原有真實 stdio／HTTP 回歸。首次驗證 runner 錯把 install 的 `--store-dir` 參數也傳給 `pnpm run build`，被 CLI 拒絕；保留 `build-runner-error.log`／`outcomes-first-run.json`，改用上述 store 環境變數後 build exit0。沒有為此改產品或測試。
+
+### 版本、雜湊與 coverage
+
+實際 Node `v24.18.0`、pnpm `11.28.3`；TypeScript `5.9.3`、Vitest／coverage-v8 `4.1.12`、SDK `1.32.1`、express `5.3.0`、zod `4.6.7`、rate-limit `8.7.1`、tsx `4.23.15`、Vite `8.3.4`、esbuild `0.28.2`、@types/express `5.0.6`、@types/node `24.19.2`。Vitest 的解析 patch 與 E-322 舊量測不同，是既有 `^4.1.9` 的此次解析，沒有升級依賴宣告；本輪 RED／GREEN 的 package.json 與 lock 完全一致。
+
+- 基線／候選 lock SHA256 同為 `1ca372c11394e8faa0f581a569ad224144b74ef2c3f91c0a0b54effc0972808b`。
+- 來源／候選 YAML SHA256 同為 `ac02d96368617c760f093cfe61fdec64b6244007ab3553e0d6621f706f54a353`。
+- materialize 後兩份副本的 package.json、vitest.config.ts、四個測試檔與四個來源檔逐檔 SHA256 全相同，完整結果 `results/summary.json`；設定核對 `effective-build-settings.json`；各命令 exit code 為 `outcomes.json`。
+
+逐檔以當次安裝的 `istanbul-lib-coverage` 讀取候選 `coverage/coverage-final.json` 的 `toSummary().lines`，與終端報表一致：
+
+| 檔案 | covered/total lines | lines % |
+|---|---|---|
+| src/http.ts | 69/84 | 82.14% |
+| src/knowledge.ts | 79/88 | 89.77% |
+| src/schemas.ts | 3/3 | 100% |
+| 全部 | 151/175 | **86.28%** |
+
+`src/index.ts` 沿用原排除設定，另由既有真實 stdio 測試覆蓋協定行為；本單沒有改分母、門檻、排除清單或測試斷言來讓它通過。
+
+全庫驗證：`XDG_CONFIG_HOME=E:/tmp/e353-verification/config` 的 skillshare config 僅設 `sources.skills: E:/source/skillshare-source-e353-esbuild`、`mode: merge`、`targets: {}`；`bash scripts/validate.sh` 與 `skillshare sync --dry-run` 均 exit0（`results/repo-validate.log`、`sync-dry-run.log`、`repo-checks.json`），預覽 60 skills／0 targets，未執行實際派發。`git diff --check` exit0，`.metadata.json` 未變。發版由 Eddie 等 E-354、E-361 都合進 dev 後以 `scripts/release-ff.*` 一起執行，本單未發版。
+
+全新唯讀最終審查 `E-353-最終審查`：Critical 0／Important 0／Minor 0；逐項核對四檔 diff、materializer、lock／YAML 雜湊、31 測試 JSON 與 coverage 原始輸出，無阻擋。此為程式與證據審查；正式開工審計的核准來源仍為上述 Eddie 回報。

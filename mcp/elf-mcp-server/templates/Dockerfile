@@ -2,7 +2,7 @@
 # Node major: team standard is 24.18 (elf-stack). docs-mcp-server currently uses node:26-alpine — see 待確認.
 FROM node:<NODE_IMAGE_TAG> AS build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN npm install -g pnpm@<PNPM_VERSION> && pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
@@ -16,7 +16,7 @@ ENV TRANSPORT=http
 ENV PORT=<PORT>
 
 # production deps only
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN npm install -g pnpm@<PNPM_VERSION> && pnpm install --prod --frozen-lockfile && pnpm store prune
 
 # compiled server + bundled knowledge data
