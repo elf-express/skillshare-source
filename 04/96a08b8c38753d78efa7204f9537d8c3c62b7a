@@ -1,0 +1,24 @@
+docs/superpowers/guard.md
+  s_8acb3871e49012::t_6a71aae7e809d1 3,25,78-81
+  s_8acb3871e49012::t_0dc2b372cc0f0f 82-83
+AGENTS.md
+  s_8acb3871e49012::t_6a71aae7e809d1 32-33
+README.md
+  s_8acb3871e49012::t_6a71aae7e809d1 108-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0496a08b8c38753d78efa7204f9537d8c3c62b7a",
+  "prompts": {},
+  "sessions": {
+    "s_8acb3871e49012": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b35f205-2207-4f72-b834-04c4caf110f5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
