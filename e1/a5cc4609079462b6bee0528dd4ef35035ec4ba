@@ -1,0 +1,21 @@
+scripts/make-hooks-yaml.cjs
+  s_8acb3871e49012::t_120440acfae1a2 1-131
+scripts/elf-guard.hooks.yaml
+  s_8acb3871e49012::t_d6d932b83c9cfc 1-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e1a5cc4609079462b6bee0528dd4ef35035ec4ba",
+  "prompts": {},
+  "sessions": {
+    "s_8acb3871e49012": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b35f205-2207-4f72-b834-04c4caf110f5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
