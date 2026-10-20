@@ -86,34 +86,42 @@ node -e "const f=require('os').homedir()+'/.claude/superpowers/approvals/E-<N>.y
 
 ## 安裝與回滾
 
-先預覽：
+所有 `skillshare hooks` 指令都要明確指定 `-g`（全域）或 `-p`（專案）；本文件一律用 `-g`。
+
+先預覽 elf-guard 會寫入什麼：
 
 ```bash
-skillshare hooks sync --dry-run --json
+skillshare hooks add elf-guard --file scripts/elf-guard.hooks.yaml --dry-run --json -g
 ```
 
-若輸出 `blocked: true`，代表 `~/.claude/settings.json` 已有其他 hook 被 skillshare 以外的方式改過。先決定 import 或 replace，再安裝。
+若預覽顯示 `blocked: true`，`blocked` 的成因待確認（尚未實測）。可用的處理指令：
+
+```bash
+skillshare hooks import --from claude --json -g       # 不帶名稱：列出 ~/.claude 既有 hook 候選
+skillshare hooks sync elf-guard --replace -g          # 明確取代 elf-guard 衝突的原生輸出
+```
+
+這兩個指令執行前，依團隊規則 34 由 Eddie 決定。
 
 安裝：
 
 ```bash
-skillshare hooks add elf-guard --file scripts/elf-guard.hooks.yaml --sync
+skillshare hooks add elf-guard --file scripts/elf-guard.hooks.yaml --sync -g
 ```
 
-回滾：
+回滾（擇一）：
 
 ```bash
-skillshare hooks disable elf-guard --sync
-skillshare hooks restore <backup-id>
+skillshare hooks disable elf-guard --sync -g   # 停用 entry
+skillshare hooks restore <backup-id> -g        # 還原到指定備份
 ```
 
-兩者擇一：`disable` 停用 entry，`restore` 還原到指定備份。
-
-改過 `scripts/elf-guard.cjs` 或 `scripts/elf-sessionstart.cjs` 後，先重新產生 YAML，再同步：
+改過 `scripts/elf-guard.cjs` 或 `scripts/elf-sessionstart.cjs` 後，依序執行：
 
 ```bash
-node scripts/make-hooks-yaml.cjs          # 寫出 scripts/elf-guard.hooks.yaml
-node scripts/make-hooks-yaml.cjs --check  # 兩者不同步時 exit 1
+node scripts/make-hooks-yaml.cjs                                              # 重新產生 YAML
+node scripts/make-hooks-yaml.cjs --check                                      # 兩者不同步時 exit 1
+skillshare hooks edit elf-guard --file scripts/elf-guard.hooks.yaml --sync -g # 更新已安裝的 Guard
 ```
 
 ## 測試
