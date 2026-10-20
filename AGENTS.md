@@ -29,7 +29,8 @@ _superpowers/                      tracked repo obra/superpowers (own .git, giti
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
 scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
-docs/                              screenshots only — not a skill
+scripts/elf-guard.*, make-hooks-yaml.cjs   superpowers phase Guard hooks (see docs/superpowers/guard.md)
+docs/                              screenshots and docs/superpowers/ (Guard doc, state files) — not a skill
 ```
 
 A folder is a skill only if it contains `SKILL.md`; that is why `docs/`, `scripts/` and `agents/`

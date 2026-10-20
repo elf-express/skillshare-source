@@ -1,6 +1,6 @@
 # Superpowers 階段 Guard
 
-Guard 是 Claude Code 的 PreToolUse hook：分支 `e-<N>` 的計畫未核准前，只允許修改 `docs/superpowers/` 底下的檔案。另有 SessionStart hook，新 session 開始時把狀態檔摘要注入。
+Guard 是 Claude Code 的 PreToolUse hook：分支 `e-<N>` 的計畫未核准前，Write／Edit／MultiEdit／NotebookEdit 只允許寫入 `docs/superpowers/` 底下的檔案。Bash／PowerShell 只檢查指令裡有沒有核准目錄字串，不檢查實作檔寫入：用 `echo >`、`sed`、heredoc 寫實作檔不在 Guard 涵蓋範圍內。另有 SessionStart hook，新 session 開始時把狀態檔摘要注入。
 
 - `scripts/elf-guard.cjs`：PreToolUse，matcher 為 `Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell`。
 - `scripts/elf-sessionstart.cjs`：SessionStart，輸出 `[superpowers 狀態] ticket=… phase=… plan=… 核准=已核准|未核准`。
@@ -22,7 +22,7 @@ Guard 是 Claude Code 的 PreToolUse hook：分支 `e-<N>` 的計畫未核准前
 | 8 | 目標在 repo 內的 `docs/superpowers/` 底下 | 放行 |
 | 9 | 其餘 | 擋 |
 
-規則 1 與 3 不看核准狀態，核准前後都擋。無害的 grep、commit 訊息只要含該字串也會被擋。核准檔因此只能由人在 Claude Code 之外建立。
+規則 2 表示 Bash／PowerShell 在通過規則 1 後一律放行，實作檔寫入限制只對檔案寫入工具生效。規則 1 與 3 不看核准狀態，核准前後都擋。無害的 grep、commit 訊息只要含該字串也會被擋。核准檔因此只能由人在 Claude Code 之外建立。
 
 擋下時的訊息：
 
@@ -74,6 +74,12 @@ node -e "const f=require('os').homedir()+'/.claude/superpowers/approvals/E-<N>.y
 ## permissions.deny 片段
 
 在 `~/.claude/settings.json` 的 `permissions.deny` 加入：
+
+```json
+"Edit(~/.claude/superpowers/approvals/**)"
+```
+
+`Edit(...)` 規則會涵蓋所有內建的寫檔工具（Write、MultiEdit、NotebookEdit）。`~/` 代表家目錄，`//` 開頭才是檔案系統絕對路徑。備選寫法（原草稿，是否生效待實測）：
 
 ```json
 "Write(//~/.claude/superpowers/approvals/**)",

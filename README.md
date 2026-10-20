@@ -105,7 +105,8 @@ skillshare-source/
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
 ├── scripts/validate.sh              提交前檢查
-└── docs/
+├── scripts/elf-guard.*、make-hooks-yaml.cjs   superpowers 階段 Guard hooks（說明見 docs/superpowers/guard.md）
+└── docs/                            截圖與 docs/superpowers/（Guard 說明、狀態檔）
 ```
 
 ★ = 團隊規範（名稱都以 `elf-` 開頭）；其餘為第三方或工具。
