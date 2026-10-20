@@ -256,3 +256,6 @@ A clone made before the rename still has a local `master`: `git branch -m master
 - Uninstall a tracked path with `skillshare uninstall <path>`, not `--group <path>`: `--group` removes
   only the `SKILL.md` folders and leaves the rest of the bundle behind.
 - Line endings: `core.autocrlf`; the "LF will be replaced by CRLF" warning is harmless.
+- VS Code's C# Dev Kit would otherwise build a solution from `cicd/elf-cicd-backend/templates/*.csproj`
+  and restore it: the restore fails (the template has no `TargetFramework` on purpose) and leaves an
+  `obj/` that fails `validate.sh`. `.vscode/settings.json` turns that off; keep it.
