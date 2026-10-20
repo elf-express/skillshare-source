@@ -1,0 +1,22 @@
+scripts/elf-guard.test.cjs
+  s_8acb3871e49012::t_56f52a3e2dd9c7 1-180
+scripts/elf-guard.cjs
+  s_8acb3871e49012::t_4c0d0d6bf55d32 1-162,164-201
+  s_8acb3871e49012::t_372c7a33c71a88 163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6123570bba0082218b29e059c2355c1fa6af090",
+  "prompts": {},
+  "sessions": {
+    "s_8acb3871e49012": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b35f205-2207-4f72-b834-04c4caf110f5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
