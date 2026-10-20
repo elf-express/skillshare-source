@@ -119,6 +119,13 @@ if (-not (Test-Path $shPath)) {
 }
 & $shPath ($guardInstall -replace '\\', '/') --check .
 if ($LASTEXITCODE -ne 0) { Stop-Release "git-guard check failed. Fix it before releasing (rule 30)." }
+# The pushes below run git from this PowerShell, so it must see the same core.hooksPath as sh did (E-361)
+$psHooks = "$(& git config --get core.hooksPath 2>$null)".Trim()
+$shHooks = "$(& $shPath -c 'git config --get core.hooksPath' 2>$null)".Trim()
+if ($psHooks -ne $shHooks) {
+    Stop-Release ("git in this PowerShell sees core.hooksPath='$psHooks' but sh sees '$shHooks', so git-guard would not run on push (rule 30). " +
+        "Usual cause: HOME is an MSYS path (HOME=$env:HOME). See 'Windows PowerShell' in scripts/git-guard/README.md.")
+}
 
 # release (and main) must not be checked out in another worktree
 $here = (G rev-parse --show-toplevel) -replace '\\', '/'

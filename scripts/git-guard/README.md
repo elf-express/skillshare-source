@@ -55,6 +55,25 @@ sh scripts/git-guard/tests/run.sh
 - **repo 自己的 hook 安裝腳本**（例如 `postinstall` 執行的 `install-git-hooks.mjs`、simple-git-hooks）：它們把 hook 寫進 `git rev-parse --git-path hooks`，裝了 git-guard 之後那就是全機目錄，會蓋掉 git-guard 的 hook，讓所有 repo 都受影響。`install.sh --check` 會報出「hook 被改過」；先重跑 `install.sh` 還原，再修那個腳本：repo 沒有自己設定 `core.hooksPath` 時，改寫到 `$(git rev-parse --git-common-dir)/hooks`，git-guard 會照常串接執行。
 - **原本的全機 hooks 目錄**：安裝前若已設定全機 `core.hooksPath`，原路徑記在 `elfguard.previousHooksPath`；repo 沒有自己的同名 hook 時，git-guard 會改執行那裡的 hook。
 
+## Windows PowerShell
+
+`install.sh` 寫的是全域設定（`~/.gitconfig`）。原生 `git.exe` 依 `HOME` 找這個檔，`HOME` 是 MSYS 格式（`/c/Users/<名字>`）時會讀不到，全域 `core.hooksPath` 跟著消失，從這個 PowerShell 推送時 git-guard 完全不執行，`install.sh --check` 也查不出來（它跑在 sh 裡，sh 會把 `HOME` 轉成正確路徑）。Orca 啟動的 Claude Code 就是這樣：它的 PowerShell 工具帶著 `HOME=/c/Users/<名字>`（E-361）。
+
+在要推送的 PowerShell 裡確認：
+
+```powershell
+git config --global --get core.hooksPath   # 必須印出 .../.elf-git-guard/hooks；空白就是讀不到
+$env:HOME                                  # 以 / 開頭就是這個問題
+```
+
+修法：Claude Code 在 `~/.claude/settings.json` 的 `env` 加上 Windows 格式的 `HOME`，重開 session 後 PowerShell 與 Git Bash 工具都讀得到：
+
+```json
+{ "env": { "HOME": "C:\\Users\\<名字>" } }
+```
+
+其他工具的 PowerShell 若也有 `/` 開頭的 `HOME`，在該工具的環境變數設定改成同樣的 Windows 格式；改不了就用 Git Bash 執行 `git push`。`scripts/release-ff.ps1` 會比對 PowerShell 與 sh 讀到的 `core.hooksPath`，不一致就停下。
+
 ## 已知限制
 
 - 第 3 種同時推 `release` 和 `main`（`git push origin release main`）時，`main` 會和推送前的 `origin/release` 比對而被擋；請分兩次推，先 `release` 再 `main`。
