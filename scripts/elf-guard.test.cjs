@@ -2,11 +2,13 @@
 // elf-guard.cjs 的測試：每個案例用暫存目錄組出假 repo 與核准目錄，不依賴任何外部狀態。
 
 const assert = require('node:assert');
+const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
 const guard = require('./elf-guard.cjs');
+const sessionStart = require('./elf-sessionstart.cjs');
 
 const tmpRoots = [];
 
@@ -170,6 +172,58 @@ const cases = [
     const { approvalsDir } = mkRepo();
     const file = path.join(os.homedir(), '.claude', 'superpowers', 'approvals', 'E-377.yaml').replace(/\//g, '\\');
     assert.strictEqual(run({ tool_name: 'Edit', tool_input: { file_path: file } }, approvalsDir).decision, 'deny');
+  }],
+  ['2.1 e-377 分支、未核准 -> 狀態摘要含 ticket、phase、未核准、狀態檔路徑', () => {
+    const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
+    const text = sessionStart.summarize(repo, { approvalsDir });
+    assert.strictEqual(typeof text, 'string');
+    assert.ok(text.includes('ticket=E-367'), text);
+    assert.ok(text.includes('phase=plan'), text);
+    assert.ok(text.includes('plan=E-377'), text);
+    assert.ok(text.includes('未核准'), text);
+    assert.ok(text.includes('state/E-367.yaml'), text);
+    assert.ok(text.includes('docs/superpowers/state/E-367.yaml'), text);
+  }],
+  ['2.2 核准檔齊全 -> 狀態摘要含已核准', () => {
+    const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
+    writeFile(path.join(approvalsDir, 'E-377.yaml'), APPROVAL_FULL);
+    const text = sessionStart.summarize(repo, { approvalsDir });
+    assert.ok(text.includes('已核准'), text);
+    assert.ok(!text.includes('未核准'), text);
+  }],
+  ['2.3 branch main -> null', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'main', state: STATE_E377 });
+    assert.strictEqual(sessionStart.summarize(repo, { approvalsDir }), null);
+  }],
+  ['2.4 沒有狀態檔 -> null', () => {
+    const { repo, approvalsDir } = mkRepo();
+    assert.strictEqual(sessionStart.summarize(repo, { approvalsDir }), null);
+  }],
+  ['2.5 狀態檔無法解析、detached HEAD、repo 外 -> null', () => {
+    const bad = mkRepo({ state: '# 空檔\n' });
+    assert.strictEqual(sessionStart.summarize(bad.repo, { approvalsDir: bad.approvalsDir }), null);
+    const detached = mkRepo({ branch: null, state: STATE_E377 });
+    assert.strictEqual(sessionStart.summarize(detached.repo, { approvalsDir: detached.approvalsDir }), null);
+    assert.strictEqual(sessionStart.summarize(path.join(findDirWithoutGit(), 'elf-guard-no-such-dir')), null);
+  }],
+  ['2.6 從子目錄與 worktree 的 .git 檔案也能摘要', () => {
+    const { repo, approvalsDir } = mkRepo({ worktree: true, state: STATE_E377 });
+    const sub = path.join(repo, 'docs', 'superpowers');
+    const text = sessionStart.summarize(sub, { approvalsDir });
+    assert.ok(text && text.includes('ticket=E-367'), String(text));
+  }],
+  ['2.7 CLI：stdin cwd 有狀態檔 -> 印出摘要並 exit 0；無狀態檔 -> 無輸出並 exit 0', () => {
+    const script = path.join(__dirname, 'elf-sessionstart.cjs');
+    const withState = mkRepo({ state: STATE_E377 });
+    const r1 = childProcess.spawnSync(process.execPath, [script], { input: JSON.stringify({ cwd: withState.repo }), encoding: 'utf8' });
+    assert.strictEqual(r1.status, 0);
+    assert.ok(r1.stdout.includes('ticket=E-367') && r1.stdout.endsWith('\n'), r1.stdout);
+    const noState = mkRepo();
+    const r2 = childProcess.spawnSync(process.execPath, [script], { input: JSON.stringify({ cwd: noState.repo }), encoding: 'utf8' });
+    assert.strictEqual(r2.status, 0);
+    assert.strictEqual(r2.stdout, '');
+    const r3 = childProcess.spawnSync(process.execPath, [script], { input: 'not json', encoding: 'utf8' });
+    assert.strictEqual(r3.status, 0);
   }],
   ['介面 五個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval']) {
