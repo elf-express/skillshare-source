@@ -154,6 +154,23 @@ const cases = [
     assert.strictEqual(d.decision, 'deny');
     assert.match(d.reason, /E-367/);
   }],
+  ['1.16 PowerShell 寫入 approvals 路徑 -> deny', () => {
+    const { approvalsDir } = mkRepo();
+    const command = 'Set-Content $HOME\\.claude\\superpowers\\approvals\\E-377.yaml x';
+    assert.strictEqual(run({ tool_name: 'PowerShell', tool_input: { command } }, approvalsDir).decision, 'deny');
+  }],
+  ['1.17 Write 核准目錄下的檔案 -> deny', () => {
+    const { approvalsDir } = mkRepo();
+    const file = path.join(os.homedir(), '.claude', 'superpowers', 'approvals', 'E-377.yaml').replace(/\\/g, '/');
+    const d = run({ tool_name: 'Write', tool_input: { file_path: file } }, approvalsDir);
+    assert.strictEqual(d.decision, 'deny');
+    assert.ok(d.reason && d.reason.length > 0);
+  }],
+  ['1.18 Edit 核准目錄下的檔案（反斜線）-> deny', () => {
+    const { approvalsDir } = mkRepo();
+    const file = path.join(os.homedir(), '.claude', 'superpowers', 'approvals', 'E-377.yaml').replace(/\//g, '\\');
+    assert.strictEqual(run({ tool_name: 'Edit', tool_input: { file_path: file } }, approvalsDir).decision, 'deny');
+  }],
   ['介面 五個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval']) {
       assert.strictEqual(typeof guard[name], 'function', name);

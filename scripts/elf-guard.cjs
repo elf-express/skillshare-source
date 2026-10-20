@@ -126,19 +126,23 @@ function decideUnsafe(payload, opts) {
   const toolName = payload.tool_name;
   const input = payload.tool_input || {};
 
-  // 1. Bash 碰核准目錄：核准前後都擋。
-  if (toolName === 'Bash' && /superpowers[\\/]approvals/i.test(String(input.command || ''))) {
-    return deny('Superpowers 階段 Guard：禁止用 Bash 存取 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
+  // 1. Bash／PowerShell 碰核准目錄：核准前後都擋。
+  if ((toolName === 'Bash' || toolName === 'PowerShell') && /superpowers[\\/]approvals/i.test(String(input.command || ''))) {
+    return deny('Superpowers 階段 Guard：禁止用 Bash 或 PowerShell 存取 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
   }
 
-  // 2. 取檔案類工具的目標路徑，並找出 repo 根。
+  // 2. 取檔案類工具的目標路徑；目標在核准目錄底下一律擋。
   const rawTarget = input.file_path || input.notebook_path;
   if (!rawTarget) return ALLOW;
   let target = toPosix(rawTarget);
+  if (/superpowers\/approvals/i.test(target)) {
+    return deny('Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
+  }
   if (!isAbsolutePosix(target)) {
     target = path.posix.join(toPosix(payload.cwd || process.cwd()), target);
   }
   target = path.posix.normalize(target);
+  // 找出 repo 根。
   const gitRoot = findGitRoot(target);
   if (!gitRoot) return ALLOW;
 
