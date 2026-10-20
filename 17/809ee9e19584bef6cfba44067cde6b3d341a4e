@@ -1,0 +1,45 @@
+.gitattributes
+  s_babe1af9e3a7a0::t_c261be654424dc 1-13
+backend/elf-domain-modeling/SKILL.md
+  s_babe1af9e3a7a0::t_07e4ce4d5e39c3 1-179
+backend/elf-domain-modeling/references/entity-templates.md
+  s_babe1af9e3a7a0::t_02bb6b8fae45bc 1-280
+backend/elf-dotnet/SKILL.md
+  s_babe1af9e3a7a0::t_799e4371d7e20b 1-361
+backend/elf-dotnet/references/project-templates.md
+  s_babe1af9e3a7a0::t_a30eb83c03c72e 1-372
+backend/elf-sqlsugar/SKILL.md
+  s_babe1af9e3a7a0::t_6e3a10953dc426 1-298
+backend/elf-sqlsugar/references/sqlsugar-setup.md
+  s_babe1af9e3a7a0::t_86357198610322 1-269
+stack/elf-stack/SKILL.md
+  s_babe1af9e3a7a0::t_3be278324d62e6 1-275
+testing/elf-allure-report/SKILL.md
+  s_babe1af9e3a7a0::t_1681ccdb093c03 1-252
+testing/elf-e2e/SKILL.md
+  s_babe1af9e3a7a0::t_92a2933eb17066 1-367
+testing/elf-integration/SKILL.md
+  s_babe1af9e3a7a0::t_c581ce1484d4c8 1-198
+testing/elf-integration/references/integration-templates.md
+  s_babe1af9e3a7a0::t_a709fa4b4e3d60 1-438
+testing/elf-unit/SKILL.md
+  s_babe1af9e3a7a0::t_839d092add20a5 1-429
+testing/elf-unit/references/vitest-templates.md
+  s_babe1af9e3a7a0::t_324d6d962c7ec4 1-197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "17809ee9e19584bef6cfba44067cde6b3d341a4e",
+  "prompts": {},
+  "sessions": {
+    "s_babe1af9e3a7a0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0aa3034-1d9f-49f1-8422-81c9edda4b99",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
