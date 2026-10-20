@@ -1,0 +1,27 @@
+mcp/elf-mcp-server/templates/Dockerfile
+  s_b6c8862b54c50f::t_5859eab4cd8ce9 5,19
+mcp/elf-mcp-server/SKILL.md
+  s_b6c8862b54c50f::t_1b4969c8a5d1c2 9,18,57,111,217
+mcp/elf-mcp-server/references/simplification-evidence.md
+  s_b6c8862b54c50f::t_c43c5978448abf 29,303-371
+  s_b6c8862b54c50f::t_1b4969c8a5d1c2 9-10,36,142
+  s_b6c8862b54c50f::t_e7e6a829d3d4b4 372-373
+mcp/elf-mcp-server/templates/pnpm-workspace.yaml
+  s_b6c8862b54c50f::t_5859eab4cd8ce9 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c149879cd1f3fe3991551dc989848f79f39e2834",
+  "prompts": {},
+  "sessions": {
+    "s_b6c8862b54c50f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a156e2-3b48-78f3-8f7a-07e5e93e3363",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
