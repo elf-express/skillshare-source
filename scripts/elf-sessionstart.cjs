@@ -51,7 +51,7 @@ function main() {
   try {
     let cwd = process.cwd();
     try {
-      const payload = JSON.parse(fs.readFileSync(0, 'utf8').replace(/^﻿/, ''));
+      const payload = JSON.parse(fs.readFileSync(0, 'utf8').replace(/^\uFEFF/, ''));
       if (payload && typeof payload.cwd === 'string' && payload.cwd) cwd = payload.cwd;
     } catch {
       // stdin 無法解析時改用目前目錄。

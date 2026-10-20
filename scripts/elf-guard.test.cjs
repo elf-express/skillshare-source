@@ -173,6 +173,18 @@ const cases = [
     const file = path.join(os.homedir(), '.claude', 'superpowers', 'approvals', 'E-377.yaml').replace(/\//g, '\\');
     assert.strictEqual(run({ tool_name: 'Edit', tool_input: { file_path: file } }, approvalsDir).decision, 'deny');
   }],
+  ['1.19 Write 路徑含 ./approvals（未正規化）-> deny', () => {
+    const { approvalsDir } = mkRepo();
+    const file = path.join(os.homedir(), '.claude', 'superpowers').replace(/\\/g, '/') + '/./approvals/E-377.yaml';
+    const d = run({ tool_name: 'Write', tool_input: { file_path: file } }, approvalsDir);
+    assert.strictEqual(d.decision, 'deny');
+    assert.ok(d.reason && d.reason.length > 0);
+  }],
+  ['1.20 Write 路徑含 superpowers//approvals（重複斜線）-> deny', () => {
+    const { approvalsDir } = mkRepo();
+    const file = path.join(os.homedir(), '.claude', 'superpowers').replace(/\\/g, '/') + '//approvals/E-377.yaml';
+    assert.strictEqual(run({ tool_name: 'Write', tool_input: { file_path: file } }, approvalsDir).decision, 'deny');
+  }],
   ['2.1 e-377 分支、未核准 -> 狀態摘要含 ticket、phase、未核准、狀態檔路徑', () => {
     const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
     const text = sessionStart.summarize(repo, { approvalsDir });
@@ -183,6 +195,8 @@ const cases = [
     assert.ok(text.includes('未核准'), text);
     assert.ok(text.includes('state/E-367.yaml'), text);
     assert.ok(text.includes('docs/superpowers/state/E-367.yaml'), text);
+    assert.ok(text.includes('讀 docs/superpowers/state/E-367.yaml 與 Linear 票。'), text);
+    assert.ok(!text.includes(repo) && !text.includes(repo.replace(/\\/g, '/')), text);
   }],
   ['2.2 核准檔齊全 -> 狀態摘要含已核准', () => {
     const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
@@ -224,6 +238,23 @@ const cases = [
     assert.strictEqual(r2.stdout, '');
     const r3 = childProcess.spawnSync(process.execPath, [script], { input: 'not json', encoding: 'utf8' });
     assert.strictEqual(r3.status, 0);
+  }],
+  ['3.1 CLI：deny 輸出 hookSpecificOutput JSON；allow 與亂碼 stdin 無輸出，皆 exit 0', () => {
+    const script = path.join(__dirname, 'elf-guard.cjs');
+    const spawn = (input) => childProcess.spawnSync(process.execPath, [script], { input, encoding: 'utf8' });
+    const denied = spawn(JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'cat ~/.claude/superpowers/approvals/E-377.yaml' } }));
+    assert.strictEqual(denied.status, 0);
+    const out = JSON.parse(denied.stdout);
+    assert.strictEqual(out.hookSpecificOutput.hookEventName, 'PreToolUse');
+    assert.strictEqual(out.hookSpecificOutput.permissionDecision, 'deny');
+    assert.strictEqual(typeof out.hookSpecificOutput.permissionDecisionReason, 'string');
+    assert.ok(out.hookSpecificOutput.permissionDecisionReason.length > 0);
+    const allowed = spawn(JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'ls' } }));
+    assert.strictEqual(allowed.status, 0);
+    assert.strictEqual(allowed.stdout, '');
+    const garbage = spawn('not json');
+    assert.strictEqual(garbage.status, 0);
+    assert.strictEqual(garbage.stdout, '');
   }],
   ['介面 五個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval']) {

@@ -1,6 +1,6 @@
 'use strict';
 // Superpowers 階段 Guard：Claude Code PreToolUse hook。
-// 計畫未核准前，禁止修改 docs/superpowers/ 以外的檔案，並禁止 Bash 碰核准目錄。
+// 計畫未核准前，檔案寫入工具禁止修改 docs/superpowers/ 以外的檔案；Bash／PowerShell 指令與檔案工具都禁止碰核准目錄。
 // 只用同步 fs，不啟動子行程；hook 永遠 exit 0，以 stdout JSON 表達 deny。
 
 const fs = require('node:fs');
@@ -23,7 +23,7 @@ function isAbsolutePosix(p) {
 
 // 讀 UTF-8 文字並去掉 BOM。
 function readText(file) {
-  return fs.readFileSync(file, 'utf8').replace(/^﻿/, '');
+  return fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
 }
 
 // 取單層 YAML 欄位的值（行級解析，容忍 CRLF）；欄位不存在或空白回空字串。
@@ -135,13 +135,13 @@ function decideUnsafe(payload, opts) {
   const rawTarget = input.file_path || input.notebook_path;
   if (!rawTarget) return ALLOW;
   let target = toPosix(rawTarget);
-  if (/superpowers\/approvals/i.test(target)) {
-    return deny('Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
-  }
   if (!isAbsolutePosix(target)) {
     target = path.posix.join(toPosix(payload.cwd || process.cwd()), target);
   }
   target = path.posix.normalize(target);
+  if (/superpowers\/approvals/i.test(target)) {
+    return deny('Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
+  }
   // 找出 repo 根。
   const gitRoot = findGitRoot(target);
   if (!gitRoot) return ALLOW;
@@ -179,7 +179,7 @@ function decide(payload, opts = {}) {
 
 function main() {
   try {
-    const payload = JSON.parse(fs.readFileSync(0, 'utf8').replace(/^﻿/, ''));
+    const payload = JSON.parse(fs.readFileSync(0, 'utf8').replace(/^\uFEFF/, ''));
     const result = decide(payload);
     if (result.decision === 'deny') {
       process.stdout.write(
