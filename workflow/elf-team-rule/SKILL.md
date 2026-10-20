@@ -8,7 +8,7 @@ description: |
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.3.0
+  version: 1.3.1
   owner: Elf Express
 ---
 
@@ -59,11 +59,11 @@ metadata:
 10. 開發分支命名 MUST 為 `<類型>/e-<編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`、`hotfix/e-250-login-crash`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`。短名用英文小寫加連字號。
     編號：有 `[Spec]`＋`[Plan]` 時用 **Plan 編號**；沒有 Spec／Plan 的單一工作單（例如緊急修正）用**該單編號**。本規則是團隊唯一的分支命名，Linear「開發流程規範」引用本規則，不另外定義。
     **工作單狀態**：
-    - 已導入 dev／release 的 repo（有 `BRANCHING.md`，第 1–3 種）：
+    - 有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo：
       - 開 PR → Plan「進行中」（自動）；PR 合進 `dev` → 「驗證中」（自動，Eddie 依目標分支設定）；Spec 維持「進行中」。
       - 「已完成」由 AI 在步驟 7（`workflow__elf-linear-superpowers`）**手動設定**，三個條件都要滿足：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。Plan 完成後 Spec 由父子自動化關閉。
     - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部手動，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
-    - 還沒導入 dev／release 的 repo（沒有 `BRANCHING.md`、只有主線）：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
+    - 沒有 `release` 分支（還沒導入 dev／release）的 repo：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
     - 過渡期：Eddie 在 E-310 留言確認自動化已設定之前，`dev` 合併後若被自動關單，AI 手動把 Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」。
 
     為什麼：Linear 的 PR 自動化（開 PR → 進行中、合進 `dev` → 驗證中）靠分支名稱裡的 `e-<編號>` 對應工作單；`release` 是快轉推送、沒有 PR，Linear 的 PR 自動化不會觸發，所以「已完成」要手動設定。分支名稱 MUST NOT 含中文或全形符號，Linear 自動產生的 `gitBranchName` 常帶中文標題，不要直接用。
@@ -128,7 +128,7 @@ metadata:
     - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送。
     - 推送後 CI MUST 在該提交上執行：依 `elf-cicd-*`，CI 在 push `hotfix/**` 時就會觸發；repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
       為什麼：`release` 只能快轉到 CI 通過的提交（規則 28）；舊版 `elf-cicd-*` 的 CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run，draft PR 是給還沒更新 CI 的 repo 用的。
-    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後才 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
+    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後，才由規則 39 決定的執行者 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
     - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`，讓 CI 在新提交上執行，再依規則 28 重新判斷後發佈。
     為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
 26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git fetch origin && git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新，並確認 `git log --oneline origin/dev..dev` 是空的（快轉失敗或有輸出，代表本機 `dev` 有沒推的提交，依規則 13 停下；使用者要保留那些提交時，改用 `git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`），再 `git merge --no-edit origin/release`，沒有衝突時由維護者直接 `git push origin dev`（規則 9 的例外）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`（依規則 18 用 merge commit）。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。最後依規則 19 刪除 hotfix 分支。
@@ -195,13 +195,19 @@ metadata:
 
 **發版**
 
-39. 本規則只適用於有 `release` 分支的 repo（已導入 dev／release，第 1–3 種）；還沒導入的 repo（沒有 `release` 分支）維持規則 10 的「merge → 已完成」，合進主線就等於發版。
-    發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由 Eddie 指定一個 session 負責，或由 Eddie 自己做；依規則 24 列出提交給使用者看時，一併確認由誰負責。快轉與實際派發由誰執行，依 repo 的規定：
+39. 本規則只適用於有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo；沒有 `release` 分支（還沒導入 dev／release）的 repo 維持規則 10 的「merge → 已完成」，合進主線就等於發版。
+    發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由 Eddie 指定一個 session 負責，或由 Eddie 自己做；依規則 24 列出提交給使用者看時，一併確認由誰負責。
+    快轉與實際派發由誰執行，依 repo 的規定：
     - repo 允許 AI 推 `release`：由被指定的 session 執行。
     - repo 規定 AI 不推 `release`／`main`（例：skillshare-source 的 `AGENTS.md`「AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.」）：快轉與實際派發由 Eddie 執行；被指定的 session 只負責快轉前列出提交（規則 24）、查 check runs（規則 28）、發版後驗證，以及通知其他相關的單。
+    - repo 沒寫明 AI 能不能推 `release`／`main`：視同不能推，比照上一項由 Eddie 執行。
+
+    限制與例外：
     - 沒被指定的 session MUST NOT 為發版快轉 `release`（第 3 種含接著快轉 `main`），也 MUST NOT 跑派發。
     - 第 1、2 種同步上游時快轉 `main`（`references/01-contribution-fork.md` B1、`references/02-private-fork.md` B1）不是發版，不受本規則限制。
-    - 測試例外（不算派發，任何 session 都可以執行）：`skillshare sync --dry-run`，以及用拋棄式 `XDG_CONFIG_HOME`（`targets` 為空，或只指向暫存目錄）執行的 skillshare 指令或 `scripts/validate.sh`。這些都不會改動實際的目標。
+    - 測試例外（不算派發，任何 session 都可以執行）：`skillshare sync --dry-run`，以及用拋棄式 `XDG_CONFIG_HOME`（`targets` 為空或只指向暫存目錄，且 `sources.skills` 指向自己的 worktree，不指向共用的 `release` clone）執行的 skillshare 指令或 `scripts/validate.sh`。這些都不會改動實際的目標與共用的來源。
+
+    相關的單：
     - 其他相關的單合進 `dev` 後停在「驗證中」，等發版的 session 或 Eddie 通知，才做各自的發版後驗證、結單（規則 10）與清理（規則 19、36）。
     - 單的範圍寫「不發版」時，MUST 同時寫明由哪張單或誰負責發版。
 
