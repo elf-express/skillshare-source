@@ -286,10 +286,10 @@ bindings:
         - matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell"
           hooks:
             - type: command
-              command: node {files}/elf-guard.cjs
+              command: 'node "$HOME/.claude/hooks/skillshare/elf-guard/elf-guard.cjs"'
               timeout: 10
       SessionStart:
         - hooks:
             - type: command
-              command: node {files}/elf-sessionstart.cjs
+              command: 'node "$HOME/.claude/hooks/skillshare/elf-guard/elf-sessionstart.cjs"'
               timeout: 10

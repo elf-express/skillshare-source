@@ -12,6 +12,8 @@ const OUT_FILE = path.join(SCRIPTS_DIR, 'elf-guard.hooks.yaml');
 const SOURCES = ['elf-guard.cjs', 'elf-sessionstart.cjs'];
 const FILE_KEY_INDENT = ' '.repeat(6);
 const CONTENT_INDENT = ' '.repeat(8);
+// hook command 使用的腳本安裝目錄（由 shell 展開 $HOME）
+const HOOK_DIR = '$HOME/.claude/hooks/skillshare/elf-guard';
 
 // 讀取來源並檢查 block scalar 能原樣還原的前提：無 CR、無 BOM、正好一個結尾換行、首行有內容且不以空白開頭
 function readSource(name) {
@@ -47,12 +49,12 @@ function generate(sources) {
     '        - matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell"\n' +
     '          hooks:\n' +
     '            - type: command\n' +
-    '              command: node {files}/elf-guard.cjs\n' +
+    `              command: 'node "${HOOK_DIR}/elf-guard.cjs"'\n` +
     '              timeout: 10\n' +
     '      SessionStart:\n' +
     '        - hooks:\n' +
     '            - type: command\n' +
-    '              command: node {files}/elf-sessionstart.cjs\n' +
+    `              command: 'node "${HOOK_DIR}/elf-sessionstart.cjs"'\n` +
     '              timeout: 10\n'
   );
 }
