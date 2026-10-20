@@ -1,0 +1,21 @@
+AGENTS.md
+  s_cb4b189e6d80c4::t_cc9bea831180fb 259-261
+.vscode/settings.json
+  s_cb4b189e6d80c4::t_c72514e8b2ad70 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f2b63a391506056f15e9e9b78dbf62f04e594c03",
+  "prompts": {},
+  "sessions": {
+    "s_cb4b189e6d80c4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "395cf801-b521-4425-8bd0-a91bd9ea127e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
