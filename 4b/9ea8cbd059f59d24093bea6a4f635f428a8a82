@@ -1,0 +1,21 @@
+scripts/release-ff.ps1
+  s_e39d45c0375497::t_e829bc72492668 122-128
+scripts/git-guard/README.md
+  s_e39d45c0375497::t_c018de625856ed 58-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4b9ea8cbd059f59d24093bea6a4f635f428a8a82",
+  "prompts": {},
+  "sessions": {
+    "s_e39d45c0375497": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "106482d1-2c0d-4587-b805-c60f86e1b0f4",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
