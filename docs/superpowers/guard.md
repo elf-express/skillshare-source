@@ -24,6 +24,8 @@ Guard 是 Claude Code 的 PreToolUse hook：分支 `e-<N>` 的計畫未核准前
 
 規則 2 表示 Bash／PowerShell 在通過規則 1 後一律放行，實作檔寫入限制只對檔案寫入工具生效。規則 1 與 3 不看核准狀態，核准前後都擋。無害的 grep、commit 訊息只要含該字串也會被擋。核准檔因此只能由人在 Claude Code 之外建立。
 
+Task 子 agent 寫檔同樣會觸發 PreToolUse，適用上表所有規則。已實測：子 agent 用 Write 寫 `scripts/` 被 Guard 擋下。
+
 擋下時的訊息：
 
 - 規則 1：`Superpowers 階段 Guard：禁止用 Bash 或 PowerShell 存取 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。`
@@ -79,14 +81,7 @@ node -e "const f=require('os').homedir()+'/.claude/superpowers/approvals/E-<N>.y
 "Edit(~/.claude/superpowers/approvals/**)"
 ```
 
-`Edit(...)` 規則會涵蓋所有內建的寫檔工具（Write、MultiEdit、NotebookEdit）。`~/` 代表家目錄，`//` 開頭才是檔案系統絕對路徑。備選寫法（原草稿，是否生效待實測）：
-
-```json
-"Write(//~/.claude/superpowers/approvals/**)",
-"Edit(//~/.claude/superpowers/approvals/**)"
-```
-
-確切語法待本機實測後定稿（E-367 待確認項）。
+`Edit(...)` 規則會涵蓋所有內建的寫檔工具（Write、MultiEdit、NotebookEdit）。`~/` 代表家目錄。已實測：agent 用 Write 寫核准檔時被擋下，錯誤訊息為「File is in a directory that is denied by your permission settings」。
 
 依團隊規則 34，這項設定由 Eddie 執行或同意；修改前與修改後的內容都要貼到 Linear 單上。
 
@@ -100,20 +95,23 @@ node -e "const f=require('os').homedir()+'/.claude/superpowers/approvals/E-<N>.y
 skillshare hooks add elf-guard --file scripts/elf-guard.hooks.yaml --dry-run --json -g
 ```
 
-若預覽顯示 `blocked: true`，`blocked` 的成因待確認（尚未實測）。可用的處理指令：
+若預覽顯示 `blocked: true`，已實測：skillshare 匯入過的 hook 被其他工具（例如 Orca）在外部改過時，會出現 conflict。可用的處理指令：
 
 ```bash
 skillshare hooks import --from claude --json -g       # 不帶名稱：列出 ~/.claude 既有 hook 候選
 skillshare hooks sync elf-guard --replace -g          # 明確取代 elf-guard 衝突的原生輸出
+skillshare hooks remove <name> --keep-files -g        # 停止由 skillshare 管理該筆 entry，native 設定的內容不會被改動
 ```
 
-這兩個指令執行前，依團隊規則 34 由 Eddie 決定。
+這三個指令執行前，依團隊規則 34 由 Eddie 決定。
 
 安裝：
 
 ```bash
 skillshare hooks add elf-guard --file scripts/elf-guard.hooks.yaml --sync -g
 ```
+
+安裝後 hook command 形式為 `node "$HOME/.claude/hooks/skillshare/elf-guard/elf-guard.cjs"`（SessionStart 同理）；skillshare 不會替 claude binding 展開 `{files}`。腳本固定裝在 `~/.claude/hooks/skillshare/elf-guard/`，若帳號另外設定了 config_dir，路徑會不同（待確認）。
 
 回滾（擇一）：
 
@@ -135,7 +133,3 @@ skillshare hooks edit elf-guard --file scripts/elf-guard.hooks.yaml --sync -g # 
 ```bash
 node scripts/elf-guard.test.cjs
 ```
-
-## 待確認
-
-- Task 子 agent 寫檔是否會觸發 PreToolUse：未實測。
