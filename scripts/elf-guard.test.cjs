@@ -47,6 +47,9 @@ function mkRepo({ branch = 'e-377', worktree = false, stateFile = 'E-367.yaml', 
 
 const STATE_E377 = 'ticket: E-367\nphase: plan\nplan: E-377\n';
 const APPROVAL_FULL = 'ticket: E-377\napproved_at: 2026-10-21T10:00:00+08:00\nauditor: Eddie\nlinear_comment_id: 1a2b3c\n';
+// 團隊流程（elf-linear-superpowers 步驟 2）：狀態檔用 Spec 編號，分支用 Plan 編號。
+const STATE_E372 = 'ticket: E-369\nphase: plan\nplan: E-372\n';
+const APPROVAL_E372 = 'ticket: E-372\napproved_at: 2026-10-22\nauditor: Fable 5.1\nlinear_comment_id: 4d5e6f\n';
 
 function write(repo, ...segments) {
   return { tool_name: 'Write', tool_input: { file_path: path.join(repo, ...segments) } };
@@ -185,6 +188,35 @@ const cases = [
     const file = path.join(os.homedir(), '.claude', 'superpowers').replace(/\\/g, '/') + '//approvals/E-377.yaml';
     assert.strictEqual(run({ tool_name: 'Write', tool_input: { file_path: file } }, approvalsDir).decision, 'deny');
   }],
+  ['1.21 團隊分支 feat/e-372-superpowers-v7 未核准寫實作檔 -> deny；寫 docs/superpowers -> allow；核准檔齊全 -> allow', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-372-superpowers-v7', stateFile: 'E-369.yaml', state: STATE_E372 });
+    const d = run(write(repo, 'scripts', 'x.cjs'), approvalsDir);
+    assert.strictEqual(d.decision, 'deny');
+    assert.match(d.reason, /E-372/);
+    assert.strictEqual(run(write(repo, 'docs', 'superpowers', 'plans', 'p.md'), approvalsDir).decision, 'allow');
+    writeFile(path.join(approvalsDir, 'E-372.yaml'), APPROVAL_E372);
+    assert.strictEqual(run(write(repo, 'scripts', 'x.cjs'), approvalsDir).decision, 'allow');
+  }],
+  ['1.22 單一開發工作單分支 fix/e-361-powershell-home-guard、沒有對應的狀態檔 -> allow', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'fix/e-361-powershell-home-guard', state: STATE_E377 });
+    assert.strictEqual(guard.findState(guard.findGitRoot(repo), 361), 'missing');
+    assert.strictEqual(run(write(repo, 'scripts', 'x.cjs'), approvalsDir).decision, 'allow');
+  }],
+  ['1.23 branchTicket 認 e-<N> 與 <類型>/e-<N>-<短名>，其餘回 null', () => {
+    const hits = [
+      ['e-377', '377'],
+      ['feat/e-32-fx-rate-sync', '32'],
+      ['fix/e-361-powershell-home-guard', '361'],
+      ['docs/e-12-guard-doc', '12'],
+      ['chore/e-7-ci', '7'],
+      ['test/e-8-guard-cases', '8'],
+      ['hotfix/e-5-a', '5'],
+    ];
+    for (const [branch, n] of hits) assert.strictEqual(guard.branchTicket(branch), n, branch);
+    const misses = [null, undefined, '', 'main', 'release', 'dev', 'feature/e-1-x', 'e-1-x', 'feat/e-1', 'feat/e-1-', 'feat/e-1--x',
+      'feat/e-1-X', 'Feat/e-1-x', 'feat/E-1-x', 'feat/e-x-y', 'refs/heads/feat/e-1-x', 'pr/e-1-x', 'feat/e-1-x/y'];
+    for (const branch of misses) assert.strictEqual(guard.branchTicket(branch), null, String(branch));
+  }],
   ['2.1 e-377 分支、未核准 -> 狀態摘要含 ticket、phase、未核准、狀態檔路徑', () => {
     const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
     const text = sessionStart.summarize(repo, { approvalsDir });
@@ -239,6 +271,15 @@ const cases = [
     const r3 = childProcess.spawnSync(process.execPath, [script], { input: 'not json', encoding: 'utf8' });
     assert.strictEqual(r3.status, 0);
   }],
+  ['2.8 團隊分支 feat/e-372-superpowers-v7 有狀態檔 -> 摘要含 ticket=E-369、plan=E-372', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-372-superpowers-v7', stateFile: 'E-369.yaml', state: STATE_E372 });
+    const text = sessionStart.summarize(repo, { approvalsDir });
+    assert.strictEqual(typeof text, 'string');
+    assert.ok(text.includes('ticket=E-369'), text);
+    assert.ok(text.includes('plan=E-372'), text);
+    assert.ok(text.includes('未核准'), text);
+    assert.ok(text.includes('docs/superpowers/state/E-369.yaml'), text);
+  }],
   ['3.1 CLI：deny 輸出 hookSpecificOutput JSON；allow 與亂碼 stdin 無輸出，皆 exit 0', () => {
     const script = path.join(__dirname, 'elf-guard.cjs');
     const spawn = (input) => childProcess.spawnSync(process.execPath, [script], { input, encoding: 'utf8' });
@@ -256,8 +297,8 @@ const cases = [
     assert.strictEqual(garbage.status, 0);
     assert.strictEqual(garbage.stdout, '');
   }],
-  ['介面 五個 export 皆為函式', () => {
-    for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval']) {
+  ['介面 六個 export 皆為函式', () => {
+    for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval', 'branchTicket']) {
       assert.strictEqual(typeof guard[name], 'function', name);
     }
   }],
