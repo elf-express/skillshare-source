@@ -217,6 +217,12 @@ const cases = [
       'feat/e-1-X', 'Feat/e-1-x', 'feat/E-1-x', 'feat/e-x-y', 'refs/heads/feat/e-1-x', 'pr/e-1-x', 'feat/e-1-x/y'];
     for (const branch of misses) assert.strictEqual(guard.branchTicket(branch), null, String(branch));
   }],
+  ['1.24 worktree（.git 是指標檔）加團隊分支 feat/e-372-superpowers-v7：未核准寫實作檔 -> deny；核准檔齊全 -> allow', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-372-superpowers-v7', worktree: true, stateFile: 'E-369.yaml', state: STATE_E372 });
+    assert.strictEqual(run(write(repo, 'scripts', 'x.cjs'), approvalsDir).decision, 'deny');
+    writeFile(path.join(approvalsDir, 'E-372.yaml'), APPROVAL_E372);
+    assert.strictEqual(run(write(repo, 'scripts', 'x.cjs'), approvalsDir).decision, 'allow');
+  }],
   ['2.1 e-377 分支、未核准 -> 狀態摘要含 ticket、phase、未核准、狀態檔路徑', () => {
     const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
     const text = sessionStart.summarize(repo, { approvalsDir });
