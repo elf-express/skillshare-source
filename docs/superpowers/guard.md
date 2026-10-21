@@ -53,7 +53,9 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 
 `plan:` 沒填時，Plan 分支（`e-<Plan 編號>` 或 `<類型>/e-<Plan 編號>-…`）找不到狀態檔，Guard 不會擋。Spec 分支上 `plan:` 空白時視為未核准，會擋。
 
-團隊流程（elf-linear-superpowers 2.0.0 起的步驟 2）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號；單一開發工作單與 hotfix 不建狀態檔，所以它們的分支 Guard 一律放行。
+依 E-369 的設計，團隊流程（elf-linear-superpowers 步驟 2，由 E-372 實作）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
+
+狀態檔合進 `dev` 後留著當紀錄，不刪。之後的分支只要沿用同一個 Spec 或 Plan 編號，Guard 一樣會管。核准檔只存在建立它的那台電腦，換一台電腦時，這類分支在 `docs/superpowers/` 以外的寫入會被擋。
 
 ## 核准流程
 
