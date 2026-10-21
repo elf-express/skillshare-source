@@ -65,6 +65,16 @@ function readBranch(gitRoot) {
   }
 }
 
+// 從分支名稱取出單號：Orca 的 e-<N>，或團隊規範的 <類型>/e-<N>-<英文短名>
+// （elf-team-rule 規則 10：類型 feat、fix、docs、chore、test、hotfix；短名小寫英數字，以 - 連接）。其餘回 null。
+const BRANCH_RE = /^(?:e-(\d+)|(?:feat|fix|docs|chore|test|hotfix)\/e-(\d+)-[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+
+function branchTicket(branch) {
+  if (typeof branch !== 'string') return null;
+  const m = BRANCH_RE.exec(branch);
+  return m ? m[1] || m[2] : null;
+}
+
 // 解析單一狀態檔；ticket 與 plan 都解析不出值回 null。
 function parseState(file) {
   try {
@@ -146,13 +156,12 @@ function decideUnsafe(payload, opts) {
   const gitRoot = findGitRoot(target);
   if (!gitRoot) return ALLOW;
 
-  // 3. 只管 e-<數字> 分支。
-  const branch = readBranch(gitRoot);
-  const m = branch && /^e-(\d+)$/.exec(branch);
-  if (!m) return ALLOW;
+  // 3. 只管 e-<數字> 與 <類型>/e-<數字>-<短名> 分支。
+  const n = branchTicket(readBranch(gitRoot));
+  if (!n) return ALLOW;
 
   // 4. 沒有對應狀態檔或狀態檔無法解析：放行。
-  const state = findState(gitRoot, m[1]);
+  const state = findState(gitRoot, n);
   if (state === 'missing' || state === 'invalid') return ALLOW;
 
   // 5. 計畫已核准：放行。
@@ -198,7 +207,7 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { decide, findGitRoot, readBranch, findState, readApproval };
+module.exports = { decide, findGitRoot, readBranch, findState, readApproval, branchTicket };
 
 if (require.main === module) {
   main();

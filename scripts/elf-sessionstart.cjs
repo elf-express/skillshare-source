@@ -1,13 +1,13 @@
 'use strict';
 // Superpowers 階段 Guard：Claude Code SessionStart hook。
-// e-<數字> 分支且有狀態檔時，把 ticket、phase、plan 與核准狀態印到 stdout 供新 session 續跑。
+// e-<數字> 或 <類型>/e-<數字>-<短名> 分支且有狀態檔時，把 ticket、phase、plan 與核准狀態印到 stdout 供新 session 續跑。
 // 只用同步 fs，不啟動子行程；hook 永遠 exit 0。
 
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { findGitRoot, readBranch, findState, readApproval } = require('./elf-guard.cjs');
+const { findGitRoot, readBranch, findState, readApproval, branchTicket } = require('./elf-guard.cjs');
 
 // 路徑統一成正斜線。
 function toPosix(p) {
@@ -26,11 +26,10 @@ function summarizeUnsafe(cwd, opts) {
   const gitRoot = findGitRoot(path.resolve(String(cwd)));
   if (!gitRoot) return null;
 
-  const branch = readBranch(gitRoot);
-  const m = branch && /^e-(\d+)$/.exec(branch);
-  if (!m) return null;
+  const n = branchTicket(readBranch(gitRoot));
+  if (!n) return null;
 
-  const state = findState(gitRoot, m[1]);
+  const state = findState(gitRoot, n);
   if (state === 'missing' || state === 'invalid') return null;
 
   const approval = readApproval(approvalsDir, state.plan) ? '已核准' : '未核准';
