@@ -1,0 +1,19 @@
+workflow/elf-linear-superpowers/SKILL.md
+  s_8637c3f5f81e98::t_a0d27c5d461383 5,20,22,24-26,30-51,57,59,63-64,84-86,88-90,92-95,110-113,119,131-141,148,151,156-159,161-165,167-173,177,184-201,203-206,208-216,220-228,232,237,243,247-251,257,261,263,269-277,280-286,314,328-329,341,343-352
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "99596be1173ffb8d3d8d48e5b42fbd4cc8380b87",
+  "prompts": {},
+  "sessions": {
+    "s_8637c3f5f81e98": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a16215-cb2b-76e1-a519-9a2f624f818b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
