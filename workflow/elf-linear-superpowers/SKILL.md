@@ -56,7 +56,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 要 commit 到 repo，且需要設計 | 本 skill 的 Spec／Plan 流程 |
 | 要 commit 到 repo，但不需要設計（明確錯誤修正、緊急修正、小型改善） | 單一開發工作單（仍要兩道保險） |
 | 不 commit 到 repo（備份、AG 複寫、網路、主機、憑證、帳號、稽核佐證） | **維運單**（見文末「維運單」） |
-| 不確定要不要設計 | 先開 Spec，用 brainstorming 談。brainstorming 判斷為快速小事或小變更時：**先**把 Spec 改為已取消、**再**改 Plan（子單先關可能觸發父單自動改為已完成），各留言「規模判斷：小變更，改開 E-xxx」，另開單一開發工作單，把對話中講定的做法寫進「修正方式」 |
+| 不確定要不要設計 | 先開 Spec，用 brainstorming 談。brainstorming 判斷為快速小事或小變更時：**先**把 Spec 改為已取消、**再**改 Plan（子單先關可能觸發父單自動改為已取消），各留言「規模判斷：小變更，改開 E-xxx」，另開單一開發工作單，把對話中講定的做法寫進「修正方式」 |
 
 同一件事兩者都有時拆兩張：先開維運單把事情做掉，工具化另開 Spec／Plan。
 
@@ -72,7 +72,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 工作類型 label（單選） | `新功能`、`改善`、`錯誤`、`維運`；加在 Spec 或單一工作單，Plan 不加；`稽核` 可另加 |
 | 已退役 label | `業務需求`、`自主規劃`，不再使用 |
 | 狀態 | 待規劃 → 待辦 → 進行中 → 驗證中 → 已完成；另有 已取消、Duplicate、Triage |
-| 父子自動化 | 子 issue 全部完成 → 父 issue 自動關閉；父 issue 關閉**不會**關子 issue |
+| 父子自動化 | 子 issue 全部完成 → 父 issue 自動關閉；子 issue 全部取消 → 父 issue 自動改為已取消；父 issue 關閉**不會**關子 issue |
 | Estimate | Spec 與 Plan **必填**；維運單選填 |
 | GitHub PR 自動化 | 開 PR → 進行中；PR 審查活動 → 驗證中；PR 合進 `dev` → 驗證中（自動，Eddie 依目標分支設定；設定完成前依 elf-team-rule 規則 10 的過渡期處理）。已導入 dev／release 的 repo，「已完成」在發版完成後於步驟 7 手動設定；還沒導入的 repo 維持 PR merge → 已完成 |
 
@@ -345,8 +345,6 @@ Plan 改為已完成（發版完成；未導入 dev／release 的 repo 是 PR �
 
 以下寫法依上游文件或推論，還沒在 Eddie 的機器實測。實測前照下列做法；結果不同時以實測為準，更新本節並刪掉該項。
 
-- **模型級別對應的模型名稱**：「最便宜／中階／最強」在 Eddie 的環境（經 omniroute）各對應哪個模型名稱，以 Agent 工具 `model` 參數實際接受的值為準。確認前派發時寫 Agent 工具列出的名稱，留言寫實際用的名稱。
-- **派發參數覆蓋 `model: inherit`**：依 Claude Code 文件，Agent 工具的 `model` 參數優先於 agent 檔的 `model`。確認前，派出後看隊友回報的模型名稱，不符就停下來回報使用者。
-- **`EnterWorktree` 的 `path` 參數**：Eddie 的 Claude Code 版本是否已有。依 Claude Code 文件，從啟動目錄第一次切換時才能切到 repo 外的 worktree；session 已經在別的 worktree 裡時，只能切到 `.claude/worktrees/` 底下，這時改開新 session。沒有 `path` 參數時改用 `cd`，但 session 的專案設定（CLAUDE.md、記憶）不會跟著切換。
-- **上游腳本在 Windows 的路徑**：從 skillshare 來源樹執行 `task-start`／`task-done`（Git Bash）能否找到 subagent-driven-development 的腳本。找不到時停下來回報，不手動改腳本。
-- **Linear 取消子單與父單自動關閉**：子 issue 全部改為已取消時，父 issue 會不會被自動關閉。確認前一律先取消 Spec、再取消 Plan（「先分流」最後一列）。
+- **模型級別對應的模型名稱**：「最便宜／中階／最強」在 Eddie 的環境（經 omniroute）各對應哪個模型名稱，以 Agent 工具 `model` 參數實際接受的值為準。確認前派發時寫 Agent 工具列出的名稱，留言寫實際用的名稱。 實測（2026-10-22）：沒能實測 Claude Code／omniroute 的對應；Codex 派發接受 gpt-6-luna、gpt-6.1-sol、gpt-6-astra，但三個子代理都只回報「無法確認」，不能把參數當成已驗證的執行模型名稱。
+- **派發參數覆蓋 `model: inherit`**：依 Claude Code 文件，Agent 工具的 `model` 參數優先於 agent 檔的 `model`。確認前，派出後看隊友回報的模型名稱，不符就停下來回報使用者。 實測（2026-10-22）：沒能實測；本次 Codex 派發工具沒有選擇 elf-reviewer 角色的參數，一般子代理不能代替 Claude Code 原生 Agent 的角色覆寫測試。
+- **`EnterWorktree` 的 `path` 參數**：Eddie 的 Claude Code 版本是否已有。依 Claude Code 文件，從啟動目錄第一次切換時才能切到 repo 外的 worktree；session 已經在別的 worktree 裡時，只能切到 `.claude/worktrees/` 底下，這時改開新 session。沒有 `path` 參數時改用 `cd`，但 session 的專案設定（CLAUDE.md、記憶）不會跟著切換。 實測（2026-10-22）：沒能實測；本次 session 從 Orca 的 .ocrca worktree 啟動，且 Codex 沒有 EnterWorktree 工具。逐指令指定 cwd 可進入 repo 外 worktree，但不等同 Claude Code 的 path 切換。
