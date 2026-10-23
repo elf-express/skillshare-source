@@ -56,6 +56,13 @@ update and make `skillshare status` report drift.
 | `frontend/vue/shadcn-vue/` | `noartem/skills`, subdir `skills/shadcn-vue` | `skillshare update frontend/vue/shadcn-vue` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
 
+`_superpowers` tracks `main` and upgrades with upstream on purpose: superpowers is tuned to current
+models, and skills and models move together, so we do not pin a tag (E-369, decided 2026-10-21;
+`skillshare install --branch <tag>` exists but is not used). Whenever `_superpowers` is updated,
+read upstream `RELEASE-NOTES.md`; if a behavior changed, open a Linear ticket to bring
+`workflow/elf-linear-superpowers` and the Linear templates in line.
+OpenSpec, once adopted, follows the same rule (E-373).
+
 `frontend/vue/shadcn-vue/` was a hand copy of `noartem/skills@249519a` from 2026-05 until E-253 reinstalled
 it as a tracked subdir. Other third-party folders may still be hand copies — check `.metadata.json`
 before assuming a folder updates itself.

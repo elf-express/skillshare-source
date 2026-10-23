@@ -8,7 +8,7 @@ description: |
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.3.1
+  version: 1.4.0
   owner: Elf Express
 ---
 
@@ -81,6 +81,7 @@ metadata:
     - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外
     - `git push` 被拒（non-fast-forward）：MUST NOT 改用 `pull --rebase`、`reset` 或 force push 讓它過
     - 在本規範沒有指示的 detached HEAD 上準備提交（規則 26 的替代做法本身會 `git switch --detach origin/dev`，所以只擋本規範沒有指示的情況，不把 detached HEAD 整個列為停止條件）
+    本條的停止條件優先於 `workflow__elf-linear-superpowers` 的裁決制：裁決制只處理計畫與實際不符，上列情況一律照本條停下。
 14. 回報 MUST 包含：目前分支、執行的指令、錯誤訊息原文、判斷的原因、可選的處理方式。
 15. 對外的動作（對原作者開 PR、留言、推送到別人的 repo）MUST 先取得使用者明確同意。
 
@@ -98,7 +99,7 @@ metadata:
     提問範本：「目前此 Plan 下已有 X 個 Tasks，為避免開發進度延宕與上下文切換，建議將其拆分為 [Plan A] 與 [Plan B]。請問是否同意拆分？」
     拆成**兩組以上** `[Spec]`＋`[Plan]` 時，MUST：(1) 在該專案建立里程碑，名稱用這件事的主題；(2) 把每一組 Spec 與 Plan 都放進這個里程碑；(3) 有先後順序的，用 blocked by 標出依賴。只有一組時不建里程碑。
     為什麼：拆開後的工作單散在專案裡，沒有里程碑就看不出哪幾張是同一件事。
-    工作單結構 MUST 最多兩層：`[Spec]` → `[Plan]`，一張 Spec 只有一張 Plan；**Plan 底下不開子工作單**，Task 一律是 Plan 描述裡的打勾清單。不需要設計的小單（單純維運、明確的錯誤修正、緊急修正）維持單一工作單，不套 Spec＋Plan。
+    工作單結構 MUST 最多兩層：`[Spec]` → `[Plan]`，一張 Spec 只有一張 Plan；**Plan 底下不開子工作單**，Task 一律是 Plan 描述裡的打勾清單。不需要設計的小單（單純維運、明確的錯誤修正、緊急修正、小型改善）維持單一工作單，不套 Spec＋Plan；已開 Spec＋Plan 後經 brainstorming 判斷為小變更的，**先**把 Spec 改為已取消、**再**改 Plan（子單先取消可能讓父單被自動關閉），各留言「規模判斷：小變更，改開 E-xxx」，另開單一開發工作單（開發流程規範步驟 1）。
     Label：階段 `Spec`／`Plan` 單選；「工作類型」群組單選一個（`新功能`／`改善`／`錯誤`／`維運`），加在 Spec（單一工作單就加在該單），Plan 不另加；`稽核` 可另外加。
     為什麼：AI 依 label 與層級判斷流程走到哪一步；Task 拆成子工作單後要讀十幾張單才知道進度，最容易接不上。
 
@@ -172,14 +173,15 @@ metadata:
 35. 刪除或移動共用路徑前，MUST 在相關的單上確認沒有人在用。
     為什麼：E-303 刪了舊 clone，稍早的稽核正在讀那份。
     - 規則 34、35 的「確認有沒有人在用」：查同一里程碑、同一專案裡狀態為「進行中」或「驗證中」的 Plan，有就在那張單留言；判斷不了就問使用者。
-36. session 收尾時 MUST 清理自己建立的 worktree 與分支（規則 19 的分支刪除之外加上 worktree），並把 Orca 自動建立、沒用到的 `.ocrca/…` 目錄列進清理清單。
+36. session 收尾時 MUST 清理自己建立的 worktree 與分支（規則 19 的分支刪除之外加上 worktree），並把 Orca 自動建立、沒用到的 `.ocrca/…` 目錄列進清理清單。刪除 superpowers 工作區（`.superpowers/sdd/E-<Plan 編號>-plan/`，移除 worktree 時也會一起刪掉）之前，MUST 先在 Plan 留言「Rulings I made」總表（`workflow__elf-linear-superpowers` 步驟 5-1）。
     為什麼：E-302、E-310 都留下了這種目錄。
+    為什麼（Rulings I made）：ledger 不進版控，工作區一刪就沒了；各 Task 的裁決雖已隨完成留言留到 Plan，總表是使用者與稽核一次看完所有裁決的地方。
 
 **合併方式**
 
 37. 開發分支的 PR 合進 `dev` MUST 用「Create a merge commit」，MUST NOT squash 或 rebase。
     為什麼：
-    1. 可以追溯：每個 Task 是一個帶 Plan 編號的 commit（例 `fix(E-307): …`），審查逐 Task 進行；merge commit 保留這些 commit，稽核問「哪一步、誰審的」時對得到 Plan 的勾選紀錄與審查留言，squash 會把這條線切斷。
+    1. 可以追溯：每個 Task 是一個帶 Plan 編號的 commit（例 `fix(E-307): …`），審查逐 Task 進行；merge commit 保留這些 commit，稽核問「哪一步、誰審的」時對得到 Plan 的勾選紀錄與各 Task 的完成留言（含審查結論與裁決），以及收尾的「Rulings I made」總表，squash 會把這條線切斷。
     2. 與規則 18 一致：全團隊只有一種合併方式，AI 不用每次判斷。
     3. 不用 rebase：rebase 產生新 SHA，PR 上審查過、CI 跑過的提交就不是實際進 `dev` 的那一批。
     - 衍生要求：每個 commit 都會保留，提交要有意義，不留 `wip`、`fix typo` 這類零碎提交。**合併前在自己分支上整理 commit 是允許的**（做法見規則 38）；禁止的是**合併時** squash 或 rebase。
@@ -191,6 +193,7 @@ metadata:
     | 已推送、還沒開 PR | 依規則 13 停下來問使用者；同意後才可對**自己的開發分支** `git push --force-with-lease` |
     | 已開 PR | MUST NOT 改寫歷史，一律新增 commit 修正（例 `fix(E-xx): address review — …`）。為什麼：PR 上的審查留言與 check runs 綁在當時的 SHA，改寫後審查紀錄對不上程式碼。這種 commit 不算零碎提交 |
 
+    - 用 superpowers 執行的 Plan：Task 完成留言（含 `commits <a>..<b>`）之後，不再整理該 Task 的 commit。為什麼：留言與 ledger 綁在當時的 SHA，整理後稽核對不上（與「已開 PR」那列同理）。
     - `dev`、`release`、`main` 任何情況 MUST NOT force push（既有規則 8、13、20、21 不變）。
 
 **發版**
@@ -324,6 +327,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
 - [ ] 合併完成的開發分支、`pr/`、`merge/conflict-*` 已刪除
 - [ ] session 收尾時自己建立的 worktree 已清理，Orca 建立但沒用到的 `.ocrca/…` 目錄已列進清理清單（規則 36）
+- [ ] 刪除 superpowers 工作區或移除 worktree 之前，已在 Plan 留言「Rulings I made」總表（規則 36）
 - [ ] Plan 的 Task 數 ≤ 5
 
 ## 6. 常見錯誤
