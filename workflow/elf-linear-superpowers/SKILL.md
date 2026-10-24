@@ -194,6 +194,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 
 **開工**
 
+- 確認工作目錄是本 Plan 的 worktree，且本 Plan 的狀態檔已 commit：第一張 Plan 是 `E-<Spec 編號>.yaml`，同一個 Spec 第二張以後是 `E-<Plan 編號>.yaml`（步驟 2 第 7 項）。沒有就先回步驟 2；被 blocked by 擋住、先在 Linear 寫計畫的 Plan 最容易漏。
 - 確認 Plan 有「計畫已核准」留言、之後沒有還沒核准的「計畫已修改」留言、已排進週期；確認核准檔在：用 Read 讀家目錄的 `.claude/superpowers/approvals/E-<Plan 編號>.yaml`，四個欄位都有值（Bash／PowerShell 指令只要含 `superpowers/approvals` 就會被 Guard 擋，不要用），沒有就請 Eddie 照步驟 3 第 9 項建立（可附上填好欄位的指令）；讀「執行方式」留言，沒有就問使用者並補留言。開始第一個 Task 時 Plan 改為 **進行中**。
 - **匯出計畫**（在 worktree 根目錄）：
   1. 先建 `.superpowers/sdd/`，在裡面寫一個內容只有 `*` 的 `.gitignore`。上游 `sdd-workspace` 也會建這個檔，先建是為了讓匯出檔從一開始就不被 git 看到。
@@ -322,7 +323,7 @@ Plan 改為已完成（發版完成；未導入 dev／release 的 repo 是 PR �
 規則見《Linear 巡檢規則》，每個工作日 08:50 也會自動巡檢並寫入《Linear 巡檢報告（每日更新）》。
 
 - 步驟 0 開單後：對新建的兩張單跑 R1–R7。
-- 步驟 4 開工前：確認 R13（Plan 已有「計畫已核准」留言），以及核准檔已建立（見步驟 4「開工」）。
+- 步驟 4 開工前：確認 R13（Plan 已有「計畫已核准」留言），以及核准檔已建立（見步驟 4「開工」）；本 Plan 的狀態檔已建立（同一個 Spec 第二張以後是 `E-<Plan 編號>.yaml`）。
 - 步驟 7 收尾前：對該 Spec＋Plan 跑全部規則，有錯誤先修正再收尾。
 - 維運單收尾前：跑 R1、R2、R6、R7。
 
