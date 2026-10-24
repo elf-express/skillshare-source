@@ -1,0 +1,27 @@
+scripts/elf-guard.test.cjs
+  s_fd0fc7bd3eb608::t_d0f9bbb263dca6 64-73
+  s_fd0fc7bd3eb608::t_7b69e0a35437af 6
+  s_fd0fc7bd3eb608::t_55e5fde82e7dca 318-396
+  s_fd0fc7bd3eb608::t_8ae18f8bd09802 13
+scripts/elf-approval.cjs
+  s_fd0fc7bd3eb608::t_6d76b6d9e67cec 1-66
+scripts/elf-guard.cjs
+  s_fd0fc7bd3eb608::t_fc554de6ec73ef 12-13
+  s_fd0fc7bd3eb608::t_82da4faa7bbae2 212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "010b9133feb39c1af5744c200a5bb07487a9733c",
+  "prompts": {},
+  "sessions": {
+    "s_fd0fc7bd3eb608": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a7a31f-b35b-4e93-8e68-9c3b3d6ab858",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
