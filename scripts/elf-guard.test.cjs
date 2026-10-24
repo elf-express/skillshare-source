@@ -48,10 +48,31 @@ function mkRepo({ branch = 'e-377', worktree = false, stateFile = 'E-367.yaml', 
 }
 
 const STATE_E377 = 'ticket: E-367\nphase: plan\nplan: E-377\n';
-const APPROVAL_FULL = 'ticket: E-377\napproved_at: 2026-10-21T10:00:00+08:00\nauditor: Eddie\nlinear_comment_id: 1a2b3c\n';
+// 新格式核准憑證（E-399，九個欄位）；overrides 的值為 null 時省略該欄。
+function credentialText(plan, spec, overrides = {}) {
+  const values = {
+    ticket: plan,
+    plan,
+    spec,
+    approver_id: guard.APPROVER_ID,
+    linear_comment_id: '1a2b3c',
+    comment_created_at: '2026-10-21T02:00:00.000Z',
+    approved_at: '2026-10-21',
+    auditor: 'Codex',
+    plan_hash: approval.hashDescription('# ' + plan),
+    ...overrides,
+  };
+  return Object.entries(values)
+    .filter(([, v]) => v !== null)
+    .map(([k, v]) => `${k}: ${v}\n`)
+    .join('');
+}
+// 舊 E-377 四欄位核准檔，新版 Guard 一律視為未核准。
+const OLD_APPROVAL = 'ticket: E-377\napproved_at: 2026-10-21T10:00:00+08:00\nauditor: Eddie\nlinear_comment_id: 1a2b3c\n';
+const APPROVAL_FULL = credentialText('E-377', 'E-367');
 // 團隊流程（elf-linear-superpowers 步驟 2）：狀態檔用 Spec 編號，分支用 Plan 編號。
 const STATE_E372 = 'ticket: E-369\nphase: plan\nplan: E-372\n';
-const APPROVAL_E372 = 'ticket: E-372\napproved_at: 2026-10-22\nauditor: Fable 5.1\nlinear_comment_id: 4d5e6f\n';
+const APPROVAL_E372 = credentialText('E-372', 'E-369', { linear_comment_id: '4d5e6f', auditor: 'Fable 5.1' });
 
 function write(repo, ...segments) {
   return { tool_name: 'Write', tool_input: { file_path: path.join(repo, ...segments) } };
@@ -70,6 +91,19 @@ function comment(id, body, minute, authorId = guard.APPROVER_ID) {
 }
 
 const APPROVE_V1 = '計畫已核准（2026-10-25，審計員：Codex）';
+const PLAN_DESC = '# [Plan] E-399\n\n- [ ] 步驟 1.1：寫測試\n- [ ] 步驟 1.2：跑測試\n';
+
+// 建立器的輸入：形狀同 Linear MCP 的 get_issue／list_comments。
+function planInput(overrides = {}) {
+  return { plan: 'E-399', spec: 'E-397', description: PLAN_DESC, comments: [comment('c1', APPROVE_V1, 1)], ...overrides };
+}
+
+// 建立獨立的暫存根目錄與其中的 approvals 目錄。
+function mkApprovalsDir() {
+  const dir = path.join(mkTmp(), 'approvals');
+  fs.mkdirSync(dir);
+  return dir;
+}
 
 // 往上找不到 .git 的位置，供「repo 外」案例使用。
 function findDirWithoutGit() {
@@ -116,7 +150,7 @@ const cases = [
   }],
   ['1.6 核准檔 auditor 空白 -> deny', () => {
     const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
-    writeFile(path.join(approvalsDir, 'E-377.yaml'), 'ticket: E-377\napproved_at: 2026-10-21\nauditor:\nlinear_comment_id: 1a2b3c\n');
+    writeFile(path.join(approvalsDir, 'E-377.yaml'), credentialText('E-377', 'E-367', { auditor: '' }));
     const d = run(write(repo, 'scripts', 'x.cjs'), approvalsDir);
     assert.strictEqual(d.decision, 'deny');
     assert.match(d.reason, /E-377/);
@@ -308,6 +342,7 @@ const cases = [
     assert.strictEqual(out.hookSpecificOutput.permissionDecision, 'deny');
     assert.strictEqual(typeof out.hookSpecificOutput.permissionDecisionReason, 'string');
     assert.ok(out.hookSpecificOutput.permissionDecisionReason.length > 0);
+    assert.match(out.hookSpecificOutput.permissionDecisionReason, /核准憑證建立器/);
     const allowed = spawn(JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'ls' } }));
     assert.strictEqual(allowed.status, 0);
     assert.strictEqual(allowed.stdout, '');
@@ -393,6 +428,125 @@ const cases = [
     const r = approval.findApproval([comment('c1', APPROVE_V1, 1), comment('c2', '核准撤回', 2), comment('c3', APPROVE_V1, 3)]);
     assert.strictEqual(r.ok, true);
     assert.strictEqual(r.comment.id, 'c3');
+  }],
+  ['6.1 有效輸入 -> 建立九欄位憑證、不留暫存檔', () => {
+    const dir = mkApprovalsDir();
+    const r = approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
+    assert.strictEqual(r.ok, true, r.reason);
+    const cred = guard.readCredential(dir, 'E-399');
+    assert.deepStrictEqual(cred, {
+      ticket: 'E-399',
+      plan: 'E-399',
+      spec: 'E-397',
+      approver_id: guard.APPROVER_ID,
+      linear_comment_id: 'c1',
+      comment_created_at: comment('c1', APPROVE_V1, 1).createdAt,
+      approved_at: '2026-10-25',
+      auditor: 'Codex',
+      plan_hash: approval.hashDescription(PLAN_DESC),
+    });
+    assert.deepStrictEqual(fs.readdirSync(dir), ['E-399.yaml']);
+  }],
+  ['6.2 --plan 與輸入的 plan 不同 -> 拒絕、不寫檔', () => {
+    const dir = mkApprovalsDir();
+    assert.strictEqual(approval.createCredential(planInput({ plan: 'E-398' }), { plan: 'E-399', approvalsDir: dir }).ok, false);
+    assert.deepStrictEqual(fs.readdirSync(dir), []);
+  }],
+  ['6.3 plan 格式不合 -> 拒絕、目錄外沒有新檔', () => {
+    const dir = mkApprovalsDir();
+    const parent = path.dirname(dir);
+    for (const plan of ['E-1/../x', '399', '']) {
+      assert.strictEqual(approval.createCredential(planInput({ plan }), { plan, approvalsDir: dir }).ok, false, plan);
+    }
+    assert.deepStrictEqual(fs.readdirSync(dir), []);
+    assert.deepStrictEqual(fs.readdirSync(parent), ['approvals']);
+  }],
+  ['6.4 無留言、錯誤作者、已撤回 -> 拒絕，原有憑證不變', () => {
+    const dir = mkApprovalsDir();
+    assert.strictEqual(approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir }).ok, true);
+    const before = fs.readFileSync(path.join(dir, 'E-399.yaml'), 'utf8');
+    const bad = [
+      [],
+      [comment('c1', APPROVE_V1, 1, OTHER_ID)],
+      [comment('c1', APPROVE_V1, 1), comment('c2', '核准撤回', 2)],
+    ];
+    for (const comments of bad) {
+      assert.strictEqual(approval.createCredential(planInput({ comments }), { plan: 'E-399', approvalsDir: dir }).ok, false);
+    }
+    assert.strictEqual(fs.readFileSync(path.join(dir, 'E-399.yaml'), 'utf8'), before);
+  }],
+  ['6.5 驗證：只改勾選 -> 通過；多一行文字 -> 雜湊不符、stop', () => {
+    const dir = mkApprovalsDir();
+    approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
+    const checked = PLAN_DESC.replace('- [ ] 步驟 1.1', '- [X] 步驟 1.1');
+    assert.strictEqual(approval.verifyCredential(planInput({ description: checked }), { plan: 'E-399', approvalsDir: dir }).ok, true);
+    const r = approval.verifyCredential(planInput({ description: PLAN_DESC + '多一行\n' }), { plan: 'E-399', approvalsDir: dir });
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.action, 'stop');
+    assert.match(r.reason, /雜湊不符/);
+  }],
+  ['6.6 驗證：撤回、留言消失 -> revoke；有 v2 核准 -> recreate', () => {
+    const dir = mkApprovalsDir();
+    approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
+    const base = planInput().comments;
+    const check = (comments) => approval.verifyCredential(planInput({ comments }), { plan: 'E-399', approvalsDir: dir });
+    assert.strictEqual(check([...base, comment('c2', '核准撤回', 2)]).action, 'revoke');
+    assert.strictEqual(check([comment('c9', '其他留言', 2)]).action, 'revoke');
+    const v2 = [...base, comment('c2', '計畫已修改 v2（加一步）', 2), comment('c3', '計畫已核准 v2（2026-10-26，審計員：Codex）', 3)];
+    assert.strictEqual(check(v2).action, 'recreate');
+  }],
+  ['6.7 驗證：沒有憑證、憑證損壞 -> stop', () => {
+    const dir = mkApprovalsDir();
+    const r1 = approval.verifyCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
+    assert.strictEqual(r1.ok, false);
+    assert.strictEqual(r1.action, 'stop');
+    writeFile(path.join(dir, 'E-399.yaml'), 'garbage\n');
+    assert.strictEqual(approval.verifyCredential(planInput(), { plan: 'E-399', approvalsDir: dir }).action, 'stop');
+  }],
+  ['6.8 撤回：刪除憑證；再撤回一次 removed 為 false', () => {
+    const dir = mkApprovalsDir();
+    approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
+    assert.strictEqual(approval.revokeCredential({ plan: 'E-399', approvalsDir: dir }).removed, true);
+    assert.strictEqual(fs.existsSync(path.join(dir, 'E-399.yaml')), false);
+    assert.strictEqual(approval.revokeCredential({ plan: 'E-399', approvalsDir: dir }).removed, false);
+  }],
+  ['6.9 Guard：舊四欄位、格式不合、暫存檔名 -> deny；建立器產生的憑證 -> allow', () => {
+    const { repo, approvalsDir } = mkRepo({ state: STATE_E377 });
+    const target = write(repo, 'scripts', 'x.cjs');
+    const file = path.join(approvalsDir, 'E-377.yaml');
+    const bad = [
+      OLD_APPROVAL,
+      credentialText('E-377', 'E-367', { plan_hash: 'sha256:xyz' }),
+      credentialText('E-377', 'E-367', { ticket: 'E-378' }),
+      credentialText('E-377', 'E-367', { approver_id: OTHER_ID }),
+      credentialText('E-377', 'E-367', { spec: null }),
+    ];
+    for (const text of bad) {
+      writeFile(file, text);
+      assert.strictEqual(run(target, approvalsDir).decision, 'deny', text);
+    }
+    fs.rmSync(file);
+    writeFile(path.join(approvalsDir, '.E-377.yaml.123.tmp'), APPROVAL_FULL);
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    const r = approval.createCredential(planInput({ plan: 'E-377', spec: 'E-367' }), { plan: 'E-377', approvalsDir });
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
+  ['6.10 CLI：create exit 0、無效輸入 exit 1、缺 --plan exit 2、revoke exit 0', () => {
+    const dir = mkApprovalsDir();
+    const script = path.join(__dirname, 'elf-approval.cjs');
+    const spawn = (args) => childProcess.spawnSync(process.execPath, [script, ...args, '--approvals-dir', dir], { encoding: 'utf8' });
+    const good = path.join(path.dirname(dir), 'good.json');
+    const bad = path.join(path.dirname(dir), 'bad.json');
+    writeFile(good, JSON.stringify(planInput()));
+    writeFile(bad, JSON.stringify(planInput({ comments: [] })));
+    const created = spawn(['create', '--plan', 'E-399', '--input', good]);
+    assert.strictEqual(created.status, 0, created.stdout + created.stderr);
+    assert.ok(created.stdout.includes('E-399') && created.stdout.includes('c1'), created.stdout);
+    assert.strictEqual(spawn(['create', '--plan', 'E-399', '--input', bad]).status, 1);
+    assert.strictEqual(spawn(['create', '--input', good]).status, 2);
+    assert.strictEqual(spawn(['revoke', '--plan', 'E-399']).status, 0);
+    assert.strictEqual(fs.existsSync(path.join(dir, 'E-399.yaml')), false);
   }],
   ['介面 六個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval', 'branchTicket']) {

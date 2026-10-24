@@ -8,9 +8,22 @@ const os = require('node:os');
 const path = require('node:path');
 
 const WHITELIST_PREFIX = 'docs/superpowers/';
-const APPROVAL_FIELDS = ['ticket', 'approved_at', 'auditor', 'linear_comment_id'];
+// 核准憑證的九個欄位（E-399）；舊 E-377 的四欄位核准檔缺欄位，一律視為未核准。
+const CREDENTIAL_FIELDS = [
+  'ticket',
+  'plan',
+  'spec',
+  'approver_id',
+  'linear_comment_id',
+  'comment_created_at',
+  'approved_at',
+  'auditor',
+  'plan_hash',
+];
 // 核准留言唯一認可的 Linear user ID（Eddie）。
 const APPROVER_ID = 'f7c5792e-6252-49dd-8210-b15b30c5229d';
+const TICKET_RE = /^E-\d+$/;
+const PLAN_HASH_RE = /^sha256:[0-9a-f]{64}$/;
 
 const ALLOW = { decision: 'allow' };
 
@@ -109,15 +122,29 @@ function findState(gitRoot, n) {
   return 'missing';
 }
 
-// 核准檔 <dir>/<plan>.yaml 的四個欄位都非空才算已核准；其餘一律視為未核准。
-function readApproval(dir, plan) {
-  if (!plan || path.basename(plan) !== plan) return false;
+// 讀核准憑證 <dir>/<plan>.yaml：九欄皆非空、ticket 與 plan 等於檔名、spec 為 E-<數字>、
+// approver_id 為固定 user ID、plan_hash 為 sha256 格式才回傳欄位物件；其餘回 null。
+function readCredential(dir, plan) {
+  if (typeof plan !== 'string' || !TICKET_RE.test(plan)) return null;
   try {
     const text = readText(path.join(dir, plan + '.yaml'));
-    return APPROVAL_FIELDS.every((key) => readField(text, key) !== '');
+    const cred = {};
+    for (const key of CREDENTIAL_FIELDS) {
+      const value = readField(text, key);
+      if (value === '') return null;
+      cred[key] = value;
+    }
+    if (cred.ticket !== plan || cred.plan !== plan) return null;
+    if (!TICKET_RE.test(cred.spec) || cred.approver_id !== APPROVER_ID || !PLAN_HASH_RE.test(cred.plan_hash)) return null;
+    return cred;
   } catch {
-    return false;
+    return null;
   }
+}
+
+// 該 Plan 有格式正確的核准憑證才算已核准。
+function readApproval(dir, plan) {
+  return readCredential(dir, plan) !== null;
 }
 
 // 目標路徑相對 repo 根的位置（正斜線）；不在 repo 底下回 null。
@@ -140,7 +167,7 @@ function decideUnsafe(payload, opts) {
 
   // 1. Bash／PowerShell 碰核准目錄：核准前後都擋。
   if ((toolName === 'Bash' || toolName === 'PowerShell') && /superpowers[\\/]approvals/i.test(String(input.command || ''))) {
-    return deny('Superpowers 階段 Guard：禁止用 Bash 或 PowerShell 存取 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
+    return deny('Superpowers 階段 Guard：禁止用 Bash 或 PowerShell 存取 superpowers/approvals 核准目錄。核准憑證只能用核准憑證建立器（elf-approval.cjs）建立。');
   }
 
   // 2. 取檔案類工具的目標路徑；目標在核准目錄底下一律擋。
@@ -152,7 +179,7 @@ function decideUnsafe(payload, opts) {
   }
   target = path.posix.normalize(target);
   if (/superpowers\/approvals/i.test(target)) {
-    return deny('Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准檔須由審計員人工建立。');
+    return deny('Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准憑證只能用核准憑證建立器（elf-approval.cjs）建立。');
   }
   // 找出 repo 根。
   const gitRoot = findGitRoot(target);
@@ -175,7 +202,7 @@ function decideUnsafe(payload, opts) {
   const id = state.plan || state.ticket;
   return deny(
     `Superpowers 階段 Guard：${id} 計畫未核准，目前只能修改 docs/superpowers/ 底下的檔案。` +
-      '請先完成 spec／plan，由審計員在 Linear 核准後建立核准檔，再繼續實作。',
+      '請先完成 spec／plan，由審計員在 Linear 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。',
   );
 }
 
@@ -209,7 +236,17 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { decide, findGitRoot, readBranch, findState, readApproval, branchTicket, APPROVER_ID };
+module.exports = {
+  decide,
+  findGitRoot,
+  readBranch,
+  findState,
+  readApproval,
+  readCredential,
+  branchTicket,
+  APPROVER_ID,
+  CREDENTIAL_FIELDS,
+};
 
 if (require.main === module) {
   main();
