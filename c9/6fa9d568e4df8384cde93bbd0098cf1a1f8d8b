@@ -1,0 +1,19 @@
+docs/superpowers/state/E-397.yaml
+  s_a28b699e4790bd::t_2fb8f5bd5bc3f6 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c96fa9d568e4df8384cde93bbd0098cf1a1f8d8b",
+  "prompts": {},
+  "sessions": {
+    "s_a28b699e4790bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "195abc9b-fbd8-4977-9ae6-70d5fcc76908",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
