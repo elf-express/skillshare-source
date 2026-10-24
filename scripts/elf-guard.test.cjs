@@ -548,6 +548,30 @@ const cases = [
     assert.strictEqual(spawn(['revoke', '--plan', 'E-399']).status, 0);
     assert.strictEqual(fs.existsSync(path.join(dir, 'E-399.yaml')), false);
   }],
+  ['7.1 同一個 Spec 的第二張 Plan 用自己的 E-<Plan>.yaml 狀態檔', () => {
+    const state398 = 'ticket: E-397\nphase: plan\nplan: E-398\n';
+    const state399 = 'ticket: E-397\nphase: plan\nplan: E-399\n';
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-399-approval-builder', stateFile: 'E-397.yaml', state: state398 });
+    writeFile(path.join(repo, 'docs', 'superpowers', 'state', 'E-399.yaml'), state399);
+    const target = write(repo, 'scripts', 'x.cjs');
+    const d = run(target, approvalsDir);
+    assert.strictEqual(d.decision, 'deny');
+    assert.match(d.reason, /E-399/);
+    writeFile(path.join(approvalsDir, 'E-398.yaml'), credentialText('E-398', 'E-397'));
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    writeFile(path.join(approvalsDir, 'E-399.yaml'), credentialText('E-399', 'E-397'));
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+    // 第一張 Plan 的分支仍讀 E-397.yaml，依 E-398 的憑證判斷。
+    writeFile(path.join(repo, '.git', 'HEAD'), 'ref: refs/heads/feat/e-398-x\n');
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+    fs.rmSync(path.join(approvalsDir, 'E-398.yaml'));
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    // 已知缺口：第二張 Plan 沒建自己的狀態檔時，它的分支對不到任何狀態檔而放行。
+    writeFile(path.join(repo, '.git', 'HEAD'), 'ref: refs/heads/feat/e-399-approval-builder\n');
+    fs.rmSync(path.join(repo, 'docs', 'superpowers', 'state', 'E-399.yaml'));
+    fs.rmSync(path.join(approvalsDir, 'E-399.yaml'));
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
   ['介面 六個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval', 'branchTicket']) {
       assert.strictEqual(typeof guard[name], 'function', name);
