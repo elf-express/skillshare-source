@@ -34,7 +34,7 @@ Task 子 agent 寫檔同樣會觸發 PreToolUse，適用上表所有規則。已
 
 ## 狀態檔
 
-路徑：`docs/superpowers/state/E-<Spec>.yaml`，檔名用 Spec 編號。
+路徑：`docs/superpowers/state/E-<Spec>.yaml`，檔名用 Spec 編號。同一個 Spec 底下第二張以後的 Plan（elf-team-rule 規則 17）各建一份 `docs/superpowers/state/E-<Plan>.yaml`，檔名用該 Plan 的編號，`ticket` 仍填 Spec 編號；第一張 Plan 用的 `E-<Spec>.yaml` 不改。
 
 ```yaml
 ticket: E-367
@@ -50,6 +50,8 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 
 1. 先讀 `docs/superpowers/state/E-<N>.yaml`。
 2. 沒有這個檔名時，掃 `state/*.yaml`（依檔名排序），取第一份 `plan` 等於 `E-<N>` 的檔案。
+
+第二張以後的 Plan，分支 `e-<Plan>` 在第 1 步就讀到自己的 `E-<Plan>.yaml`，不經第 2 步。只放 `E-<Spec>.yaml` 時，它的 `plan:` 是第一張 Plan，第二張 Plan 的分支在兩步都對不到狀態檔，依規則 6 放行，核准前不受保護（E-386 底下的 E-396 就是這種情況）。把 `E-<Spec>.yaml` 的 `plan:` 改成第二張 Plan 也不行：第一張 Plan 的分支會因此對不到狀態檔。
 
 `plan:` 沒填時，Plan 分支（`e-<Plan 編號>` 或 `<類型>/e-<Plan 編號>-…`）找不到狀態檔，Guard 不會擋。Spec 分支上 `plan:` 空白時視為未核准，會擋。
 
