@@ -1,0 +1,35 @@
+scripts/elf-guard.test.cjs
+  s_fd0fc7bd3eb608::t_806fe28fd205c3 94-106
+  s_fd0fc7bd3eb608::t_eb4df433a04d3a 51-72
+  s_fd0fc7bd3eb608::t_91993da5db1667 75
+  s_fd0fc7bd3eb608::t_23aa1ac9be0491 153
+  s_fd0fc7bd3eb608::t_3263de46a9903e 432-550
+  s_fd0fc7bd3eb608::t_0aa155491f19ba 345
+scripts/elf-guard.cjs
+  s_fd0fc7bd3eb608::t_e66ca6c701879b 182
+  s_fd0fc7bd3eb608::t_ea202f1c844824 205
+  s_fd0fc7bd3eb608::t_e82bc7c9492fd3 11-22,25-26
+  s_fd0fc7bd3eb608::t_08fe707598dc02 170
+  s_fd0fc7bd3eb608::t_3cee7febb2906e 125-128,131-139,141,145-147
+  s_fd0fc7bd3eb608::t_9af9d5116d535a 239-249
+  s_fd0fc7bd3eb608::t_e6255c987796a5 148-149
+scripts/elf-approval.cjs
+  s_fd0fc7bd3eb608::t_f58e3878c65c17 2-6,9-11,13-17
+  s_fd0fc7bd3eb608::t_068c9a9ee6dc05 76-239
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f98b343483e556d7755d8685e206ab0791553d85",
+  "prompts": {},
+  "sessions": {
+    "s_fd0fc7bd3eb608": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a7a31f-b35b-4e93-8e68-9c3b3d6ab858",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
