@@ -9,6 +9,8 @@ const path = require('node:path');
 
 const WHITELIST_PREFIX = 'docs/superpowers/';
 const APPROVAL_FIELDS = ['ticket', 'approved_at', 'auditor', 'linear_comment_id'];
+// 核准留言唯一認可的 Linear user ID（Eddie）。
+const APPROVER_ID = 'f7c5792e-6252-49dd-8210-b15b30c5229d';
 
 const ALLOW = { decision: 'allow' };
 
@@ -207,7 +209,7 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { decide, findGitRoot, readBranch, findState, readApproval, branchTicket };
+module.exports = { decide, findGitRoot, readBranch, findState, readApproval, branchTicket, APPROVER_ID };
 
 if (require.main === module) {
   main();

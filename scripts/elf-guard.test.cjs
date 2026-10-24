@@ -3,12 +3,14 @@
 
 const assert = require('node:assert');
 const childProcess = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
 const guard = require('./elf-guard.cjs');
 const sessionStart = require('./elf-sessionstart.cjs');
+const approval = require('./elf-approval.cjs');
 
 const tmpRoots = [];
 
@@ -58,6 +60,16 @@ function write(repo, ...segments) {
 function run(payload, approvalsDir) {
   return guard.decide(payload, { approvalsDir });
 }
+
+const OTHER_ID = '00000000-0000-0000-0000-000000000000';
+
+// 組一則留言；createdAt 以分鐘偏移產生，方便排序案例。
+function comment(id, body, minute, authorId = guard.APPROVER_ID) {
+  const createdAt = new Date(Date.UTC(2026, 9, 25, 0, minute)).toISOString();
+  return { id, body, createdAt, author: { id: authorId } };
+}
+
+const APPROVE_V1 = '計畫已核准（2026-10-25，審計員：Codex）';
 
 // 往上找不到 .git 的位置，供「repo 外」案例使用。
 function findDirWithoutGit() {
@@ -302,6 +314,85 @@ const cases = [
     const garbage = spawn('not json');
     assert.strictEqual(garbage.status, 0);
     assert.strictEqual(garbage.stdout, '');
+  }],
+  ['4.1 CRLF、CR 與 LF 同雜湊', () => {
+    const h = approval.hashDescription('a\nb');
+    assert.strictEqual(approval.hashDescription('a\r\nb'), h);
+    assert.strictEqual(approval.hashDescription('a\rb'), h);
+  }],
+  ['4.2 結尾 0、1、3 個換行同雜湊', () => {
+    const h = approval.hashDescription('a\nb');
+    assert.strictEqual(approval.hashDescription('a\nb\n'), h);
+    assert.strictEqual(approval.hashDescription('a\nb\n\n\n'), h);
+  }],
+  ['4.3 行首 checkbox 勾選狀態不影響雜湊（含前導空白）', () => {
+    for (const unchecked of ['- [ ] 步驟 1.1', '  - [ ] 步驟 1.1']) {
+      const base = approval.hashDescription(`前文\n${unchecked}\n後文`);
+      const checked = [unchecked.replace('[ ]', '[x]'), unchecked.replace('[ ]', '[X]')];
+      for (const line of checked) assert.strictEqual(approval.hashDescription(`前文\n${line}\n後文`), base, line);
+    }
+  }],
+  ['4.4 程式碼區塊內的 - [x] 改成 - [ ] 雜湊不同', () => {
+    const a = approval.hashDescription('前文\n```\n- [x] 步驟 1.1\n```\n');
+    const b = approval.hashDescription('前文\n```\n- [ ] 步驟 1.1\n```\n');
+    assert.notStrictEqual(a, b);
+  }],
+  ['4.5 一般文字的 [x] 改成 [ ] 雜湊不同', () => {
+    assert.notStrictEqual(approval.hashDescription('見 [x] 欄'), approval.hashDescription('見 [ ] 欄'));
+  }],
+  ['4.6 新增、刪除、改文字的 checkbox 雜湊不同', () => {
+    const base = approval.hashDescription('- [ ] 步驟 1.1\n- [ ] 步驟 1.2\n');
+    assert.notStrictEqual(approval.hashDescription('- [ ] 步驟 1.1\n- [ ] 步驟 1.2\n- [ ] 步驟 1.3\n'), base);
+    assert.notStrictEqual(approval.hashDescription('- [ ] 步驟 1.1\n'), base);
+    assert.notStrictEqual(approval.hashDescription('- [ ] 步驟 1.1\n- [ ] 步驟 1.2 改\n'), base);
+  }],
+  ['4.7 hashDescription 為 a\\n 的 SHA-256', () => {
+    const h = approval.hashDescription('a');
+    assert.strictEqual(h, 'sha256:' + crypto.createHash('sha256').update('a\n', 'utf8').digest('hex'));
+    assert.match(h, /^sha256:[0-9a-f]{64}$/);
+  }],
+  ['5.1 沒有留言 -> 不通過', () => {
+    const r = approval.findApproval([]);
+    assert.strictEqual(r.ok, false);
+    assert.match(r.reason, /找不到有效的核准留言/);
+  }],
+  ['5.2 作者不是固定 user ID -> 不通過', () => {
+    assert.strictEqual(approval.findApproval([comment('c1', APPROVE_V1, 1, OTHER_ID)]).ok, false);
+  }],
+  ['5.3 文字不符 -> 不通過', () => {
+    for (const body of ['計畫已核准', '計畫核准（2026-10-25，審計員：Codex）', '計畫已核准（2026/10/25，審計員：Codex）']) {
+      assert.strictEqual(approval.findApproval([comment('c1', body, 1)]).ok, false, body);
+    }
+  }],
+  ['5.4 有效核准留言 -> 通過並取出審計員、日期、版號', () => {
+    const r = approval.findApproval([comment('c1', APPROVE_V1 + '\n\n附註', 1)]);
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.auditor, 'Codex');
+    assert.strictEqual(r.approvedAt, '2026-10-25');
+    assert.strictEqual(r.version, 1);
+    assert.strictEqual(r.comment.id, 'c1');
+  }],
+  ['5.5 核准之後有核准撤回 -> 不通過', () => {
+    const r = approval.findApproval([comment('c1', APPROVE_V1, 1), comment('c2', '核准撤回', 2)]);
+    assert.strictEqual(r.ok, false);
+    assert.match(r.reason, /核准撤回/);
+  }],
+  ['5.6 計畫已修改 v2 之後要有計畫已核准 v2', () => {
+    const list = [comment('c1', APPROVE_V1, 1), comment('c2', '計畫已修改 v2（加一步）', 2), comment('c3', APPROVE_V1, 3)];
+    assert.strictEqual(approval.findApproval(list).ok, false);
+    list.push(comment('c4', '計畫已核准 v2（2026-10-26，審計員：Codex）', 4));
+    const r = approval.findApproval(list);
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.comment.id, 'c4');
+    assert.strictEqual(r.version, 2);
+  }],
+  ['5.7 依 createdAt 排序，不依陣列順序', () => {
+    assert.strictEqual(approval.findApproval([comment('c2', '核准撤回', 2), comment('c1', APPROVE_V1, 1)]).ok, false);
+  }],
+  ['5.8 撤回之後再核准 -> 通過，取最後那則', () => {
+    const r = approval.findApproval([comment('c1', APPROVE_V1, 1), comment('c2', '核准撤回', 2), comment('c3', APPROVE_V1, 3)]);
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.comment.id, 'c3');
   }],
   ['介面 六個 export 皆為函式', () => {
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval', 'branchTicket']) {
