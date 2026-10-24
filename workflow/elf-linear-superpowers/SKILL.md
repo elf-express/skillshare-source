@@ -2,7 +2,7 @@
 name: elf-linear-superpowers
 description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用。
 metadata:
-  version: 2.0.0
+  version: 2.1.0
   owner: Elf Express
 ---
 
@@ -45,7 +45,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | finishing-a-development-branch 選單有「本地合併」 | 開發分支只開 PR 合進 `dev`；本地合併只用於規則 18、26 的情況 | 分支規範 |
 | 裁決（Ruling）記在 ledger，收尾時在對話回報 | 每個 Task 完成時把該 Task 的裁決原文留言到 Plan；刪 superpowers 工作區前再留一則「Rulings I made」總表 | ledger 不進版控、會隨工作區刪除；session 中斷時 Linear 仍有紀錄 |
 
-另有幾項是團隊另加的限制，上游沒有規定、也不衝突：Plan 的 Task 控制在 3–5 個（elf-team-rule 規則 16、17）；超出 Spec 的需求不裁決（見步驟 4）；並行的問題調查同時最多兩條線；計畫可以交給計畫撰寫隊友寫（見隊友表）；階段 Guard（E-377，Claude Code 的 hook）在計畫核准前擋檔案工具寫 repo 裡 `docs/superpowers/` 以外的檔案，靠步驟 2 的狀態檔與步驟 3 的核准檔運作，說明見 skillshare-source 的 `docs/superpowers/guard.md`。
+另有幾項是團隊另加的限制，上游沒有規定、也不衝突：單一 Plan 的 Task 建議 3–5 個、超過 10 個必拆（elf-team-rule 規則 16）；工作量大時在同一個 Spec 底下增加 Plan（規則 17）；超出 Spec 的需求不裁決（見步驟 4）；並行的問題調查同時最多兩條線；計畫可以交給計畫撰寫隊友寫（見隊友表）；階段 Guard（E-377，Claude Code 的 hook）在計畫核准前擋檔案工具寫 repo 裡 `docs/superpowers/` 以外的檔案，靠步驟 2 的狀態檔與步驟 3 的核准檔運作，說明見 skillshare-source 的 `docs/superpowers/guard.md`。
 
 更新 superpowers（`skillshare update _superpowers`）前先讀上游 `RELEASE-NOTES.md`；行為有變動就開單同步本 skill 與團隊範本，同步後更新本節的版本。
 
@@ -114,6 +114,8 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
   | Plan 驗證中、PR 尚未合進 `dev` | 步驟 5 或 6（看留言紀錄） |
   | Plan 驗證中、PR 已合進 `dev` | 步驟 7（等發版） |
 
+  Spec 底下有兩張以上 Plan 時，判斷表逐張 Plan 套用：Spec 那幾列看 Spec，Plan 那幾列看自己負責的那張；已定案的 Spec 不因多一張 Plan 而回步驟 1。一個 session 只接一張 Plan（elf-team-rule 規則 31）。
+
   步驟 5-1 已改為驗證中的 Plan，在步驟 7 開 PR 時會被自動拉回進行中，這是正常的，仍在步驟 7（等 PR 合併），不要回步驟 4；PR 有審查活動或合進 `dev` 時會再自動改為驗證中（合進 `dev` 的自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。
 
 - **新需求**：`save_issue` 在團隊 `ELF EXPRESS` 套用模板 `Spec 設計規格` 建立 `[Spec] 主題`。確認底下有 `[Plan]` 子 issue（沒有就手動建：套用模板 `Plan 實作計畫`、parent 為此 Spec、label `Plan`、狀態 待規劃），並把子 issue 標題改成 `[Plan] 主題`。
@@ -148,7 +150,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 4. worktree 一律開在 repo 外（同層），不開在主倉庫目錄內。這是本團隊已宣告的偏好，using-git-worktrees 不必再問要不要建。不用 Claude Code 的 `EnterWorktree` 建 worktree（它只會建在 repo 內的 `.claude/worktrees/`）；改用 `git worktree add <repo 外同層的路徑> -b <分支名稱> origin/dev`（hotfix 用 `origin/release`），再用 `EnterWorktree` 的 `path` 參數切進去，讓 session 的工作目錄跟著過去；沒有 `path` 參數的版本改用 `cd`（兩者的限制見「待確認」）。
 5. 跑基線測試，在 Plan 留言：分支名稱、worktree 路徑、基線測試結果（通過數／失敗數）。基線不乾淨就停下來問使用者。
 6. **Orca 連單**：worktree 一律由 Claude Code 建立，**不要**在 Orca 的 Linear 任務列表按 Use 建立。建立後提醒使用者在 Orca：讓該 worktree 顯示在側邊欄；在 Edit Worktree Details 的 issue 欄位貼上 **Plan** 單網址（只連 Plan，一個工作區只連一張單）。
-7. **狀態檔**（給階段 Guard。只有 Spec／Plan 要建，單一開發工作單與 hotfix 不建）：在 worktree 建 `docs/superpowers/state/E-<Spec 編號>.yaml`，內容三行 `ticket: E-<Spec 編號>`、`phase: plan`、`plan: E-<Plan 編號>`（UTF-8、LF），以 `docs(E-<Plan 編號>): 加入狀態檔` commit 進本分支；合進 `dev` 後留著當紀錄，不刪。第 1 種 repo 送原作者的 `pr/` 分支不 cherry-pick 這個 commit（規則 12）。`phase` 之後不更新，在哪一步一律看 Linear。Guard 依分支名稱找狀態檔，認得哪些分支格式見 skillshare-source 的 `docs/superpowers/guard.md`。
+7. **狀態檔**（給階段 Guard。只有 Spec／Plan 要建，單一開發工作單與 hotfix 不建）：在 worktree 建 `docs/superpowers/state/E-<Spec 編號>.yaml`，內容三行 `ticket: E-<Spec 編號>`、`phase: plan`、`plan: E-<Plan 編號>`（UTF-8、LF），以 `docs(E-<Plan 編號>): 加入狀態檔` commit 進本分支；合進 `dev` 後留著當紀錄，不刪。第 1 種 repo 送原作者的 `pr/` 分支不 cherry-pick 這個 commit（規則 12）。`phase` 之後不更新，在哪一步一律看 Linear。Guard 依分支名稱找狀態檔，認得哪些分支格式見 skillshare-source 的 `docs/superpowers/guard.md`。同一個 Spec 底下第二張以後的 Plan，另建 `docs/superpowers/state/E-<Plan 編號>.yaml`，內容三行 `ticket: E-<Spec 編號>`、`phase: plan`、`plan: E-<Plan 編號>`，不改第一張 Plan 用的 `E-<Spec 編號>.yaml`：Guard 先讀與分支編號同名的狀態檔，改了第一張的 `plan:`，第一張 Plan 的分支就不再受 Guard 保護。
 
 ### 3. writing-plans → Plan
 
@@ -171,6 +173,15 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 7. 自審後 Plan 改為 **待辦**，送審計員（使用者的審計對話）審，並照 writing-plans 請使用者選執行方式、附一句推薦理由：**Subagent-driven**（4-2：每個 Task 有全新實作者與審查者，最徹底）或 **Native**（4-1：在本 session 自己做，最後由最強模型的審查者審整個分支，最省）。使用者選定後在 Plan 留言「執行方式：Subagent-driven」或「執行方式：Native」，步驟 4 照這則留言執行。
 8. 審計員在 Plan 留言「計畫已核准（YYYY-MM-DD，審計員：<模型>）」後才進 3a／4。對話裡的口頭同意不算，自己派的 subagent 審查只算自審。核准後若再改 Plan 描述（勾步驟與完成檢查不算），先留言「計畫已修改 v2（原因）」並重新送審，審計員留言「計畫已核准 v2（YYYY-MM-DD，審計員：<模型>）」後才繼續；之後再改依序用 v3、v4。審計員退回時，依留言修改、重做 5 項自審後再送。
 9. **核准檔**（給階段 Guard）：審計員留言「計畫已核准」後，由 Eddie 在自己的終端機（不經 Claude Code）照 `guard.md` 建 `~/.claude/superpowers/approvals/E-<Plan 編號>.yaml`：`ticket` 填 Plan 編號（和檔名相同，不是狀態檔裡的 Spec 編號），`linear_comment_id` 填那則核准留言的 id。AI 不建、不改、不刪核准檔，用什麼工具都一樣；使用者要 AI 代建時，把填好的指令寫在對話或留言裡，交給他自己執行（不要用 Bash 印出來，含核准目錄的指令會被 Guard 擋）。留言「計畫已修改 vN」時請 Eddie 刪掉核准檔，「計畫已核准 vN」之後再照同樣方式重建。
+
+**同一個 Spec 底下增加 Plan**（elf-team-rule 規則 17）：寫計畫時發現工作量要拆，或執行中依規則 17 受控拆分時：
+
+- 套模板 `Plan 實作計畫` 建子 issue：parent 為該 Spec、label `Plan`、狀態 待規劃、負責人與專案同 Spec，標題 `[Plan] 主題`。
+- 設新 Plan 的 estimate，把 Spec 的 estimate 改成各 Plan 加總；Plan 之間有先後就用 blocked by。不建里程碑、不寫「## 並行」。
+- Spec 的驗收條件逐條在結尾標明由哪張 Plan 勾，例 `（E-387）`。
+- 新 Plan 只寫計畫；碰到 Spec 沒涵蓋的設計，回步驟 1 和使用者談，不在 Plan 裡自己決定。
+- 被 blocked by 擋住的 Plan 可以先在 Linear 寫計畫、送審；解除阻擋、開工前才做步驟 2（worktree、基線、狀態檔）。
+- 執行中拆分照規則 17 受控拆分：原 Plan 照第 8 項留言「計畫已修改 vN」重新送審，新 Plan 獨立寫計畫與送審。
 
 ### 3a. 排進週期
 
@@ -239,7 +250,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
    證據分兩段，完成時間點不同：
    - **合進 `dev` 前必須完成**：測試、build、lint、資料庫腳本冪等這類「程式本身對不對」的證據。為什麼：延到合併後才補，等於讓沒驗證過的程式先進整合分支，保險②失效。
    - **發版完成前補齊**：與 `release` 有關的證據（快轉後的 check runs、`skillshare sync`、實機驗證）。
-4. 回 Spec 逐條核對「驗收條件」，有證據才勾；不過就回 S2。
+4. 回 Spec 逐條核對「驗收條件」，有證據才勾；不過就回 S2。Spec 底下有多張 Plan 時，只勾結尾標本 Plan 的條件；別張 Plan 的條件即使看起來已完成也不代勾，在那張 Plan 留言（規則 33）。
 5. 勾 Plan「完成檢查」裡已經完成的項目；PR、發版、清理那幾項在步驟 7 完成時再勾。
 
 ### 7. finishing-a-development-branch
@@ -252,8 +263,8 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 
 | 選項 | Plan | Spec |
 |---|---|---|
-| 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中 |
-| 發版完成 | elf-team-rule 規則 10 的三個條件都滿足後，AI 手動改為 已完成：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`） | 自動關閉 |
+| 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中（多張 Plan 時，最後一張完成才自動關閉） |
+| 發版完成 | elf-team-rule 規則 10 的三個條件都滿足後，AI 手動改為 已完成：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`） | 自動關閉（多張 Plan 時，最後一張完成才關閉） |
 | hotfix | 不經 PR 合回 `dev`（elf-team-rule 規則 11）：依規則 25 快轉 `release`（repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開 draft PR，只用來觸發 CI）；依規則 26 在本機把 `release` 合回 `dev` 後直接推送（規則 9 的例外），有衝突時經 `merge/conflict-*` 的 PR 合回、用 merge commit（規則 18、37）。規則 10 的三個條件都滿足後手動改為 已完成（條件 ① 改為 `release` 已快轉到該 `origin/hotfix/*`） | —（hotfix 是單一工作單，沒有 Spec） |
 | 未導入 dev／release 的 repo | PR 合併 → 已完成（預設自動化） | 自動關閉 |
 | 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（elf-team-rule 規則 18）與 hotfix 的 `release` → `dev` 合回（規則 26），開發分支不適用 | — |
@@ -330,7 +341,7 @@ Plan 改為已完成（發版完成；未導入 dev／release 的 repo 是 PR �
 - 兩道保險（5-1、6）即使是小任務也不省略；沒有證據不說完成。
 - Spec 與 Plan 都必須設定 estimate，未設定不得進入下一步；範圍變動時同步更新。留言中的工時預估不能取代 estimate 欄位。
 - 不手動把 Spec 改為已完成，交給自動化關閉；Spec 已完成就代表整件事做完。
-- 一個 Spec 對應一個 Plan；範圍太大就拆成多個 Spec 並建里程碑。
+- 預設一個 Spec 對應一個 Plan；Spec 定案後因工作量大要拆，在同一個 Spec 底下增加 Plan（elf-team-rule 規則 16、17）；要做 Spec「不做的事」或拆出來的是獨立需求，才另開 Spec＋Plan 並建里程碑。
 - 工作單**最多兩層**（Spec → Plan），Plan 底下不開子工作單，Task 一律是 Plan 描述裡的打勾清單。
 - 多個 AI 同時開發（Orca）：照 elf-team-rule 規則 31–36。一個 AI 只負責一個 worktree、一條分支、一張 Plan，兩個 session 不用同一條分支；先在 Plan 留言認領；不切分支、不碰主目錄、不改別人的 Plan；會改到同一個檔案就先問使用者。另外：
   - 開始前確認工作目錄就是這張 Plan 的 worktree（repo 外同層、分支名稱符合規則 10），不在 Orca 自動建立的 `.ocrca/…` 目錄裡做事（規則 31）。
