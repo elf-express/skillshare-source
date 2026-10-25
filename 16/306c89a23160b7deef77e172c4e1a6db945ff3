@@ -1,0 +1,33 @@
+workflow/elf-linear-superpowers/SKILL.md
+  s_fd0fc7bd3eb608::t_9ea4f0321ffcc0 149
+  s_fd0fc7bd3eb608::t_66cb7da03117f8 191-193
+  s_fd0fc7bd3eb608::t_e80403334c880e 214-215
+  s_fd0fc7bd3eb608::t_6f04928b8ba26b 291
+  s_fd0fc7bd3eb608::t_f2f082d22d68d3 274
+  s_fd0fc7bd3eb608::t_e322a8e915350b 297
+  s_fd0fc7bd3eb608::t_b08383302a893c 117
+  s_fd0fc7bd3eb608::t_8bee478cf877bc 150
+  s_fd0fc7bd3eb608::t_36713a9b049201 234
+  s_fd0fc7bd3eb608::t_efe8bd0001df3e 348-349,367
+workflow/elf-team-rule/SKILL.md
+  s_fd0fc7bd3eb608::t_d377c03957d956 124
+  s_fd0fc7bd3eb608::t_99b9cd1bb62895 372-374
+  s_fd0fc7bd3eb608::t_1ff9d26cff8074 110-123,125-129
+  s_fd0fc7bd3eb608::t_d40b3bab21f6ff 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "16306c89a23160b7deef77e172c4e1a6db945ff3",
+  "prompts": {},
+  "sessions": {
+    "s_fd0fc7bd3eb608": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a7a31f-b35b-4e93-8e68-9c3b3d6ab858",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
