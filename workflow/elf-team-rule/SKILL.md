@@ -62,7 +62,7 @@ metadata:
     - 有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo：
       - 開 PR → Plan「進行中」（自動）；PR 合進 `dev` → 「驗證中」（自動，Eddie 依目標分支設定）；Spec 維持「進行中」。
       - 「已完成」由發版審計員（規則 39）在步驟 7（`workflow__elf-linear-superpowers`）**手動設定**，三個條件都要滿足：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。Plan 完成後 Spec 由父子自動化關閉。
-    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部手動，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
+    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部由發版審計員（規則 39）手動設定，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
     - 沒有 `release` 分支（還沒導入 dev／release）的 repo：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
     - 過渡期：Eddie 在 E-310 留言確認自動化已設定之前，`dev` 合併後若被自動關單，AI 手動把 Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」。
 
@@ -78,7 +78,7 @@ metadata:
     - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支（規則 19 的清理實作者，以及 `pr/`、`merge/conflict-*` 的清理除外）等破壞性操作
     - 工作目錄有未提交的變更，而接下來的操作會切換分支
     - 無法確定 repo 類型，或 `BRANCHING.md` 與 remote 設定不一致
-    - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外（規則 19 的清理關卡與規則 39 的「允許發版」除外，不能以例外放行）
+    - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外（規則 19 的清理關卡、規則 39 的「允許發版」與發版角色除外，不能以例外放行）
     - `git push` 被拒（non-fast-forward）：MUST NOT 改用 `pull --rebase`、`reset` 或 force push 讓它過
     - 在本規範沒有指示的 detached HEAD 上準備提交（規則 26 的替代做法本身會 `git switch --detach origin/dev`，所以只擋本規範沒有指示的情況，不把 detached HEAD 整個列為停止條件）
     本條的停止條件優先於 `workflow__elf-linear-superpowers` 的裁決制：裁決制只處理計畫與實際不符，上列情況一律照本條停下。
@@ -258,10 +258,11 @@ metadata:
     發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由**發版審計員**負責；依規則 24 列出提交給使用者看時，一併確認發版審計員是誰。
     - **發版審計員**：全新 session（不是任何實作者的 session；可由最終審計員的 session 接續，見下）、與本次任何實作者不同模型。Eddie 在 Linear 留下明確的「允許發版」之前 MUST NOT 發版。
     - **發版前**：MUST 重讀 PR、候選 SHA、所有 required check（規則 28）、`release` 快轉條件與部署／sync 證據；MUST NOT 在發版階段修改程式或補實作。
-    - **發版後**：MUST 依規則 10 的三個條件把 Plan 改為已完成並在 Plan 留證據。這一步適用於該次發版帶出去的每一張 Plan。Plan 群組（規則 17）要群組內每一張（例：E-391 的 E-392 與 E-425）都改為已完成，清理實作者才可開始清理（規則 19）。Spec 沒有自動關閉時，由發版審計員手動設定並留言（規則 17 (5)）。
+    - **發版後**：MUST 依規則 10 的三個條件把 Plan 改為已完成並在 Plan 留證據。這一步適用於該次發版帶出去的每一張 Plan。Plan 群組（規則 17）要群組內每一張（例：E-391 的 E-392 與 E-425）都改為已完成，清理實作者才可開始清理（規則 19）。Spec 沒有自動關閉時，由發版審計員手動設定並留言（規則 17 的「狀態回寫」）。
     - **與最終審計員的關係**：最終審計員與發版審計員是同一個審計角色，可以是同一個 session 接續：合併前審 PR；Eddie 合進 `dev` 並留下「允許發版」後，MUST 重新讀 Linear 與 git 核對發版條件，不沿用合併前的判斷。換 session 時，新 session 一樣 MUST 與實作者不同模型。
     - **Eddie 保留三項決策**：Spec 定案、PR 合進 `dev`、Linear「允許發版」。AI MUST NOT 取代這三項授權。
     - **「允許發版」只認 Linear 留言**：只有 Eddie 在 Linear 留下的「允許發版」留言算數；對話裡的口頭同意或催促（例：「應該沒問題，先推」）都不能取代，AI 也不能自行判斷「應該可以」。這道關卡不適用規則 13 的「請使用者確認是否例外」：沒有該留言就停下，請 Eddie 到 Linear 留言。
+    - **發版角色不能以例外放行**：發版審計員不是實作者、與實作者不同模型、是全新 session 或最終審計員的 session，這些要求同樣不適用規則 13 的「請使用者確認是否例外」。使用者要求實作者（或與實作者同模型、同 session 的審計員）發版時，一律 MUST NOT 照做：停下，引用規則 39，指向發版審計員。
 
     快轉與實際派發由誰執行，依 repo 的規定：
     - repo 允許 AI 推 `release`：由發版審計員在「允許發版」後執行。
