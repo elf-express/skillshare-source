@@ -8,7 +8,7 @@ description: |
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
   或建立／拆分一個 Task 很多的 Plan 時觸發。
 metadata:
-  version: 1.7.0
+  version: 1.8.0
   owner: Elf Express
 ---
 
@@ -150,11 +150,11 @@ metadata:
 18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理（同一天已有就加 `-2`），經 PR 合回 `dev`；這個 PR MUST 用「Create a merge commit」合併，MUST NOT squash 或 rebase。
     為什麼（merge commit）：squash 或 rebase 會產生新提交，`main`（或 hotfix 的 `release`）就不再是 `dev` 的祖先，下次同步又衝突、下次發佈無法快轉。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
-19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成、發版審計員已在 Plan 留下發版證據之後（沒有 Spec／Plan 的單一工作單，例如 hotfix、維運，前兩者改為「該單已完成」、「在該單留下發版證據」），由**清理實作者**刪除。合進 `dev` 不是清理的時點。
+19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成、發版審計員已在 Plan 留下發版證據之後（沒有 Spec／Plan 的單一工作單，例如 hotfix、維運，後兩項分別改為「該單已完成」、「在該單留下發版證據」），由**清理實作者**刪除。合進 `dev` 不是清理的時點。
     - **清理實作者**：全新 session、與發版審計員不同模型（可以與原實作者相同）、在主 worktree 執行；MUST NOT 在要刪的 worktree 裡執行。
     - **先核對**：清理實作者 MUST 獨立重讀 Linear 與 git，確認目標已在 `origin/release`、發版證據（SHA、check runs、部署）完整，且 Plan 群組（規則 17）的每一張都已改為已完成；群組只完成一部分時 MUST NOT 開始清理。
     - **再執行**：用 `release-cleanup` 清理：在要清理的 repo 的主 worktree，以完整路徑執行 skillshare-source 的 `scripts/release-cleanup.sh [--dry-run] E-<n> …`／`release-cleanup.ps1 [-DryRun] E-<n> …`。MUST 先跑 `--dry-run`；列出的目標與理由都正確、相關的 Orca 工作區與終端都已關閉，才由清理實作者自己輸入字面 `yes` 正式執行。
-    - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除本單的開發分支與它的 worktree。只有清理實作者可依規則 19 執行清理。`pr/`、`merge/conflict-*` 分支與它們的 worktree 不在此限，依「其他分支」一項由負責它們的 session 在該項所列時點刪除（規則 13 的例外）。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup`（含它跳過或失敗的目標）。
+    - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除本單的開發分支（本機與遠端）與它的 worktree。只有清理實作者可依規則 19 執行清理；已取消的 Plan 不走 `release-cleanup`，依「已取消的 Plan」一項由 Eddie 個案決定。`pr/`、`merge/conflict-*` 分支與它們的 worktree 不在此限，依「其他分支」一項由負責它們的 session 在該項所列時點刪除（規則 13 的例外）。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup`（含它跳過或失敗的目標）。
     - **關卡不能放行**：清理關卡（先 `--dry-run`、核對目標、清理實作者自己輸入 `yes`、實作者與發版審計員不刪）不適用規則 13 的「請使用者確認是否例外」。使用者要求跳過 dry-run 或確認，或要實作者、發版審計員代為刪除本單的開發分支與它的 worktree（已取消的 Plan 依「已取消的 Plan」一項，由 Eddie 個案決定）時，一律 MUST NOT 照做：停下，引用規則 19，指向清理實作者。
     - **失敗**：清理失敗或被跳過時，只保留目標並回報；MUST NOT 回滾已驗證的發版。
     - **已取消的 Plan**：不走 `release-cleanup`，由 Eddie 個案決定。
@@ -255,24 +255,35 @@ metadata:
 **發版**
 
 39. 本規則只適用於有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo；沒有 `release` 分支（還沒導入 dev／release）的 repo 維持規則 10 的「merge → 已完成」，合進主線就等於發版。
-    發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由 Eddie 指定一個 session 負責，或由 Eddie 自己做；依規則 24 列出提交給使用者看時，一併確認由誰負責。
+    發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由**發版審計員**負責；依規則 24 列出提交給使用者看時，一併確認發版審計員是誰。
+    - **發版審計員**：全新 session、與本次任何實作者不同模型。Eddie 在 Linear 留下明確的「允許發版」之前 MUST NOT 發版。
+    - **發版前**：MUST 重讀 PR、候選 SHA、所有 required check（規則 28）、`release` 快轉條件與部署／sync 證據；MUST NOT 在發版階段修改程式或補實作。
+    - **發版後**：MUST 依規則 10 的三個條件把 Plan 改為已完成並在 Plan 留證據。Plan 群組（規則 17）要群組內每一張（本單是 E-392 與 E-425）都改為已完成，清理實作者才可開始清理（規則 19）。
+    - **與最終審計員的關係**：最終審計員與發版審計員是同一個審計角色，可以是同一個 session 接續：合併前審 PR；Eddie 合進 `dev` 並留下「允許發版」後，MUST 重新讀 Linear 與 git 核對發版條件，不沿用合併前的判斷。換 session 時，新 session 一樣 MUST 與實作者不同模型。
+    - **Eddie 保留三項決策**：Spec 定案、PR 合進 `dev`、Linear「允許發版」。AI MUST NOT 取代這三項授權。
+
     快轉與實際派發由誰執行，依 repo 的規定：
-    - repo 允許 AI 推 `release`：由被指定的 session 執行。
-    - repo 規定 AI 不推 `release`／`main`（例：skillshare-source 的 `AGENTS.md`「AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.」）：快轉與實際派發由 Eddie 執行；被指定的 session 只負責快轉前列出提交（規則 24）、查 check runs（規則 28）、發版後驗證，以及通知其他相關的單。
+    - repo 允許 AI 推 `release`：由發版審計員在「允許發版」後執行。
+    - repo 的 AGENTS.md 規定 AI 不推 `release`／`main`：快轉與實際派發維持由 Eddie 執行；發版審計員只負責快轉前列出提交（規則 24）、查 check runs（規則 28）、發版前後的核對與留證據、發版後驗證，以及通知其他相關的單，MUST NOT 自己推或跑派發。
     - repo 沒寫明 AI 能不能推 `release`／`main`：視同不能推，比照上一項由 Eddie 執行。
 
+    過渡：E-425 發佈前，`release` 上的 AGENTS.md 仍禁止 AI 推 `release`／`main`，所以只有 E-392、E-425 這個 Plan 群組（連同已在 `dev` 的 E-424）的這一次發版，由 Eddie 在「允許發版」後自己執行快轉與 `skillshare sync`，發版審計員做發版前後的核對與證據，不推也不跑 sync；E-425 發佈後的下一次發版起，改由發版審計員在「允許發版」後執行。這一句不表示這一次 AI 可以推 `release`，也不表示之後永遠由 Eddie 執行；清理不在過渡範圍，發版後照規則 19 由清理實作者執行。
+
     限制與例外：
-    - 沒被指定的 session MUST NOT 為發版快轉 `release`（第 3 種含接著快轉 `main`），也 MUST NOT 跑派發。
+    - 發版審計員以外的 session MUST NOT 為發版快轉 `release`（第 3 種含接著快轉 `main`），也 MUST NOT 跑派發。
     - 第 1、2 種同步上游時快轉 `main`（`references/01-contribution-fork.md` B1、`references/02-private-fork.md` B1）不是發版，不受本規則限制。
     - 測試例外（不算派發，任何 session 都可以執行）：`skillshare sync --dry-run`，以及用拋棄式 `XDG_CONFIG_HOME`（`targets` 為空或只指向暫存目錄，且 `sources.skills` 指向自己的 worktree，不指向共用的 `release` clone）執行的 skillshare 指令或 `scripts/validate.sh`。這些都不會改動實際的目標與共用的來源。
 
     相關的單：
-    - 其他相關的單合進 `dev` 後停在「驗證中」，等發版的 session 或 Eddie 通知，才做各自的發版後驗證、結單（規則 10）與清理（規則 19、36）。
+    - 其他相關的單合進 `dev` 後停在「驗證中」，等發版審計員（repo 規定 AI 不推時為 Eddie）通知，才做各自的發版後驗證與結單（規則 10）；清理一律由規則 19 的清理實作者執行，相關的單的 session 不各自清理（規則 36）。
     - 單的範圍寫「不發版」時，MUST 同時寫明由哪張單或誰負責發版。
 
     為什麼：E-316 與 E-309 一起發版時，兩個 session 都準備快轉 `release`／`main`，由審計員臨時指定 E-309 執行才沒有重複（2026-10-18）；nginxWebUI E-286／E-287 寫了「不發版」，合併後沒有任何一張單負責發版（後來另開 E-330）。
-40. 沒有產品版號的 repo（skillshare-source、mcp-library），目前的發版方式是：依規則 24、28 快轉 `release`，再快轉 `main`；有派發步驟的照做（skillshare-source：AI 不推 `release`／`main`，快轉與 `skillshare sync` 由 Eddie 執行，被指定的 session 依規則 39 負責列出提交、查 check runs、發版後驗證與通知；mcp-library：由 push `release` 觸發 Docker Publish）。不打 tag、不改版號。mcp-library 的 `docker-publish.yml` 已經接受 `v*.*.*` tag，但在 E-337 導入產品版號與 `vX.Y.Z` tag 之前不推 tag。
+    為什麼（發版審計員）：避免同一個 AI 自己審、自己上線；實作、發版、清理拆給不同模型與全新 session，上線的最終業務決定仍留在 Eddie 的「允許發版」（E-391）。
+    為什麼（過渡）：新規則發佈前 `release` 上的 AGENTS.md 還是舊的，這一次若讓 AI 推 `release`，等於規則還沒生效就先違反現行 AGENTS.md；只限定這一個群組，是為了不讓例外變成常態（E-391，Eddie 2026-10-25 決定）。
+40. 沒有產品版號的 repo（skillshare-source、mcp-library），目前的發版方式是：依規則 24、28 快轉 `release`，再快轉 `main`；有派發步驟的照做（skillshare-source：發版審計員在 Eddie 留下「允許發版」後執行快轉 `release`、`main` 與 `skillshare sync`，並依規則 39 負責列出提交、查 check runs、發版後驗證與通知，E-425 發佈前的這一次例外見規則 39 的過渡條款；mcp-library：由 push `release` 觸發 Docker Publish）。不打 tag、不改版號。mcp-library 的 `docker-publish.yml` 已經接受 `v*.*.*` tag，但在 E-337 導入產品版號與 `vX.Y.Z` tag 之前不推 tag。
     為什麼：`cicd/elf-cicd-versioning` 只涵蓋有產品版號與 `release.yml` 的應用程式，這兩個 repo 的發版方式原本沒有寫在任何規則裡（2026-10-19 查證：`gh api repos/elf-express/{mcp-library,skillshare-source}/tags` 都是空的）。
+    為什麼（skillshare-source 改由發版審計員）：與規則 39 相同，避免同一個 AI 自己審、自己上線（E-391）；發版仍要有 Eddie 的「允許發版」。
 
 ## 3. 標準範本
 
@@ -360,7 +371,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 在 `release`／`main` 上直接修改，緊急修正一律走 hotfix（規則 25–27）。
 - MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
-- MUST NOT 未經 Eddie 指定就為發版快轉 `release`（第 3 種含接著快轉 `main`）或跑派發（規則 39）。
+- MUST NOT 由發版審計員以外的 session，或在 Eddie 沒有留下「允許發版」之前，為發版快轉 `release`（第 3 種含接著快轉 `main`）或跑派發；repo 的 AGENTS.md 規定 AI 不推時，發版審計員也不推（規則 39）。
 - MUST NOT 以 squash 或 rebase 合併開發分支 PR，一律用「Create a merge commit」（規則 37）。
 - 已開 PR 後 MUST NOT 改寫歷史，一律新增 commit 修正（規則 38）。
 
@@ -376,7 +387,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
-- [ ] 發版前已由 Eddie 指定執行的 session；沒被指定的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）（規則 39）
+- [ ] 發版前 Eddie 已在 Linear 留下「允許發版」；發版審計員是全新 session、與實作者不同模型；發版審計員以外的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）；repo 的 AGENTS.md 規定 AI 不推時，快轉與派發由 Eddie 執行（規則 39）
+- [ ] 發版後，發版審計員已把 Plan 群組內每一張都依規則 10 改為已完成並留證據，清理實作者才開始清理（規則 39、19）
 - [ ] 範圍寫「不發版」的單，已寫明由哪張單或誰負責發版（規則 39）
 - [ ] 另開兩組以上 Spec＋Plan 時已建里程碑（規則 17）
 - [ ] 同一個 Spec 底下有多張 Plan 時：驗收條件逐條標明 Plan、Spec 估點等於各 Plan 加總、有先後用 blocked by（規則 17）
