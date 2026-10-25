@@ -368,7 +368,10 @@ case_C19() {
   mksandbox && released_wt feat/e-18-x wt-e18 || return 1
   rm -rf "$D/wt/wt-e18"
   run_cleanup "$W" $'yes\n' E-18
-  assert_rc 0 && assert_local_kept feat/e-18-x && assert_remote_kept feat/e-18-x && assert_protected
+  assert_rc 0 && assert_local_kept feat/e-18-x && assert_remote_kept feat/e-18-x || return 1
+  # 腳本不能順手 prune：prunable 的 worktree 項目仍在 git worktree list 裡
+  if ! wt_listed wt/wt-e18; then echo "    prunable 的 worktree 項目不見了（被 prune 了）"; return 1; fi
+  assert_protected
 }
 
 # Windows 終端輸入 yes 會帶 \r
@@ -388,9 +391,40 @@ case_C21() {
   assert_rc 0 && assert_local_kept feat/e-20-x && assert_remote_kept feat/e-20-x && assert_protected
 }
 
+# 候選 worktree 本身乾淨，但目錄內（被 .gitignore／info/exclude 忽略的路徑下）巢狀著另一個 worktree：
+# git status 看不到它，git worktree remove 卻會連它一起刪 → 整個候選跳過，分支一併保留
+case_C22() {
+  mksandbox && released_wt feat/e-21-x wt-e21 || return 1
+  echo '.ocrca/' >> "$W/.git/info/exclude"
+  local nested="$D/wt/wt-e21/.ocrca/e-31-plan"
+  G worktree add -q --detach "$nested" main || return 1
+  echo precious > "$nested/uncommitted.txt"
+  run_cleanup "$W" $'yes\n' E-21
+  assert_rc 0 && assert_wt_kept wt/wt-e21 && assert_wt_kept wt/wt-e21/.ocrca/e-31-plan \
+    && assert_local_kept feat/e-21-x && assert_remote_kept feat/e-21-x || return 1
+  if [ ! -f "$nested/uncommitted.txt" ]; then echo "    巢狀 worktree 裡的未提交檔不見了"; return 1; fi
+  # 從巢狀的 worktree 裡執行：外層（候選）是所在 worktree 的上層目錄，同樣要保留
+  run_cleanup "$nested" $'yes\n' E-21
+  assert_rc 0 && assert_wt_kept wt/wt-e21 && assert_wt_kept wt/wt-e21/.ocrca/e-31-plan \
+    && assert_local_kept feat/e-21-x && assert_remote_kept feat/e-21-x || return 1
+  if [ ! -f "$nested/uncommitted.txt" ]; then echo "    巢狀 worktree 裡的未提交檔不見了"; return 1; fi
+  assert_protected
+}
+
+# worktree 只看自己的條件：HEAD 已進 release、乾淨 → 照刪；同名遠端分支多一個沒進 release 的提交 → 兩端分支保留
+case_C23() {
+  mksandbox && released_wt feat/e-22-x wt-e22 || return 1
+  local wt="$D/wt/wt-e22"
+  echo more >> "$wt/f_feat_e-22-x"
+  git -C "$wt" add f_feat_e-22-x && git -C "$wt" commit -q -m "ahead" && git -C "$wt" push -q origin feat/e-22-x || return 1
+  git -C "$wt" reset -q --hard HEAD~1 || return 1
+  run_cleanup "$W" $'yes\n' E-22
+  assert_rc 0 && assert_wt_gone wt/wt-e22 && assert_local_kept feat/e-22-x && assert_remote_kept feat/e-22-x && assert_protected
+}
+
 # ---------- 執行 ----------
 
-ALL_CASES="C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21"
+ALL_CASES="C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23"
 if [ $# -gt 0 ]; then SEL="$*"; else SEL="$ALL_CASES"; fi
 case "$IMPL" in
   all) IMPLS="sh ps1" ;;

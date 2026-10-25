@@ -2,7 +2,7 @@
 # release-cleanup.sh — 發版後收尾：刪除已進 origin/release 的單號所對應的 worktree、本機分支與遠端分支。
 #
 # 只刪「可證明安全」的項目，其餘一律跳過並列出原因（寧可少刪）：
-#   worktree  HEAD 是 origin/release 的祖先、git status 乾淨（含未追蹤檔）、沒被 lock、目錄還在
+#   worktree  HEAD 是 origin/release 的祖先、git status 乾淨（含未追蹤檔）、沒被 lock、目錄還在、目錄內沒有其他 worktree
 #   本機分支  末端是 origin/release 的祖先，且沒有被保留下來的 worktree 使用
 #   遠端分支  origin/<分支> 末端是 origin/release 的祖先
 #   同名的本機與遠端分支視為一組：任一端末端不在 origin/release，兩端都跳過；只有一端存在時只看那一端
@@ -147,12 +147,22 @@ in_release() {  # $1 = SHA；0＝是祖先、1＝不是、其他＝無法判斷
 # 檢查一個 worktree 能不能刪；結果放 WHY（空字串＝可刪）
 WHY=""
 wt_verdict() {
-  local i=$1 p=${WP[$1]} rc out
+  local i=$1 p=${WP[$1]} rc out inner other
   WHY=""
   if same_path "$p" "$MAIN"; then WHY="主 worktree，一律不動"; return 0; fi
   if same_path "$p" "$CUR"; then WHY="腳本執行所在的 worktree，不動"; return 0; fi
   if [ "${WPRUN[i]}" = 1 ] || [ ! -d "$p" ]; then WHY="目錄已不存在（git 標為 prunable）"; return 0; fi
   if [ "${WLOCK[i]}" = 1 ]; then WHY="worktree 被 lock"; return 0; fi
+  # 目錄內含其他已登記的 worktree（或主 worktree、所在 worktree）：它們可能放在被忽略的路徑下，
+  # git status 看不到，git worktree remove 卻會連它們（含未提交的檔案）一起刪掉
+  inner=${p%/}/
+  for other in "${WP[@]}" "$MAIN" "$CUR"; do
+    other=${other%/}/
+    if [ "$other" != "$inner" ] && [[ ${other,,} == "${inner,,}"* ]]; then
+      WHY="目錄內含其他工作區"
+      return 0
+    fi
+  done
   rc=0
   in_release "${WH[i]}" || rc=$?
   case $rc in
@@ -231,13 +241,15 @@ for nm in "${SORTED[@]+"${SORTED[@]}"}"; do
   wi=${WT_OF[$nm]-}
   if [ -n "$wi" ]; then WT_HANDLED[$wi]=1; fi
 
+  # worktree 只看它自己的條件（WT_WHY）；分支這一組另有自己的結果（lwhy／rwhy）。
+  # 單向連動：worktree 被跳過 → 它的本機與遠端分支一併跳過；分支被跳過不影響 worktree 要不要刪。
   lwhy=""; rwhy=""; wwhy=""
+  if [ -n "$wi" ]; then wwhy=${WT_WHY[$wi]-}; fi
   case "$nm" in
     dev|release|main|master) lwhy="受保護分支，一律不動"; rwhy=$lwhy; wwhy=$lwhy ;;
   esac
 
-  if [ -z "$lwhy" ] && [ -n "$wi" ] && [ -n "${WT_WHY[$wi]-}" ]; then
-    # worktree 被跳過 → 它的本機與遠端分支一併跳過
+  if [ -z "$lwhy" ] && [ -n "$wwhy" ]; then
     lwhy="工作區被跳過，分支一併保留"; rwhy=$lwhy
   fi
 
@@ -258,25 +270,20 @@ for nm in "${SORTED[@]+"${SORTED[@]}"}"; do
     # 配對：任一端不行，兩端都跳過
     if [ -n "$lwhy" ] && [ -z "$rwhy" ] && [ -n "$r" ]; then rwhy="同名的本機分支未達 origin/release，兩端一併保留"; fi
     if [ -n "$rwhy" ] && [ -z "$lwhy" ] && [ -n "$l" ]; then lwhy="同名的遠端分支未達 origin/release，兩端一併保留"; fi
-    if [ -n "$wi" ] && [ -z "${WT_WHY[$wi]-}" ] && { [ -n "$lwhy" ] || [ -n "$rwhy" ]; }; then
-      wwhy="分支被跳過，工作區一併保留"
-    fi
   fi
 
-  if [ -n "$wi" ]; then
-    if [ -n "${WT_WHY[$wi]-}" ]; then
-      add_skip "工作區" "${WP[wi]}（分支 $nm）" "${WT_WHY[$wi]}"
-    elif [ -n "$wwhy" ]; then
-      add_skip "工作區" "${WP[wi]}（分支 $nm）" "$wwhy"
-    fi
+  if [ -n "$wi" ] && [ -n "$wwhy" ]; then
+    add_skip "工作區" "${WP[wi]}（分支 $nm）" "$wwhy"
   fi
   if [ -n "$l" ] && [ -n "$lwhy" ]; then add_skip "本機分支" "$nm" "$lwhy"; fi
   if [ -n "$r" ] && [ -n "$rwhy" ]; then add_skip "遠端分支" "origin/$nm" "$rwhy"; fi
 
-  if [ -z "$lwhy" ] && [ -z "$rwhy" ] && [ -z "$wwhy" ]; then
-    wtpath=""
-    if [ -n "$wi" ]; then wtpath=${WP[wi]}; fi
-    P_WT+=("$wtpath"); P_NAME+=("$nm"); P_L+=("$l"); P_R+=("$r")
+  # 要刪：worktree 自己沒有跳過理由就刪；分支兩端都沒有跳過理由才刪（刪除時還要 worktree 移除成功）
+  wtpath=""; dl=""; dr=""
+  if [ -n "$wi" ] && [ -z "$wwhy" ]; then wtpath=${WP[wi]}; fi
+  if [ -z "$lwhy" ] && [ -z "$rwhy" ]; then dl=$l; dr=$r; fi
+  if [ -n "$wtpath" ] || [ -n "$dl" ] || [ -n "$dr" ]; then
+    P_WT+=("$wtpath"); P_NAME+=("$nm"); P_L+=("$dl"); P_R+=("$dr")
   fi
 done
 
