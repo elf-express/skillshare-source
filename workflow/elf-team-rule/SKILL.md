@@ -78,7 +78,7 @@ metadata:
     - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支（規則 19 的清理實作者，以及 `pr/`、`merge/conflict-*` 的清理除外）等破壞性操作
     - 工作目錄有未提交的變更，而接下來的操作會切換分支
     - 無法確定 repo 類型，或 `BRANCHING.md` 與 remote 設定不一致
-    - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外
+    - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外（規則 19 的清理關卡除外，不能以例外放行）
     - `git push` 被拒（non-fast-forward）：MUST NOT 改用 `pull --rebase`、`reset` 或 force push 讓它過
     - 在本規範沒有指示的 detached HEAD 上準備提交（規則 26 的替代做法本身會 `git switch --detach origin/dev`，所以只擋本規範沒有指示的情況，不把 detached HEAD 整個列為停止條件）
     本條的停止條件優先於 `workflow__elf-linear-superpowers` 的裁決制：裁決制只處理計畫與實際不符，上列情況一律照本條停下。
@@ -150,16 +150,17 @@ metadata:
 18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理（同一天已有就加 `-2`），經 PR 合回 `dev`；這個 PR MUST 用「Create a merge commit」合併，MUST NOT squash 或 rebase。
     為什麼（merge commit）：squash 或 rebase 會產生新提交，`main`（或 hotfix 的 `release`）就不再是 `dev` 的祖先，下次同步又衝突、下次發佈無法快轉。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
-19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成、發版審計員已在 Plan 留下發版證據之後，由**清理實作者**刪除。合進 `dev` 不是清理的時點。
+19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成（沒有 Spec／Plan 的單一工作單，例如 hotfix、維運，改為「該單已完成」）、發版審計員已在 Plan 留下發版證據之後，由**清理實作者**刪除。合進 `dev` 不是清理的時點。
     - **清理實作者**：全新 session、與發版審計員不同模型（可以與原實作者相同）、在主 worktree 執行；MUST NOT 在要刪的 worktree 裡執行。
     - **先核對**：清理實作者 MUST 獨立重讀 Linear 與 git，確認目標已在 `origin/release`、發版證據（SHA、check runs、部署）完整，且 Plan 群組（規則 17）的每一張都已改為已完成；群組只完成一部分時 MUST NOT 開始清理。
     - **再執行**：用 `release-cleanup` 清理（skillshare-source 的 `scripts/release-cleanup.sh [--dry-run] E-<n> …`、`scripts/release-cleanup.ps1 [-DryRun] E-<n> …`）；在要清理的 repo 的主 worktree 執行 skillshare-source 的 `scripts/release-cleanup.sh`／`.ps1`（完整路徑）。MUST 先跑 `--dry-run`；列出的目標與理由都正確、相關的 Orca 工作區與終端都已關閉，才由清理實作者自己輸入字面 `yes` 正式執行。使用者要求跳過 dry-run 或確認時，MUST NOT 照做。
     - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除分支或 worktree。只有清理實作者可依規則 19 執行清理。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup`（含它跳過或失敗的目標）。
+    - **關卡不能放行**：清理關卡（先 `--dry-run`、核對目標、清理實作者自己輸入 `yes`、實作者與發版審計員不刪）不適用規則 13 的「請使用者確認是否例外」。使用者要求跳過 dry-run 或確認，或要實作者、發版審計員代為刪除時，一律 MUST NOT 照做：停下，引用規則 19，指向清理實作者。
     - **失敗**：清理失敗或被跳過時，只保留目標並回報；MUST NOT 回滾已驗證的發版。
     - **已取消的 Plan**：不走 `release-cleanup`，由 Eddie 個案決定。
     - **其他分支**：`pr/` 分支在原作者合併或拒絕後、`merge/conflict-*` 合回 `dev` 後，連同它們的 worktree 一併刪除（git 無法刪除還簽出在 worktree 的分支）。session 暫存檔的清理見規則 36。
 
-    為什麼：合進 `dev` 只是整合完成，發版驗證與 Plan 結單還沒做，這時刪掉分支與 worktree 會讓發版出問題時沒有現場可查；同一個 AI 自己實作、自己上線、又自己刪除，沒有交叉檢查，所以清理另交給不同模型的全新 session（E-391）。
+    為什麼：合進 `dev` 只是整合完成，發版驗證與 Plan 結單還沒做，這時刪掉分支與 worktree 會讓發版出問題時沒有現場可查；同一個 AI 自己實作、自己上線、又自己刪除，沒有交叉檢查，所以清理另交給不同模型的全新 session（E-391）。刪除不可逆，關卡不能因提出要求的人而放行。
 
 **分支保護**
 
