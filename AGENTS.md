@@ -29,7 +29,7 @@ _superpowers/                      tracked repo obra/superpowers (own .git, giti
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
 scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
-scripts/elf-guard.*, make-hooks-yaml.cjs   superpowers phase Guard hooks (see docs/superpowers/guard.md)
+scripts/elf-guard.*, elf-approval.cjs, make-hooks-yaml.cjs   superpowers phase Guard hooks and approval-credential builder (see docs/superpowers/guard.md)
 docs/                              screenshots and docs/superpowers/ (Guard doc, state files) — not a skill
 ```
 
