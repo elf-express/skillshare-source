@@ -195,8 +195,7 @@ metadata:
 **多 AI 並行**
 
 31. 一個 session 對應一個 worktree、一條分支、一張 Plan；兩個 session MUST NOT 用同一條分支。session 開始前 MUST 確認工作目錄就是這張 Plan 的 worktree（repo 外同層、分支名稱符合規則 10）；MUST NOT 在 Orca 自動建立的 `.ocrca/…` 目錄裡做事。
-    本條的 worktree 要求從 `workflow__elf-linear-superpowers` 步驟 2 起適用：Spec 討論（步驟 1）與寫計畫（步驟 3）階段還沒有 worktree，MUST 在主目錄唯讀探索，MUST NOT 為了符合本條提前建 worktree 或分支。
-    為什麼：worktree、分支與狀態檔要等 Plan 取得「計畫已核准」之後才建（E-424，2026-10-25），核准前就要求 session 待在 worktree 裡會自相矛盾。
+    本條的 worktree 要求從 `workflow__elf-linear-superpowers` 步驟 2 起適用：Spec 討論（步驟 1）與寫計畫（步驟 3）階段還沒有 worktree，MUST 在主目錄唯讀探索，MUST NOT 為了符合本條提前建 worktree 或分支。為什麼：worktree、分支與狀態檔要等 Plan 取得「計畫已核准」之後才建（E-424，2026-10-25），核准前就要求 session 待在 worktree 裡會自相矛盾。
     為什麼：E-302（2026-10-17）停在 Orca 建的中文分支目錄，後來另開 worktree，舊的那個因為正是當下的工作目錄而刪不掉。
 32. 會改到同一批檔案的單 MUST 用 blocked by 排序（例：E-308 blocked by E-307）。
     **並行標註**：同一專案有兩組以上未完成的單時（里程碑一定隸屬某個專案，所以也涵蓋同一里程碑的情況；與巡檢 W6 的範圍一致），Spec 定案前 MUST 在「## 並行」一節寫一行，格式固定（巡檢 W6 逐字判斷，與 Spec 模板的欄位文字完全一致）：
