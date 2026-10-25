@@ -1,0 +1,21 @@
+stack/elf-stack/SKILL.md
+  s_286f18324e8f9c::t_0fbb3e30c17880 146,160
+stack/elf-stack/references/lint-format-e426.md
+  s_286f18324e8f9c::t_0fbb3e30c17880 11,29-32,53,93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2c47c22586d3a78141379ea4d25d3802e490078a",
+  "prompts": {},
+  "sessions": {
+    "s_286f18324e8f9c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17167-e54c-7b00-a025-2be6a9f6287b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
