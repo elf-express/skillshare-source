@@ -8,6 +8,7 @@ Eddie 定案：單一純文字工作單；TypeScript `^6.0.3`；格式化目標�
 
 - ELF.Studio：`main`，HEAD `7796516b383aed8baf08cdc743897a841e913870`；盤點根 `package.json`、`pnpm-lock.yaml`、`eslint.config.js`、`apps/playground/package.json` 與 `packages/studio/package.json`。
 - ELF.BasicApp：本機 `feat/e-194-pdf-questpdf`，HEAD `c9bb24b6d23ff413616397a34beb050d2465387c`；盤點 `frontend/package.json`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`、`eslint.config.mjs`、`.prettierrc.mjs`。這是該 checkout 的現況，**不是已發佈 release 的宣告**。
+- BasicApp 的 `frontend/pnpm-lock.yaml` 被 `frontend/.gitignore:43` 忽略，**不在上述 commit 中**。表內 BasicApp 的解析值是本機檔案 `E:\source\ELF\ELF.BasicApp\frontend\pnpm-lock.yaml` 的快照，SHA256：`470D3D483400A94DA6988FBC442002B418F29EA4DD2FB4EC06F4F11A2480D72C`；不能只憑 HEAD／tracked 乾淨宣稱可從 commit 重現。Studio lockfile 則已納入版控。
 - 兩個產品的 tracked 檔案在盤點時均無未提交修改；本單沒有修改產品或執行產品安裝。BasicApp 的 fork 遷移位置須由後續工作依其 BRANCHING.md 決定。
 - 套件版本直接讀 npm registry 的 `latest` manifest（另讀 TS 6 與 Node 24 型別固定版）；**沒有把 target 值填成產品 lockfile 已解析值**。
 
@@ -23,9 +24,12 @@ git show HEAD:eslint.config.js
 # ELF.BasicApp
 git show HEAD:frontend/package.json
 git show HEAD:frontend/pnpm-workspace.yaml
-git show HEAD:frontend/pnpm-lock.yaml
 git show HEAD:frontend/eslint.config.mjs
 git show HEAD:frontend/.prettierrc.mjs
+# BasicApp lockfile 是被忽略的本機快照，不能用 git show HEAD 重現
+git check-ignore -v frontend/pnpm-lock.yaml
+Get-FileHash -Algorithm SHA256 -LiteralPath frontend/pnpm-lock.yaml
+Get-Content -LiteralPath frontend/pnpm-lock.yaml
 ```
 
 Registry 重現（PowerShell；只讀公開 metadata，每次請求限制 20 秒）：
@@ -46,7 +50,7 @@ Invoke-RestMethod 'https://registry.npmjs.org/@types%2fnode/24.19.2' -TimeoutSec
 
 ## 完整盤點：宣告範圍 → lockfile 解析
 
-括號省略 peer resolution 後綴；「間接」是 preset 帶入，不能誤寫為沒有安裝。
+括號省略 peer resolution 後綴；「間接」是 preset 帶入，不能誤寫為沒有安裝。BasicApp 的箭頭後解析值均來自上述有雜湊的本機鎖檔，沒有可從 commit 還原的保證。
 
 | 套件 | 舊 elf-stack | ELF.Studio | ELF.BasicApp frontend | registry latest | 決策與代價 |
 |------|-------------|------------|-----------------------|-----------------|------------|
@@ -86,6 +90,7 @@ Invoke-RestMethod 'https://registry.npmjs.org/@types%2fnode/24.19.2' -TimeoutSec
 - 同檔 override 的註解記錄 TS ESLint 8.71.1 對 `.mjs` 的 `no-unused-vars` 誤報。這是 repo 記錄的理由；本單未獨立重現，不能宣稱 8.72.0 已修復，也不移除 override。
 - BasicApp 的 `format` script 仍用 Prettier 格式化 `**/*.{json,css,html,md}`，antfu formatters 開 CSS／HTML；同一檔案存在兩入口，`.prettierrc.mjs` 也註明要避免兩邊互相重排。產品遷移應列出 JSON／CSS／HTML／MD／YAML 等實際覆蓋矩陣、統一入口，再調整 scripts／CI／編輯器。
 - BasicApp 的 `lint`／`lint:fix` 先執行 oxlint 再執行 ESLint；catalog `oxlint ^1.86.0`、lockfile 1.87.0。這是既有 repo 守門例外，本單沒有決定 oxlint 的新目標版本，E-428 保留入口並確認與 antfu 的規則分工，不因「完整 antfu」而刪除。
+- BasicApp 忽略 lockfile 與本 skill 規則 6 不一致；E-428 須依 repo 流程提交 lockfile、驗證乾淨環境 frozen install 與 CI。此例外未解決前，不能把本機解析值當成下游可重現的鎖定組合。
 - Studio 必須保留 schema 的 `no-restricted-imports`、SFC 樣式限制、browser／node globals 語意與 `.superpowers`／`.ocrca`／`.openchamber`／`uio-design-feedback` ignores。根目錄 lint 保持涵蓋，0 錯誤 0 警告；原有 typecheck／測試／build／E2E 都要過。全庫排版獨立 commit 以利審查。
 - [ESLint 10 官方遷移指南](https://eslint.org/docs/latest/use/migrate-to-10.0.0)：Node 支援範圍、由每個 linted file 出發查找 config、recommended 規則及已移除 API 等都有變動；不能只以 peer 相容作結論。
 - [typescript-eslint 官方支援範圍](https://typescript-eslint.io/users/dependency-versions/) 與 [antfu 官方設定說明](https://github.com/antfu/eslint-config#readme) 是後續組合重查入口；版本升級仍須先改本表。

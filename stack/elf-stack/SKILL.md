@@ -143,7 +143,7 @@ dotnet test server/<App>.slnx -c Release \
 | prettier | `^3.9.10` | 過渡期獨立 CLI 才直接裝；完整 antfu 目標不另跑 CLI，plugin 內部使用 formatter 不等於另一套 CLI |
 | eslint-config-prettier | `^10.1.8` | 過渡期手動 ESLint＋Prettier 組合使用；遷到完整 antfu 後移除 |
 
-pnpm catalog 專案把 range 集中在 `pnpm-workspace.yaml`，使用端寫 `catalog:`；非 catalog 專案寫 `package.json`，都必須提交 lockfile。間接套件由 preset 與 lockfile 固定，不為湊表列套件而全部加成直接相依。
+pnpm catalog 專案把 range 集中在 `pnpm-workspace.yaml`，使用端寫 `catalog:`；非 catalog 專案寫 `package.json`，都必須提交 lockfile。BasicApp 目前忽略 lockfile 是待 E-428 修正的 repo 例外，不能當成此規則的永久豁免。間接套件由 preset 與 lockfile 固定，不為湊表列套件而全部加成直接相依。
 
 **已核對的相容組合與上限**
 
@@ -157,7 +157,7 @@ pnpm catalog 專案把 range 集中在 `pnpm-workspace.yaml`，使用端寫 `cat
 | repo | 例外與理由 | 收斂條件 |
 |------|------------|----------|
 | ELF.Studio | 目前 ESLint 9＋手動 recommended＋Prettier；TS `^5.6.3`、vue-tsc `^2.1.10`。既有 CI 與 repo 專屬規則需整組遷移，不能只升 ESLint 或只換 formatter | 另單遷到完整 antfu 與本表工具鏈；保留 schema UI 中立守門、SFC 樣式限制、browser／node globals 的語意與工作區 ignores；根目錄納入 lint 且 0 錯誤 0 警告，typecheck／測試／build／E2E 通過；全庫排版獨立 commit |
-| ELF.BasicApp `frontend` | antfu `^9.5.1`、ESLint `^10.12.0`；`formatters` 啟用 CSS／HTML，但獨立 Prettier CLI 仍處理 JSON／CSS／HTML／MD，尚未完整收斂；Node 型別為 `^26.6.4`。另外固定 vue-tsc `3.3.11` 避開模板誤報，override TS ESLint plugin `8.71.0` 避開 `.mjs` no-unused-vars 誤報；lint 入口先跑 oxlint 再跑 ESLint | 另單對齊 antfu 與 ESLint，保留 oxlint 先行守門並確認規則分工；盤點各副檔名由單一入口處理，確認 Node runtime／型別一致；重現並驗證兩項誤報已由穩定版修復、typecheck／lint／測試／build 通過，才解除固定版與 override；不因 latest 存在就移除例外 |
+| ELF.BasicApp `frontend` | antfu `^9.5.1`、ESLint `^10.12.0`；`formatters` 啟用 CSS／HTML，但獨立 Prettier CLI 仍處理 JSON／CSS／HTML／MD，尚未完整收斂；Node 型別為 `^26.6.4`。另外固定 vue-tsc `3.3.11` 避開模板誤報，override TS ESLint plugin `8.71.0` 避開 `.mjs` no-unused-vars 誤報；lint 入口先跑 oxlint 再跑 ESLint；lockfile 被忽略，解析值只是本機快照 | 另單對齊 antfu 與 ESLint，保留 oxlint 先行守門並確認規則分工；提交 lockfile 並驗證 frozen install；盤點各副檔名由單一入口處理，確認 Node runtime／型別一致；重現並驗證兩項誤報已由穩定版修復、typecheck／lint／測試／build 通過，才解除固定版與 override；不因 latest 存在就移除例外 |
 
 完整盤點（含 range、lockfile、registry、逐項建議與代價）、上游連結及重現指令見 [查證紀錄](references/lint-format-e426.md)。產品跟進：ELF.Studio 為 [E-427](https://linear.app/elf-express/issue/E-427)，ELF.BasicApp 為 [E-428](https://linear.app/elf-express/issue/E-428)；Vite／Pinia／vue-i18n／vue-router 等執行期另由 [E-429](https://linear.app/elf-express/issue/E-429) 決策，3.2 的這些列維持原值。
 
