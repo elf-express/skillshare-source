@@ -4,7 +4,8 @@
 # 用法（在 Git Bash 執行；每個案例各建一組全新的 bare origin + clone + worktree，只斷言 git 狀態與結束碼）：
 #   bash scripts/release-cleanup.test.sh                  # 兩版都跑（IMPL=all，預設）
 #   IMPL=sh  bash scripts/release-cleanup.test.sh         # 只跑 .sh
-#   IMPL=ps1 bash scripts/release-cleanup.test.sh         # 只跑 .ps1（找不到 release-cleanup.ps1 時 SKIP）
+#   IMPL=ps1 bash scripts/release-cleanup.test.sh         # 只跑 .ps1（優先 powershell.exe，其次 pwsh，可用 PS_EXE 指定；
+#                                                         # 都找不到時整組 SKIP 並印警告；腳本不存在則每個案例 FAIL）
 #   bash scripts/release-cleanup.test.sh C01 C16          # 只跑指定案例
 #
 # 結尾印 "PASS <n> FAIL <n> SKIP <n>"，有 FAIL 時 exit 1。
@@ -55,6 +56,19 @@ unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE ELF_ALLOW
 
 TMO=()
 if command -v timeout >/dev/null 2>&1; then TMO=(timeout 180); fi
+
+# .ps1 的直譯器：PS_EXE 優先，其次 powershell.exe（5.1），再其次 pwsh；都沒有時 PS_BIN 為空，整組 ps1 SKIP
+PS_BIN=""
+if [ -n "${PS_EXE:-}" ]; then
+  PS_BIN=$PS_EXE
+elif command -v powershell.exe >/dev/null 2>&1; then
+  PS_BIN=powershell.exe
+elif command -v pwsh >/dev/null 2>&1; then
+  PS_BIN=pwsh
+fi
+if { [ "$IMPL" = ps1 ] || [ "$IMPL" = all ]; } && [ -z "$PS_BIN" ]; then
+  echo "警告：找不到 powershell.exe 或 pwsh，也沒設 PS_EXE，ps1 版整組 SKIP。" >&2
+fi
 
 PASS=0
 FAIL=0
@@ -139,12 +153,17 @@ run_cleanup() {
       RC=$?
       ;;
     ps1)
+      if [ ! -f "$PS1_SCRIPT" ]; then
+        echo "找不到 $PS1_SCRIPT" > "$LOG"
+        RC=127
+        return 0
+      fi
       local args=() a
       for a in "$@"; do
         if [ "$a" = --dry-run ]; then a=-DryRun; fi
         args+=("$a")
       done
-      ( cd "$cwd" && printf '%s' "$input" | "${TMO[@]}" "${PS_EXE:-powershell.exe}" -NoProfile -ExecutionPolicy Bypass \
+      ( cd "$cwd" && printf '%s' "$input" | "${TMO[@]}" "$PS_BIN" -NoProfile -ExecutionPolicy Bypass \
           -File "$(cygpath -w "$PS1_SCRIPT")" "${args[@]}" ) > "$LOG" 2>&1
       RC=$?
       ;;
@@ -437,9 +456,9 @@ for impl in $IMPLS; do
       echo "不認得的案例：$c" >&2
       exit 2
     fi
-    if [ "$impl" = ps1 ] && [ ! -f "$PS1_SCRIPT" ]; then
+    if [ "$impl" = ps1 ] && [ -z "$PS_BIN" ]; then
       SKIP=$((SKIP + 1))
-      echo "SKIP [ps1] $c（找不到 scripts/release-cleanup.ps1）"
+      echo "SKIP [ps1] $c（找不到 PowerShell：powershell.exe、pwsh 都沒有，也沒設 PS_EXE）"
       continue
     fi
     CLOG="$ROOT/$impl-$c.log"
