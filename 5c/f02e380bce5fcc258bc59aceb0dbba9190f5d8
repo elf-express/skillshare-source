@@ -1,0 +1,29 @@
+workflow/elf-linear-superpowers/SKILL.md
+  s_fd0fc7bd3eb608::t_1adad73e04fbc9 48
+  s_fd0fc7bd3eb608::t_c796e478c6d0cc 174
+  s_fd0fc7bd3eb608::t_979668ca57f0b9 342
+  s_fd0fc7bd3eb608::t_1796ecd35b8354 39
+  s_fd0fc7bd3eb608::t_ec9e2dd7c76a2b 226
+  s_fd0fc7bd3eb608::t_466e5f0051e904 357
+  s_fd0fc7bd3eb608::t_75c2a3a64e7d33 26
+  s_fd0fc7bd3eb608::t_88ac315c7be89e 86
+  s_fd0fc7bd3eb608::t_3c1cd642888838 206-213
+  s_fd0fc7bd3eb608::t_169db652ae0159 175-183
+  s_fd0fc7bd3eb608::t_699f0b0dd14ad4 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5cf02e380bce5fcc258bc59aceb0dbba9190f5d8",
+  "prompts": {},
+  "sessions": {
+    "s_fd0fc7bd3eb608": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a7a31f-b35b-4e93-8e68-9c3b3d6ab858",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
