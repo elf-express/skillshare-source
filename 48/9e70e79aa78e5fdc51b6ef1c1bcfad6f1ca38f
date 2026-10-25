@@ -1,0 +1,19 @@
+AGENTS.md
+  s_07b5a578942260::t_71bbf79f6366cd 32-33,199-200,211-215,217-219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "489e70e79aa78e5fdc51b6ef1c1bcfad6f1ca38f",
+  "prompts": {},
+  "sessions": {
+    "s_07b5a578942260": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12c3956d-92ce-4691-a821-16b097874bfc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
