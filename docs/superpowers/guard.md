@@ -56,7 +56,7 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 
 `plan:` 沒填時，Plan 分支（`e-<Plan 編號>` 或 `<類型>/e-<Plan 編號>-…`）找不到狀態檔，Guard 不會擋。Spec 分支上 `plan:` 空白時視為未核准，會擋。
 
-依 E-369 的設計，團隊流程（elf-linear-superpowers 步驟 2，由 E-372 實作）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
+團隊流程（`workflow__elf-linear-superpowers` 步驟 2）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號；而 worktree、分支與狀態檔都要等 Plan 取得「計畫已核准」、核准憑證 `verify` 通過、相依條件確認之後才建立（E-424，2026-10-25，取代 E-369 原本「Spec 定案後先建」的設計）。核准前沒有 worktree，就沒有可以寫實作檔的工作目錄，Guard 在那個階段沒有保護對象。狀態檔的實際作用在核准之後：Plan 留言「計畫已修改 vN」或「核准撤回」、憑證被 `revoke` 之後，憑證不再通過規則 7，Guard 依規則 9 重新擋住 `docs/superpowers/` 以外的寫入。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
 
 狀態檔合進 `dev` 後留著當紀錄，不刪。之後的分支只要沿用同一個 Spec 或 Plan 編號，Guard 一樣會管。核准憑證只存在建立它的那台電腦；換一台電腦時，在那台電腦依同一則 Linear 核准留言再建一份，建好之前這類分支在 `docs/superpowers/` 以外的寫入會被擋。
 
