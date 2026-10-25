@@ -104,7 +104,7 @@ gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名
 
 經 PR 合回 `dev`，用 merge commit（規則 37），不可 squash 或 rebase。
 
-合併後刪除 `feat/e-<編號>-<短名>`（本地與遠端）。
+合進 `dev` 後不刪除 `feat/e-<編號>-<短名>`（本地、遠端與它的 worktree）：發版完成、Plan 與 Spec 已完成後，由清理實作者依規則 19 用 `release-cleanup` 刪除；實作者不刪。
 
 ### B4. 發佈給下游（`dev` → `release`）
 
@@ -168,7 +168,7 @@ git push origin dev              # 被拒 → 停下來回報，不要 pull --re
 * CI 已有 `hotfix/**` 推送觸發時（`elf-cicd-*` 現行範本），推送後就會有 check run，不用開 draft PR。draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
 * 發佈後提醒使用者：下游的第 2 種 repo 可以執行同步了。
 * 修正如果也適用原作者，另依 B5 用 `pr/` 送 PR。
-* 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
+* 發佈後不由實作者刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）：該單已完成、發版證據齊全後，由清理實作者依規則 19 用 `release-cleanup` 刪除。
 
 ### B5. 送 PR 給原作者（`main` → `pr/xxx`）
 
