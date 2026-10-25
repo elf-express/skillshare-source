@@ -41,6 +41,12 @@ bash scripts/sync-agents.sh
 sh scripts/git-guard/install.sh
 #    用 husky 的 repo（例如 Orca）另外執行：sh scripts/git-guard/install.sh --repo <repo 路徑>
 #    之後 `skillshare pull` 若更新了 git-guard，重新執行一次 install.sh
+
+# 7. 安裝團隊 hook：擋掉 AI 從根目錄或整顆磁碟遞迴搜尋的命令（說明見 docs/search-guard.md）
+skillshare hooks add elf-search-guard --file scripts/elf-search-guard.hooks.yaml --sync -g
+
+# 8.（選用，Windows）安裝 Everything 與命令列 es，AI 找檔案用（見 tools/elf-file-search）
+winget install voidtools.Everything voidtools.Everything.Cli
 ```
 
 > agents **不用** `skillshare sync agents`：Claude Code 不讀連結形式的 agent 檔（Windows 實測），
@@ -100,10 +106,13 @@ skillshare-source/
 ├── workflow/
 │   ├── elf-team-rule/             ★ git 分支規範（三種 repo 類型）、release CI/CD 核對、分支對齊、Plan 容量
 │   └── elf-linear-superpowers/    ★ Linear [Spec]/[Plan]/[維運] 單 × superpowers 生命週期（正本在 Linear）
-├── tools/                           第三方工具：agent-browser、find-skills、project-planner、audit-website
+├── tools/
+│   ├── elf-file-search/           ★ 找檔案：es、專案內 Glob／Grep／rg、禁止掃整顆磁碟
+│   └── agent-browser/  find-skills/  project-planner/  audit-website/   第三方工具
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
+├── scripts/elf-search-guard.*       擋從根目錄或整顆磁碟遞迴搜尋的 hook（說明見 docs/search-guard.md）
 ├── scripts/validate.sh              提交前檢查
 ├── scripts/elf-guard.*、make-hooks-yaml.cjs   superpowers 階段 Guard hooks（說明見 docs/superpowers/guard.md）
 └── docs/                            截圖與 docs/superpowers/（Guard 說明、狀態檔）
