@@ -373,12 +373,13 @@ bindings:
           return 'sha256:' + crypto.createHash('sha256').update(normalizeDescription(text), 'utf8').digest('hex');
         }
 
-        // 依 createdAt 由舊到新找出目前有效的核准留言；修改與撤回不限作者，核准只認 APPROVER_ID。
+        // 依 createdAt 的實際時間由舊到新（同時間保留原順序）找出目前有效的核准留言；修改與撤回不限作者，核准只認 APPROVER_ID。
         function findApproval(comments) {
           const sorted = (Array.isArray(comments) ? comments : [])
             .filter((c) => c && typeof c.body === 'string')
-            .slice()
-            .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+            .map((c, i) => ({ c, i, t: Date.parse(c.createdAt) }))
+            .sort((x, y) => x.t - y.t || x.i - y.i)
+            .map((x) => x.c);
           let required = 1;
           let current = null;
           let lastBlock = '';
@@ -418,6 +419,11 @@ bindings:
           if (typeof input.spec !== 'string' || !TICKET_RE.test(input.spec)) return `輸入的 spec 格式不符：${input.spec}`;
           if (typeof input.description !== 'string' || input.description === '') return '輸入缺少 Plan 描述';
           if (!Array.isArray(input.comments)) return '輸入缺少留言陣列';
+          for (const c of input.comments) {
+            const ok = c && typeof c.id === 'string' && c.id !== '' && typeof c.body === 'string' && c.author && typeof c.author.id === 'string'
+              && Number.isFinite(Date.parse(c.createdAt));
+            if (!ok) return `留言欄位不完整（需要 id、body、createdAt、author.id）：${JSON.stringify(c && c.id)}`;
+          }
           return null;
         }
 

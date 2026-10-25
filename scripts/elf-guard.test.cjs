@@ -444,6 +444,27 @@ const cases = [
     assert.strictEqual(r.ok, true);
     assert.strictEqual(r.comment.id, 'c3');
   }],
+  ['5.9 createdAt 時區寫法不同 -> 依實際時間排序', () => {
+    const approve = { id: 'c1', body: APPROVE_V1, createdAt: '2026-10-25T10:00:00.000Z', author: { id: guard.APPROVER_ID } };
+    const revoke = { id: 'c2', body: '核准撤回', createdAt: '2026-10-25T17:00:00+08:00', author: { id: guard.APPROVER_ID } };
+    assert.strictEqual(approval.findApproval([approve, revoke]).ok, true);
+  }],
+  ['6.11 留言缺 createdAt、時間無法解析或缺 id／author -> 拒絕，不寫檔', () => {
+    const dir = mkApprovalsDir();
+    const { createdAt, ...noTime } = comment('c1', APPROVE_V1, 1);
+    const bad = [
+      [noTime, comment('c2', '核准撤回', 2)],
+      [{ ...comment('c1', APPROVE_V1, 1), createdAt: 'yesterday' }],
+      [{ ...comment('c1', APPROVE_V1, 1), id: '' }],
+      [{ id: 'c1', body: APPROVE_V1, createdAt: comment('x', '', 1).createdAt }],
+    ];
+    for (const comments of bad) {
+      const r = approval.createCredential(planInput({ comments }), { plan: 'E-399', approvalsDir: dir });
+      assert.strictEqual(r.ok, false, JSON.stringify(comments));
+      assert.match(r.reason, /留言/);
+    }
+    assert.deepStrictEqual(fs.readdirSync(dir), []);
+  }],
   ['6.1 有效輸入 -> 建立九欄位憑證、不留暫存檔', () => {
     const dir = mkApprovalsDir();
     const r = approval.createCredential(planInput(), { plan: 'E-399', approvalsDir: dir });
