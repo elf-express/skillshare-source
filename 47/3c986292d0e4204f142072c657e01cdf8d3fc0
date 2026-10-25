@@ -1,0 +1,29 @@
+scripts/release-cleanup.test.sh
+  s_07b5a578942260::t_fc6cbd754dab87 371-374
+  s_07b5a578942260::t_0a5c9515bc0022 427
+  s_07b5a578942260::t_e5f6d75b0c4aaf 414-424
+  s_07b5a578942260::t_bba4c53b2ce7d6 394-413
+scripts/release-cleanup.sh
+  s_07b5a578942260::t_9f1e5327fa790a 156-165
+  s_07b5a578942260::t_8b1be124359f70 150
+  s_07b5a578942260::t_26364b1689d222 5
+  s_07b5a578942260::t_a999b3a94acac5 244-245,252
+  s_07b5a578942260::t_6bc6f9bd750430 247
+  s_07b5a578942260::t_9da8158e586d83 275-276,281-286
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "473c986292d0e4204f142072c657e01cdf8d3fc0",
+  "prompts": {},
+  "sessions": {
+    "s_07b5a578942260": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12c3956d-92ce-4691-a821-16b097874bfc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
