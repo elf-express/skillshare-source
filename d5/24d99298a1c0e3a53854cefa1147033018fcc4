@@ -1,0 +1,23 @@
+docs/superpowers/guard.md
+  s_9b5d67406939d6::t_033d2a85391362 59
+workflow/elf-linear-superpowers/SKILL.md
+  s_9b5d67406939d6::t_982f5d2e2ada81 5,40,63,81-82,87-88,111,147-149,157,161,178,196,210,352
+workflow/elf-team-rule/SKILL.md
+  s_9b5d67406939d6::t_d1356cfbde6740 11,198-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d524d99298a1c0e3a53854cefa1147033018fcc4",
+  "prompts": {},
+  "sessions": {
+    "s_9b5d67406939d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b53511a3-2eb7-4ab3-8f26-cc07754d4000",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
