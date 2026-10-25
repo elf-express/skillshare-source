@@ -68,6 +68,8 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 | vue-i18n | `^10.0.5` | — | dependencies |
 | Vitest | `^5.0.1` | — | devDependencies |
 | @playwright/test | `^1.63.0` | — | 根 `package.json` devDependencies |
+| eslint-plugin-vue | `^10.11.1` | 10.11.1 | 根 `package.json` devDependencies ＋ lockfile |
+| globals | `^17.13.0` | 17.13.0 | 根 `package.json` devDependencies ＋ lockfile |
 | Tauri CLI（@tauri-apps/cli） | `^2.11.4` | 2.11.4 | 根 `package.json` devDependencies |
 | @tauri-apps/api | `^2.11.1` | — | dependencies |
 | tauri（Rust crate） | `"2"` | `Cargo.lock` | `src-tauri/Cargo.toml` ＋ commit `Cargo.lock` |
@@ -75,6 +77,8 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 | ant-design-vue | `^4.2.6` | — | dependencies（`apps/package.json`） |
 
 > UI 元件庫（已決議）：**ant-design-vue 4** 是團隊標準。既有 SoybeanAdmin / NaiveUI repo 屬歷史例外，依該 repo 自己的 CLAUDE.md；AI 不得在任何 repo 自行替換 UI 庫。
+
+> eslint-plugin-vue 10 與 globals（E-415 補入，取自 ELF.Studio v0.1.1）：v10 的 flat config 不再提供 v9 給的 browser globals，也不再把 `globals` 列為自己的相依，所以用 v10 的 repo 必須自己裝 `globals` 並在 `eslint.config.js` 供應（`.vue` 用 `globals.browser`、Node 腳本用 `globals.node`）；`.ts` 不受影響，typescript-eslint 的 `eslint-recommended` 對 TS 檔關掉 `no-undef`。v10 另宣告 `postcss-selector-parser: ^7.1.4`，這是 ELF.Studio 升到 v10 的原因（6.x 線沒有 GHSA-rj75-hqrm-r3gf 的修補版）。
 
 ### 3.3 .NET 測試（團隊已決議：`server/tests/<Project>.Tests/`、整合測試 `server/tests/<App>.Api.IntegrationTests/`、xUnit、`coverlet.msbuild`、合併後 line 55% 強制 / branch 50% 建議）
 
