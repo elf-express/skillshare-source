@@ -1,0 +1,24 @@
+scripts/make-hooks-yaml.cjs
+  s_ff9d2eb3460ff5::t_976dbf2c2c2fdb 4
+  s_ff9d2eb3460ff5::t_b08250ad723d42 90,92,98-99,103-126,130-136,139-154,156,160-163
+docs/search-guard.md
+  s_ff9d2eb3460ff5::t_be8b678b59174e 1-91
+scripts/elf-search-guard.hooks.yaml
+  s_ff9d2eb3460ff5::t_ef66bcdc5be54e 1-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6676f1d19779b7588e79fe20e2185190aeeda8f0",
+  "prompts": {},
+  "sessions": {
+    "s_ff9d2eb3460ff5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "80036701-a903-4f95-a2da-bbad1439dffa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
