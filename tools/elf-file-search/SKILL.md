@@ -94,6 +94,7 @@ winget install voidtools.Everything voidtools.Everything.Cli
 | 電腦變卡、CPU 滿載，`find` 跑了 2 小時（2026-10-25） | 子代理在背景跑 `find / -iname …`，子代理結束後成了孤兒行程 | 用 `es -n 20 <關鍵字>`；背景命令結束前確認已停止 |
 | `es` 回 `command not found` | 沒裝 Everything 命令列，或安裝位置不在 PATH | `where es`／`Get-Command es` 找完整路徑；沒有就限在專案目錄，或請使用者安裝（第 3 節 winget） |
 | `es` 一次吐出上萬筆 | 沒加 `-n` | 一律加 `-n 20`，需要時用 `-path` 縮小範圍 |
+| Git Bash 裡 `find /c "error" log.txt` 掃了整顆 C: | Git Bash 的 `find` 是 GNU find（`type -a find` 第一個是 `/usr/bin/find`），`/c` 被當成起點，不是 Windows find 的選項 | 文字搜尋用 `grep`／`rg`；真的要用 Windows find，在 PowerShell 或 `cmd /c` 裡執行 |
 | 以為 `tree /f` 會被擋 | `/f`、`/a` 是 Windows `tree` 的選項，不是磁碟根 | 照常使用；`tree /` 或 `tree C:\` 才是從根目錄遞迴 |
 | commit 訊息或文件裡寫到 `find /` 範例被擋 | 範例文字沒加引號，被當成命令 | 放在引號字串或 heredoc 裡；`git commit -F <檔案>` 也可以 |
 

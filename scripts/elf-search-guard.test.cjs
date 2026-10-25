@@ -53,6 +53,21 @@ const BLOCK = [
   ['B32', BASH, 'du -sh /c/'],
   ['B33', BASH, 'find /cygdrive/c -name x'],
   ['B34', PS, 'dir -Recurse C:\\'],
+  // 最終審查補的漏擋：背景、重導向、路徑前綴、/*、多個起點、PowerShell 的 ls -r。
+  ['B35', BASH, 'find / &'],
+  ['B36', BASH, 'nohup find / -name x > out.txt &'],
+  ['B37', BASH, 'find / > out.txt'],
+  ['B38', BASH, '/usr/bin/find / -name x'],
+  ['B39', BASH, 'find /* -name x'],
+  ['B40', BASH, 'find /c/* -name x'],
+  ['B41', BASH, 'find /tmp / -name x'],
+  ['B42', PS, 'ls -r C:\\'],
+  // E-422 第 17 點：Git Bash 的 find 是 GNU find，Windows find 的寫法在 Bash 工具下會掃整顆磁碟。
+  ['B43', BASH, 'find /c "error" log.txt'],
+  ['B44', BASH, 'tasklist | find /i "node"'],
+  ['B45', BASH, 'find /v /c "x" a.txt'],
+  ['B46', BASH, 'ls --recursive /'],
+  ['B47', BASH, 'du -sh /*'],
 ];
 
 // [編號, tool_name, 命令]；A01–A18 為 Eddie 個人版的放行案例。
@@ -64,9 +79,9 @@ const ALLOW = [
   ['A05', BASH, 'find ./src -type f -newer x 2>/dev/null'],
   ['A06', BASH, 'find /c/Users/EDDIE/project -name x'],
   ['A07', BASH, 'find E:/mssql -name "*.sql"'],
-  ['A08', BASH, 'tasklist | find /i "node"'],
-  ['A09', BASH, 'find /c "error" log.txt'],
-  ['A10', BASH, 'find /v /c "x" a.txt'],
+  ['A08', PS, 'tasklist | find /i "node"'],
+  ['A09', PS, 'find /c "error" log.txt'],
+  ['A10', PS, 'find /v /c "x" a.txt'],
   ['A11', BASH, 'es -n 20 altcha*.css'],
   ['A12', PS, String.raw`Get-ChildItem E:\mssql -Recurse -Filter *.sql`],
   ['A13', PS, String.raw`Get-ChildItem C:\ `],
@@ -87,6 +102,11 @@ const ALLOW = [
   ['A28', BASH, 'fd altcha .'],
   ['A29', PS, "@'\n" + String.raw`Get-ChildItem C:\ -Recurse` + "\n'@ | Set-Content a.md"],
   ['A30', 'Write', 'find /'],
+  // Windows find 在 cmd /c 內仍是 Windows 內建 find；最終審查的少見誤擋。
+  ['A31', BASH, 'cmd /c find /c "error" log.txt'],
+  ['A32', PS, 'Copy-Item -Recurse .\\dir D:\\'],
+  ['A33', BASH, 'rg / src'],
+  ['A34', PS, 'find /n "-x" a.txt'],
 ];
 
 function payload(toolName, command) {
