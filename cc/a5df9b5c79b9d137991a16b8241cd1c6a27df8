@@ -1,0 +1,19 @@
+stack/elf-stack/SKILL.md
+  s_ace45dfbc24168::t_218d7e55d6502f 71-72,81-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cca5df9b5c79b9d137991a16b8241cd1c6a27df8",
+  "prompts": {},
+  "sessions": {
+    "s_ace45dfbc24168": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2ab4f9f9-b446-4da0-8f71-4f1921cb3e1c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
