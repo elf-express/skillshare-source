@@ -1,0 +1,25 @@
+stack/elf-stack/SKILL.md
+  s_286f18324e8f9c::t_acaf05a96c6719 151,162
+  s_286f18324e8f9c::t_74e5ceee852815 130
+  s_286f18324e8f9c::t_938312cf74942f 8,17,64-65,82,128-129,131-150,152-159,161,163-165,285,320-327
+  s_286f18324e8f9c::t_a006d3a7afa24b 160
+stack/elf-stack/references/lint-format-e426.md
+  s_286f18324e8f9c::t_3ebc137fc57efd 1-87,89-97
+  s_286f18324e8f9c::t_a006d3a7afa24b 88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "198bfbbe260406a467aa69668b13c07340d3e629",
+  "prompts": {},
+  "sessions": {
+    "s_286f18324e8f9c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17167-e54c-7b00-a025-2be6a9f6287b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
