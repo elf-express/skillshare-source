@@ -75,7 +75,7 @@ metadata:
 13. 遇到以下任何一種，MUST 停止操作、說明現況、等使用者決定：
     - `git merge --ff-only` 失敗（`main` 或 `release` 被直接提交過，或上游改寫了歷史）
     - 任何合併、cherry-pick、rebase 出現衝突
-    - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支（規則 19 的清理除外）等破壞性操作
+    - 需要 `--force`、`--force-with-lease`、`reset --hard`、刪除遠端分支（規則 19 的清理實作者，以及 `pr/`、`merge/conflict-*` 的清理除外）等破壞性操作
     - 工作目錄有未提交的變更，而接下來的操作會切換分支
     - 無法確定 repo 類型，或 `BRANCHING.md` 與 remote 設定不一致
     - 使用者的要求違反本規範（例如「直接推到 main」）：說明違反哪一條，請使用者確認是否例外
@@ -150,7 +150,16 @@ metadata:
 18. 第 1、2 種的 `main` → `dev` 同步合併，沒有衝突時可以由維護者直接 `git push origin dev`；有衝突時 MUST 先回報，使用者同意後改在 `merge/conflict-<YYYYMMDD>` 分支處理（同一天已有就加 `-2`），經 PR 合回 `dev`；這個 PR MUST 用「Create a merge commit」合併，MUST NOT squash 或 rebase。
     為什麼（merge commit）：squash 或 rebase 會產生新提交，`main`（或 hotfix 的 `release`）就不再是 `dev` 的祖先，下次同步又衝突、下次發佈無法快轉。
     為什麼：同步合併沒有新內容，強制走 PR 只是多一道手續；有衝突時才需要留下可審查的紀錄。
-19. 開發分支合進 `dev` 並確認無誤後，MUST 刪除本地與遠端分支（`git branch -d <分支>`、`git push origin --delete <分支>`）；`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。worktree 的清理見規則 36。
+19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成、發版審計員已在 Plan 留下發版證據之後，由**清理實作者**刪除。合進 `dev` 不是清理的時點。
+    - **清理實作者**：全新 session、與發版審計員不同模型（可以與原實作者相同）、在主 worktree 執行；MUST NOT 在要刪的 worktree 裡執行。
+    - **先核對**：清理實作者 MUST 獨立重讀 Linear 與 git，確認目標已在 `origin/release`、發版證據（SHA、check runs、部署）完整，且 Plan 群組（規則 17）的每一張都已改為已完成；群組只完成一部分時 MUST NOT 開始清理。
+    - **再執行**：用 `release-cleanup` 清理（skillshare-source 的 `scripts/release-cleanup.sh [--dry-run] E-<n> …`、`scripts/release-cleanup.ps1 [-DryRun] E-<n> …`）。MUST 先跑 `--dry-run`；列出的目標與理由都正確、相關的 Orca 工作區與終端都已關閉，才正式執行並輸入字面 `yes`。使用者要求跳過 dry-run 或確認時，MUST NOT 照做。
+    - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除分支或 worktree。只有清理實作者可依規則 19 執行清理。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup` 的跳過或失敗。
+    - **失敗**：清理失敗或被跳過時，只保留目標並回報；MUST NOT 回滾已驗證的發版。
+    - **已取消的 Plan**：不走 `release-cleanup`，由 Eddie 個案決定。
+    - **其他分支**：`pr/` 分支在原作者合併或拒絕後刪除；`merge/conflict-*` 合回 `dev` 後刪除。session 暫存檔的清理見規則 36。
+
+    為什麼：合進 `dev` 只是整合完成，發版驗證與 Plan 結單還沒做，這時刪掉分支與 worktree 會讓發版出問題時沒有現場可查；同一個 AI 自己實作、自己上線、又自己刪除，沒有交叉檢查，所以清理另交給不同模型的全新 session（E-391）。
 
 **分支保護**
 
@@ -218,9 +227,10 @@ metadata:
 35. 刪除或移動共用路徑前，MUST 在相關的單上確認沒有人在用。
     為什麼：E-303 刪了舊 clone，稍早的稽核正在讀那份。
     - 規則 34、35 的「確認有沒有人在用」：查同一里程碑、同一專案裡狀態為「進行中」或「驗證中」的 Plan，有就在那張單留言；判斷不了就問使用者。
-36. session 收尾時 MUST 清理自己建立的 worktree 與分支（規則 19 的分支刪除之外加上 worktree），並把 Orca 自動建立、沒用到的 `.ocrca/…` 目錄列進清理清單。刪除 superpowers 工作區（`.superpowers/sdd/E-<Plan 編號>-plan/`，移除 worktree 時也會一起刪掉）之前，MUST 先在 Plan 留言「Rulings I made」總表（`workflow__elf-linear-superpowers` 步驟 5-1）。
+36. session 收尾時 MUST 清理自己建立的暫存檔（匯出檔、log、暫存目錄），MUST NOT 移除本單的 worktree 與分支。本單的 worktree、分支與 Orca 自動建立、沒用到的 `.ocrca/…` 目錄，MUST 列在收尾留言（路徑、分支、最後一個提交），留給規則 19 的清理實作者。刪除 superpowers 工作區（`.superpowers/sdd/E-<Plan 編號>-plan/`，`release-cleanup` 移除 worktree 時也會一起刪掉）之前，MUST 先在 Plan 留言「Rulings I made」總表（`workflow__elf-linear-superpowers` 步驟 5-1）；實作者在收尾留言時留下，清理實作者執行前確認 Plan 上已有，沒有就停下回報。
     為什麼：E-302、E-310 都留下了這種目錄。
     為什麼（Rulings I made）：ledger 不進版控，工作區一刪就沒了；各 Task 的裁決雖已隨完成留言留到 Plan，總表是使用者與稽核一次看完所有裁決的地方。
+    為什麼（不自己移除 worktree 與分支）：session 收尾時通常只合進 `dev`，還沒發版，自己建立又自己刪除沒有第二個角色核對；目錄也可能正是目前的工作目錄而刪不掉（規則 31）。移除留給發版後的清理實作者（規則 19，E-391）。
 
 **合併方式**
 
@@ -375,8 +385,8 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] 整合 PR 發版後，前面的 Plan 已依規則 10 手動改為已完成並留言證據，Spec 已關閉（規則 17）
 - [ ] 同一專案有兩組以上未完成的單時，Spec 定案前已在「## 並行」寫好並行標註（規則 32）
 - [ ] 發佈後依 `references/05` 確認 `release`、`main` 與來源對齊
-- [ ] 合併完成的開發分支、`pr/`、`merge/conflict-*` 已刪除
-- [ ] session 收尾時自己建立的 worktree 已清理，Orca 建立但沒用到的 `.ocrca/…` 目錄已列進清理清單（規則 36）
+- [ ] `pr/`、`merge/conflict-*` 已刪除；開發分支與 worktree 沒有由實作者或發版審計員刪除，留給清理實作者（規則 19）
+- [ ] session 收尾時自己的暫存檔已清理，本單的 worktree 與分支已列在收尾留言（規則 36）
 - [ ] 刪除 superpowers 工作區或移除 worktree 之前，已在 Plan 留言「Rulings I made」總表（規則 36）
 - [ ] 單一 Plan 的 Task 數不超過 10；6–10 個時已考慮依估點或交付邊界拆（規則 16）
 
