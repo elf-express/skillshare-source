@@ -1,0 +1,25 @@
+workflow/elf-team-rule/SKILL.md
+  s_07b5a578942260::t_d73cacb957b419 187
+workflow/elf-team-rule/references/01-contribution-fork.md
+  s_07b5a578942260::t_177dcbb5ecf1d3 107,171
+workflow/elf-team-rule/references/02-private-fork.md
+  s_07b5a578942260::t_cbc7f32e3ca56a 116,178
+workflow/elf-team-rule/references/03-own-project.md
+  s_07b5a578942260::t_349db60c661c93 67,150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b154937c44f12efae697f2e9262e7cb42444093c",
+  "prompts": {},
+  "sessions": {
+    "s_07b5a578942260": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12c3956d-92ce-4691-a821-16b097874bfc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
