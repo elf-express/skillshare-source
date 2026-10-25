@@ -21,11 +21,12 @@ and agents (AI helpers that apply those rules) — fanned out by the
 <category>/elf-<name>/SKILL.md     team skills (stack, frontend, frontend/design, api, backend,
                                    desktop, cicd, testing, mcp, workflow)
 <category>/<name>/                 third-party skills (not elf-*)
-tools/                             third-party tooling skills
+tools/                             third-party tooling skills, plus the team skill tools/elf-file-search
 agents/*.md                        team agents (copied to ~/.claude/agents by scripts/sync-agents.sh)
 skillshare/                        skillshare's built-in skill — tracked (see below)
 frontend/design/ui-ux-pro-max/     tracked third-party skill, installed from an upstream subdir
 _superpowers/                      tracked repo obra/superpowers (own .git, gitignored)
+scripts/elf-search-guard.*         Claude Code hook: block recursive searches of / or a whole drive (see docs/search-guard.md)
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
 scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
@@ -137,8 +138,8 @@ CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev
 `hotfix/**` and on every PR, so the commit a release fast-forwards to has a check run (elf-team-rule
 rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
 read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
-run there. CI has no `_superpowers/` checkout and reports 46 folders; that is expected.
-That 46 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
+run there. CI has no `_superpowers/` checkout and reports 47 folders; that is expected.
+That 47 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
 caveats below never apply there.
 
 It does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
@@ -150,9 +151,9 @@ Three caveats before you treat a red result as your own doing:
 
 - Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
-  `_superpowers/` checked out it reports 61 folders. That is validate's count (`_superpowers/` included),
+  `_superpowers/` checked out it reports 62 folders. That is validate's count (`_superpowers/` included),
   not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
-  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 59 actually sync.
+  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 60 actually sync.
   CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,

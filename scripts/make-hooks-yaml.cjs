@@ -1,6 +1,7 @@
 // 產生器：把 elf-guard.cjs、elf-sessionstart.cjs 與 elf-approval.cjs 原文內嵌成 skillshare hooks entry YAML。
 // 用法：node scripts/make-hooks-yaml.cjs          寫出 scripts/elf-guard.hooks.yaml
 //       node scripts/make-hooks-yaml.cjs --check  比對現有 YAML，不同步則 exit 1
+//       同一次執行也寫出／比對 scripts/elf-search-guard.hooks.yaml（內嵌 elf-search-guard.cjs，E-423）
 'use strict';
 
 const fs = require('fs');
@@ -86,43 +87,80 @@ function extractBlocks(yaml) {
 }
 
 // 驗證：從產出字串取回的內容必須逐字等於來源
-function verifyRoundTrip(yaml, sources) {
+function verifyRoundTrip(yaml, sources, names = SOURCES) {
   const extracted = extractBlocks(yaml);
-  for (const name of SOURCES) {
+  for (const name of names) {
     if (extracted[name] !== sources[name]) {
       throw new Error(`${name} 內嵌後無法原樣取回`);
     }
   }
   const keys = Object.keys(extracted);
-  if (keys.length !== SOURCES.length) {
-    throw new Error(`YAML 內 block scalar 數量為 ${keys.length}，預期 ${SOURCES.length}`);
+  if (keys.length !== names.length) {
+    throw new Error(`YAML 內 block scalar 數量為 ${keys.length}，預期 ${names.length}`);
   }
+}
+
+// elf-search-guard：擋從根目錄或整顆磁碟遞迴搜尋的 hook，獨立一份 entry
+const SEARCH_OUT_FILE = path.join(SCRIPTS_DIR, 'elf-search-guard.hooks.yaml');
+const SEARCH_SOURCES = ['elf-search-guard.cjs'];
+const SEARCH_HOOK_DIR = '$HOME/.claude/hooks/skillshare/elf-search-guard';
+
+function generateSearchGuard(sources) {
+  const fileBlocks = SEARCH_SOURCES.map((name) => `${FILE_KEY_INDENT}${name}: |\n${indentBlock(sources[name])}\n`).join('');
+  return (
+    '# 由 scripts/make-hooks-yaml.cjs 產生，請勿手改\n' +
+    'description: 擋下從根目錄或整顆磁碟遞迴搜尋的命令(E-423)\n' +
+    'bindings:\n' +
+    '  claude:\n' +
+    '    files:\n' +
+    fileBlocks +
+    '    events:\n' +
+    '      PreToolUse:\n' +
+    '        - matcher: "Bash|PowerShell"\n' +
+    '          hooks:\n' +
+    '            - type: command\n' +
+    `              command: 'node "${SEARCH_HOOK_DIR}/elf-search-guard.cjs"'\n` +
+    '              timeout: 10\n'
+  );
 }
 
 function main() {
   const check = process.argv.slice(2).includes('--check');
   const sources = {};
-  for (const name of SOURCES) sources[name] = readSource(name);
-  const yaml = generate(sources);
-  verifyRoundTrip(yaml, sources);
+  for (const name of [...SOURCES, ...SEARCH_SOURCES]) sources[name] = readSource(name);
+  // 每份輸出：檔案、產生的內容、內嵌的來源檔
+  const outputs = [
+    { file: OUT_FILE, yaml: generate(sources), names: SOURCES },
+    { file: SEARCH_OUT_FILE, yaml: generateSearchGuard(sources), names: SEARCH_SOURCES },
+  ];
+  for (const out of outputs) verifyRoundTrip(out.yaml, sources, out.names);
 
   if (check) {
-    if (!fs.existsSync(OUT_FILE)) {
-      console.error(`FAIL: ${OUT_FILE} 不存在，請執行 node scripts/make-hooks-yaml.cjs`);
-      process.exit(1);
+    let failed = false;
+    for (const out of outputs) {
+      const rel = `scripts/${path.basename(out.file)}`;
+      if (!fs.existsSync(out.file)) {
+        console.error(`FAIL: ${rel} 不存在，請執行 node scripts/make-hooks-yaml.cjs`);
+        failed = true;
+        continue;
+      }
+      const current = fs.readFileSync(out.file, 'utf8');
+      if (current !== out.yaml) {
+        console.error(`FAIL: ${rel} 與來源不同步，請執行 node scripts/make-hooks-yaml.cjs`);
+        failed = true;
+        continue;
+      }
+      verifyRoundTrip(current, sources, out.names);
+      console.log(`OK: ${rel} 與來源同步`);
     }
-    const current = fs.readFileSync(OUT_FILE, 'utf8');
-    if (current !== yaml) {
-      console.error('FAIL: scripts/elf-guard.hooks.yaml 與來源不同步，請執行 node scripts/make-hooks-yaml.cjs');
-      process.exit(1);
-    }
-    verifyRoundTrip(current, sources);
-    console.log('OK: scripts/elf-guard.hooks.yaml 與來源同步');
+    if (failed) process.exit(1);
     return;
   }
 
-  fs.writeFileSync(OUT_FILE, yaml, { encoding: 'utf8' });
-  console.log(`已寫出 ${path.relative(process.cwd(), OUT_FILE)}（${yaml.length} 字元）`);
+  for (const out of outputs) {
+    fs.writeFileSync(out.file, out.yaml, { encoding: 'utf8' });
+    console.log(`已寫出 ${path.relative(process.cwd(), out.file)}（${out.yaml.length} 字元）`);
+  }
 }
 
 try {
