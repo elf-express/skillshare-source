@@ -103,11 +103,11 @@ mksandbox() {
   return 0
 }
 
-# origin 沒有 release（C13）
+# origin 沒有 release（C13）：直接在 bare origin 上刪掉 release，work clone 沒 fetch，
+# refs/remotes/origin/release 與本機 release 都還在，要靠腳本自己的 fetch --prune 才會發現 origin 沒有 release
 drop_release() {
-  G push -q origin :release || return 1
-  G branch -q -D release || return 1
-  G fetch -q --prune origin || return 1
+  git -C "$D/origin.git" update-ref -d refs/heads/release || return 1
+  G rev-parse -q --verify refs/remotes/origin/release >/dev/null || { echo "    前置條件錯誤：過期的 origin/release 追蹤分支不在"; return 1; }
   NOREL=1
 }
 
@@ -441,9 +441,80 @@ case_C23() {
   assert_rc 0 && assert_wt_gone wt/wt-e22 && assert_local_kept feat/e-22-x && assert_remote_kept feat/e-22-x && assert_protected
 }
 
+# 候選 worktree 乾淨、已進 release，但被忽略的路徑下有一個巢狀的獨立 git repo（有未提交的檔案與未推的提交）：
+# git status 看不到它，git worktree remove 卻會連它一起刪 → 整個候選跳過，worktree 與分支都保留
+case_C24() {
+  mksandbox && released_wt feat/e-22-x wt-e22 || return 1
+  echo 'ign/' >> "$W/.git/info/exclude"
+  local wt="$D/wt/wt-e22" inner="$D/wt/wt-e22/ign/inner"
+  mkdir -p "$inner" && git -C "$inner" init -q -b main || return 1
+  echo kept > "$inner/a.txt"
+  git -C "$inner" add a.txt && git -C "$inner" commit -q -m "inner commit" || return 1
+  echo precious > "$inner/p.txt"
+  if [ -n "$(git -C "$wt" status --porcelain --untracked-files=all)" ]; then echo "    前置條件錯誤：外層 worktree 應該是乾淨的"; return 1; fi
+  run_cleanup "$W" $'yes\n' E-22
+  assert_rc 0 && assert_wt_kept wt/wt-e22 && assert_local_kept feat/e-22-x && assert_remote_kept feat/e-22-x || return 1
+  if [ ! -f "$inner/p.txt" ] || [ ! -f "$inner/a.txt" ]; then echo "    巢狀 repo 裡的檔案不見了"; return 1; fi
+  assert_protected
+}
+
+# 本機 release 有一個還沒推上去的合併，origin/release 沒有：判斷一律看 origin/release → 全部保留
+case_C25() {
+  mksandbox && mkbranch feat/e-23-x && publish feat/e-23-x && add_wt wt-e23 feat/e-23-x || return 1
+  G switch -q release && G merge -q --no-ff -m "local only merge" feat/e-23-x && G switch -q main || return 1
+  if ! G merge-base --is-ancestor feat/e-23-x release; then echo "    前置條件錯誤：本機 release 應含 feat/e-23-x"; return 1; fi
+  if G merge-base --is-ancestor feat/e-23-x origin/release; then echo "    前置條件錯誤：origin/release 不該含 feat/e-23-x"; return 1; fi
+  run_cleanup "$W" $'yes\n' E-23
+  assert_rc 0 && assert_wt_kept wt/wt-e23 && assert_local_kept feat/e-23-x && assert_remote_kept feat/e-23-x && assert_protected
+}
+
+# origin/release 是別的 clone 剛推上去的，work clone 事前沒有 fetch：腳本自己的 fetch 要看得到 → 照刪
+case_C26() {
+  mksandbox && mkbranch feat/e-24-x && publish feat/e-24-x && add_wt wt-e24 feat/e-24-x || return 1
+  git clone -q "$D/origin.git" "$D/second" 2>/dev/null || return 1
+  git -C "$D/second" switch -q -c release origin/release || return 1
+  git -C "$D/second" fetch -q origin || return 1
+  git -C "$D/second" merge -q --no-ff -m "release e-24" origin/feat/e-24-x || return 1
+  git -C "$D/second" push -q origin release || return 1
+  if G merge-base --is-ancestor feat/e-24-x origin/release; then echo "    前置條件錯誤：work clone 的 origin/release 不該已經是新的"; return 1; fi
+  run_cleanup "$W" $'yes\n' E-24
+  assert_rc 0 && assert_wt_gone wt/wt-e24 && assert_local_gone feat/e-24-x && assert_remote_gone feat/e-24-x && assert_protected
+}
+
+# 候選 worktree 正在做 git 操作（這裡用 bisect）：即使乾淨、已進 release 也跳過，分支一併保留
+case_C27() {
+  mksandbox && released_wt feat/e-25-x wt-e25 || return 1
+  git -C "$D/wt/wt-e25" bisect start >/dev/null 2>&1 || return 1
+  if [ ! -e "$(git -C "$D/wt/wt-e25" rev-parse --path-format=absolute --git-path BISECT_LOG)" ]; then echo "    前置條件錯誤：bisect 沒有留下 BISECT_LOG"; return 1; fi
+  if [ -n "$(git -C "$D/wt/wt-e25" status --porcelain --untracked-files=all)" ]; then echo "    前置條件錯誤：worktree 應該是乾淨的"; return 1; fi
+  run_cleanup "$W" $'yes\n' E-25
+  assert_rc 0 && assert_wt_kept wt/wt-e25 && assert_local_kept feat/e-25-x && assert_remote_kept feat/e-25-x && assert_protected
+}
+
+# 同一條分支被兩個 worktree 簽出（git worktree add -f）：分支與兩個 worktree 都保留
+case_C28() {
+  mksandbox && released_wt feat/e-26-x wt-e26a || return 1
+  G worktree add -q -f "$D/wt/wt-e26b" feat/e-26-x || return 1
+  run_cleanup "$W" $'yes\n' E-26
+  assert_rc 0 && assert_wt_kept wt/wt-e26a && assert_wt_kept wt/wt-e26b && assert_local_kept feat/e-26-x && assert_remote_kept feat/e-26-x && assert_protected
+}
+
+# 目錄名稱和單號無關的 worktree 正在 rebase（HEAD 是 detached）：它正在改寫的分支算使用中 → 分支與 worktree 都保留
+case_C29() {
+  mksandbox && mkbranch feat/e-27-x && publish feat/e-27-x && release_merge feat/e-27-x || return 1
+  G switch -q -c other main || return 1
+  echo other > "$W/f_feat_e-27-x"
+  G add f_feat_e-27-x && G commit -q -m "conflicting file" && G switch -q main || return 1
+  add_wt wt-reb feat/e-27-x || return 1
+  git -C "$D/wt/wt-reb" rebase other >/dev/null 2>&1 && { echo "    前置條件錯誤：rebase 應該停在衝突"; return 1; }
+  if [ -n "$(git -C "$D/wt/wt-reb" symbolic-ref -q HEAD)" ]; then echo "    前置條件錯誤：HEAD 應該是 detached"; return 1; fi
+  run_cleanup "$W" $'yes\n' E-27
+  assert_rc 0 && assert_wt_kept wt/wt-reb && assert_local_kept feat/e-27-x && assert_remote_kept feat/e-27-x && assert_protected
+}
+
 # ---------- 執行 ----------
 
-ALL_CASES="C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23"
+ALL_CASES="C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 C27 C28 C29"
 if [ $# -gt 0 ]; then SEL="$*"; else SEL="$ALL_CASES"; fi
 case "$IMPL" in
   all) IMPLS="sh ps1" ;;

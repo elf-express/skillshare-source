@@ -5,7 +5,9 @@ that are already in origin/release.
 
 Only deletes what is provably safe; everything else is skipped with a reason (when in doubt, keep it):
   worktree       HEAD is an ancestor of origin/release, git status is clean (untracked files included), not locked,
-                 the directory exists, and it contains no other worktree
+                 the directory exists, no git operation is in progress (rebase, bisect, merge, cherry-pick, revert),
+                 and it contains no other worktree or other git repo; a branch used by several worktrees is skipped
+                 as a whole; HEAD is read again right before removal and must not have changed
   local branch   tip is an ancestor of origin/release, and no kept worktree uses it
   remote branch  origin/<branch> tip is an ancestor of origin/release
   A local and a remote branch with the same name are one pair: if either tip is not in origin/release, both are
@@ -176,7 +178,7 @@ if ($r.Code -ne 0) { Stop-Cleanup "Cannot read the worktree list." }
 $wts = New-Object System.Collections.Generic.List[object]
 foreach ($line in ($r.Out -split "`0")) {
     if ((Test-Prefix $line 'worktree ')) {
-        $wts.Add((New-Object psobject -Property @{ Path = $line.Substring(9); Head = ''; Branch = ''; Locked = $false; Prunable = $false }))
+        $wts.Add((New-Object psobject -Property @{ Path = $line.Substring(9); Head = ''; Branch = ''; Locked = $false; Prunable = $false; GitDir = ''; InProg = ''; Rb = '' }))
     }
     elseif ($wts.Count -eq 0) { continue }
     elseif ((Test-Prefix $line 'HEAD ')) { $wts[$wts.Count - 1].Head = $line.Substring(5) }
@@ -222,6 +224,61 @@ foreach ($line in ($r.Out -split "`n")) {
     }
 }
 
+# Per worktree: its git dir, a git operation in progress (rebase, bisect, merge, cherry-pick, revert), and, for a detached
+# HEAD in the middle of a rebase, the branch being rewritten
+foreach ($w in $wts) {
+    if ($w.Prunable -or -not (Test-Path -LiteralPath $w.Path -PathType Container)) { continue }
+    $r = Invoke-Git @('-C', $w.Path, 'rev-parse', '--path-format=absolute', '--git-dir')
+    if ($r.Code -ne 0) { continue }
+    $gd = $r.Out.Trim()
+    if (-not $gd) { continue }
+    $w.GitDir = $gd
+    foreach ($st in @('rebase-merge', 'rebase-apply', 'BISECT_LOG', 'MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD')) {
+        if (Test-Path -LiteralPath "$gd/$st") { $w.InProg = $st; break }
+    }
+    if (-not $w.Branch) {
+        foreach ($st in @('rebase-merge/head-name', 'rebase-apply/head-name')) {
+            if (Test-Path -LiteralPath "$gd/$st" -PathType Leaf) {
+                $hn = (([IO.File]::ReadAllText("$gd/$st") -split "`n")[0]).Trim()
+                if ((Test-Prefix $hn 'refs/heads/')) { $w.Rb = $hn.Substring(11) }
+                break
+            }
+        }
+    }
+}
+
+# The first path named .git below $root other than $root's own top-level .git (file or directory), or $null.
+# Does not follow symlinks or junctions (like find); throws when a directory cannot be read.
+function Find-NestedGit([string]$root) {
+    $stack = New-Object System.Collections.Generic.Stack[string]
+    $stack.Push($root)
+    while ($stack.Count -gt 0) {
+        $dir = $stack.Pop()
+        $isTop = [string]::Equals($dir, $root, [System.StringComparison]::Ordinal)
+        $di = New-Object System.IO.DirectoryInfo($dir)
+        foreach ($e in $di.GetFileSystemInfos()) {
+            if ($e.Name -ieq '.git') {
+                if ($isTop) { continue }
+                return $e.FullName
+            }
+            if (($e.Attributes -band [System.IO.FileAttributes]::Directory) -and -not ($e.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $stack.Push($e.FullName)
+            }
+        }
+    }
+    return $null
+}
+
+# Is this path still listed by git worktree list?
+function Test-WtRegistered([string]$path) {
+    $r = Invoke-Git @('-C', $script:main, 'worktree', 'list', '--porcelain', '-z')
+    if ($r.Code -ne 0) { return $false }
+    foreach ($line in ($r.Out -split "`0")) {
+        if ((Test-Prefix $line 'worktree ') -and (Test-SamePath $line.Substring(9) $path)) { return $true }
+    }
+    return $false
+}
+
 # Does the last segment of the branch name start with e-<number> (then the end or "-"), case-insensitive?
 # Returns the matched number, or $null
 function Get-BranchTicket([string]$name) {
@@ -258,6 +315,9 @@ function Get-WtVerdict([int]$i) {
     if (Test-SamePath $p $script:cur) { return 'the worktree this script runs in, not touched' }
     if ($w.Prunable -or -not (Test-Path -LiteralPath $p -PathType Container)) { return 'directory is gone (git marks it prunable)' }
     if ($w.Locked) { return 'worktree is locked' }
+    # A rebase, bisect, merge, cherry-pick or revert is in progress: HEAD may be detached and the work is not settled
+    if ($w.InProg) { return 'a git operation is in progress in the worktree' }
+    if (-not $w.GitDir) { return 'cannot read the worktree git dir' }
     # The directory holds another registered worktree (or the main worktree, or the one we run in): such a worktree can
     # sit under an ignored path where git status cannot see it, yet git worktree remove would delete it too
     # (uncommitted files included)
@@ -276,6 +336,12 @@ function Get-WtVerdict([int]$i) {
     $text = (("$($r.Out)" + "$($r.Err)").TrimEnd("`r", "`n"))
     if ($r.Code -ne 0) { return "git status failed: $text" }
     if ($text.Length -gt 0) { return 'uncommitted changes or untracked files' }
+    # Another standalone git repo inside the directory (usually under an ignored path): git status cannot see it, yet
+    # git worktree remove would delete it too (uncommitted files and unpushed commits included). Any .git below the
+    # directory other than its own top-level .git counts.
+    try { $nested = Find-NestedGit $p }
+    catch { return "cannot scan the directory, so cannot confirm it holds no other git repo: $($_.Exception.Message)" }
+    if ($nested) { return 'directory contains another git repo' }
     return ''
 }
 
@@ -292,14 +358,25 @@ function Add-Skip([string]$kind, [string]$label, [string]$why) {
     $script:skips.Add((New-Object psobject -Property @{ Kind = $kind; Label = $label; Why = $why }))
 }
 
+# Which worktrees use each branch: the ones that have it checked out, plus the ones in the middle of a rebase that is
+# rewriting it (their HEAD is detached)
+$wtList = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
 for ($i = 0; $i -lt $wts.Count; $i++) {
-    if ($wts[$i].Branch) { $wtOf[$wts[$i].Branch] = $i }
+    $ub = $wts[$i].Branch
+    if (-not $ub) { $ub = $wts[$i].Rb }
+    if ($ub) {
+        $wtOf[$ub] = $i
+        if (-not $wtList.ContainsKey($ub)) { $wtList[$ub] = New-Object System.Collections.Generic.List[int] }
+        $wtList[$ub].Add($i)
+    }
 }
 
 # First decide every candidate worktree (matched by branch, or detached and matched by directory name)
 for ($i = 0; $i -lt $wts.Count; $i++) {
-    if ($wts[$i].Branch) {
-        $m = Get-BranchTicket $wts[$i].Branch
+    $cb = $wts[$i].Branch
+    if (-not $cb -and $wts[$i].Rb -and $null -ne (Get-BranchTicket $wts[$i].Rb)) { $cb = $wts[$i].Rb }
+    if ($cb) {
+        $m = Get-BranchTicket $cb
         if ($null -ne $m) {
             $cand[$i] = $true
             $found[$m] = $true
@@ -343,6 +420,18 @@ foreach ($nm in $sorted) {
     $wi = -1
     if ($wtOf.ContainsKey($nm)) { $wi = $wtOf[$nm]; $handled[$wi] = $true }
 
+    # One branch used by several worktrees: skip the branch pair and every worktree that uses it (there is no telling
+    # which one is "its" worktree)
+    if ($wtList.ContainsKey($nm) -and $wtList[$nm].Count -gt 1) {
+        foreach ($w in $wtList[$nm]) {
+            $handled[$w] = $true
+            Add-Skip 'worktree' "$($wts[$w].Path) (branch $nm)" 'branch is used by several worktrees'
+        }
+        if ($l) { Add-Skip 'local branch' $nm 'branch is used by several worktrees' }
+        if ($rr) { Add-Skip 'remote branch' "origin/$nm" 'branch is used by several worktrees' }
+        continue
+    }
+
     # A worktree is judged by its own conditions ($wtWhy); the branch pair has its own result (lwhy / rwhy).
     # One-way coupling: worktree skipped -> its local and remote branches are skipped too; a skipped branch does not
     # change whether the worktree is deleted.
@@ -379,11 +468,11 @@ foreach ($nm in $sorted) {
 
     # To delete: a worktree with no reason to skip is deleted; the branches only if neither side has a reason
     # (at delete time the worktree removal must also have succeeded)
-    $wtpath = ''; $dl = ''; $dr = ''
-    if ($wi -ge 0 -and -not $wwhy) { $wtpath = $wts[$wi].Path }
+    $wtpath = ''; $wthead = ''; $dl = ''; $dr = ''
+    if ($wi -ge 0 -and -not $wwhy) { $wtpath = $wts[$wi].Path; $wthead = $wts[$wi].Head }
     if (-not $lwhy -and -not $rwhy) { $dl = $l; $dr = $rr }
     if ($wtpath -or $dl -or $dr) {
-        $plan.Add((New-Object psobject -Property @{ Wt = $wtpath; Name = $nm; L = $dl; R = $dr }))
+        $plan.Add((New-Object psobject -Property @{ Wt = $wtpath; Head = $wthead; Name = $nm; L = $dl; R = $dr }))
     }
 }
 
@@ -397,7 +486,7 @@ for ($i = 0; $i -lt $wts.Count; $i++) {
         Add-Skip 'worktree' "$($wts[$i].Path) (detached)" ([string]$wtWhy[$i])
     }
     else {
-        $plan.Add((New-Object psobject -Property @{ Wt = $wts[$i].Path; Name = ''; L = ''; R = '' }))
+        $plan.Add((New-Object psobject -Property @{ Wt = $wts[$i].Path; Head = $wts[$i].Head; Name = ''; L = ''; R = '' }))
     }
 }
 
@@ -454,22 +543,38 @@ foreach ($e in $plan) {
     $wt = $e.Wt; $nm = $e.Name; $l = $e.L; $rr = $e.R
     $ok = $true
     if ($wt) {
-        $r = Invoke-Git @('-C', $main, 'worktree', 'remove', $wt)
-        $gitMsg = Get-Combined $r
-        if ($r.Code -eq 0 -and -not (Test-Path -LiteralPath $wt)) {
-            $done.Add((New-Object psobject -Property @{ Kind = 'worktree'; Text = "worktree $wt" }))
-            Write-Host "  deleted worktree $wt"
+        # While waiting for the confirmation the worktree may have gained a commit or switched HEAD (git worktree remove
+        # only refuses uncommitted changes, not that): read HEAD again right before removing and leave the worktree alone
+        # if it is not the one that was checked
+        $rh = Invoke-Git @('-C', $wt, 'rev-parse', 'HEAD')
+        $nowHead = $rh.Out.Trim()
+        if ($rh.Code -ne 0 -or $nowHead -cne $e.Head) {
+            $ok = $false
+            $fails.Add("worktree ${wt}: HEAD changed (was $(Get-Short $e.Head) when checked, now $(Get-Short $nowHead)), not removed")
+            Write-Host "  FAILED: worktree $wt"
         }
         else {
-            $ok = $false
-            if (Test-Path -LiteralPath $wt) {
-                $extra = ''; if ($gitMsg) { $extra = " (git: $gitMsg)" }
-                $fails.Add("worktree ${wt}: directory is in use, close whatever holds it and delete it by hand$extra")
+            $r = Invoke-Git @('-C', $main, 'worktree', 'remove', $wt)
+            $gitMsg = Get-Combined $r
+            if ($r.Code -eq 0 -and -not (Test-Path -LiteralPath $wt)) {
+                $done.Add((New-Object psobject -Property @{ Kind = 'worktree'; Text = "worktree $wt" }))
+                Write-Host "  deleted worktree $wt"
             }
             else {
-                $fails.Add("worktree ${wt}: git worktree remove failed ($gitMsg)")
+                $ok = $false
+                if (Test-WtRegistered $wt) {
+                    # Still registered with git: git refused to remove it (e.g. it holds a submodule), the directory is not in use
+                    $fails.Add("worktree ${wt}: git refused: $gitMsg")
+                }
+                elseif (Test-Path -LiteralPath $wt) {
+                    $extra = ''; if ($gitMsg) { $extra = " (git: $gitMsg)" }
+                    $fails.Add("worktree ${wt}: directory is in use, close whatever holds it and delete it by hand$extra")
+                }
+                else {
+                    $fails.Add("worktree ${wt}: git worktree remove failed ($gitMsg)")
+                }
+                Write-Host "  FAILED: worktree $wt"
             }
-            Write-Host "  FAILED: worktree $wt"
         }
     }
     if (-not $ok) {

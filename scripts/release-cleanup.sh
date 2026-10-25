@@ -2,7 +2,9 @@
 # release-cleanup.sh — 發版後收尾：刪除已進 origin/release 的單號所對應的 worktree、本機分支與遠端分支。
 #
 # 只刪「可證明安全」的項目，其餘一律跳過並列出原因（寧可少刪）：
-#   worktree  HEAD 是 origin/release 的祖先、git status 乾淨（含未追蹤檔）、沒被 lock、目錄還在、目錄內沒有其他 worktree
+#   worktree  HEAD 是 origin/release 的祖先、git status 乾淨（含未追蹤檔）、沒被 lock、目錄還在、沒有進行中的 git 操作
+#             （rebase、bisect、merge、cherry-pick、revert）、目錄內沒有其他 worktree 或其他 git repo；
+#             分支同時被多個 worktree 使用時整組跳過；刪除前再確認一次 HEAD 沒變
 #   本機分支  末端是 origin/release 的祖先，且沒有被保留下來的 worktree 使用
 #   遠端分支  origin/<分支> 末端是 origin/release 的祖先
 #   同名的本機與遠端分支視為一組：任一端末端不在 origin/release，兩端都跳過；只有一端存在時只看那一端
@@ -27,7 +29,7 @@ set -euo pipefail
 main() {
 
 usage() {
-  sed -n '2,21p' "$0"
+  sed -n '2,23p' "$0"
 }
 
 DRY_RUN=0
@@ -98,6 +100,8 @@ git -C "$MAIN" rev-parse -q --verify "$REL^{commit}" >/dev/null || stop "遠端�
 
 # ---------- 1. 收集 ----------
 declare -A LOCAL=() REMOTE=()
+refs=$(git -C "$MAIN" for-each-ref --format='%(objectname) %(refname)' refs/heads refs/remotes/origin </dev/null) \
+  || stop "讀不到分支清單。"
 while read -r sha ref; do
   case "$ref" in
     refs/heads/*) LOCAL["${ref#refs/heads/}"]=$sha ;;
@@ -106,7 +110,32 @@ while read -r sha ref; do
       if [ "$nm" != HEAD ]; then REMOTE["$nm"]=$sha; fi
       ;;
   esac
-done < <(git -C "$MAIN" for-each-ref --format='%(objectname) %(refname)' refs/heads refs/remotes/origin)
+done <<< "$refs"
+
+# 每個 worktree 的 git 目錄、進行中的 git 操作，以及 rebase 中（HEAD 是 detached）正在改寫的分支
+GD=(); INPROG=(); RB=()
+for ((i = 0; i < nwt; i++)); do
+  GD[i]=""; INPROG[i]=""; RB[i]=""
+  if [ "${WPRUN[i]}" = 1 ] || [ ! -d "${WP[i]}" ]; then continue; fi
+  gd=""
+  if gd=$(git -C "${WP[i]}" rev-parse --path-format=absolute --git-dir 2>/dev/null </dev/null); then
+    GD[i]=$gd
+    for st in rebase-merge rebase-apply BISECT_LOG MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+      if [ -e "$gd/$st" ]; then INPROG[i]=$st; break; fi
+    done
+    if [ -z "${WB[i]}" ]; then
+      for st in rebase-merge/head-name rebase-apply/head-name; do
+        if [ -f "$gd/$st" ]; then
+          hn=""
+          IFS= read -r hn < "$gd/$st" || true
+          hn=${hn%$'\r'}
+          case "$hn" in refs/heads/*) RB[i]=${hn#refs/heads/} ;; esac
+          break
+        fi
+      done
+    fi
+  fi
+done
 
 # 分支名稱最後一段是否以 e-<編號> 開頭（後面是結尾或 -，大小寫不分）；符合時設 MATCHED
 MATCHED=""
@@ -153,6 +182,9 @@ wt_verdict() {
   if same_path "$p" "$CUR"; then WHY="腳本執行所在的 worktree，不動"; return 0; fi
   if [ "${WPRUN[i]}" = 1 ] || [ ! -d "$p" ]; then WHY="目錄已不存在（git 標為 prunable）"; return 0; fi
   if [ "${WLOCK[i]}" = 1 ]; then WHY="worktree 被 lock"; return 0; fi
+  # rebase、bisect、merge、cherry-pick、revert 進行中：HEAD 可能是 detached、工作內容還沒定案
+  if [ -n "${INPROG[i]}" ]; then WHY="工作區有進行中的 git 操作"; return 0; fi
+  if [ -z "${GD[i]}" ]; then WHY="無法讀取工作區的 git 目錄"; return 0; fi
   # 目錄內含其他已登記的 worktree（或主 worktree、所在 worktree）：它們可能放在被忽略的路徑下，
   # git status 看不到，git worktree remove 卻會連它們（含未提交的檔案）一起刪掉
   inner=${p%/}/
@@ -175,24 +207,39 @@ wt_verdict() {
     return 0
   fi
   if [ -n "$out" ]; then WHY="有未提交的變更或未追蹤檔"; return 0; fi
+  # 目錄內（通常在被忽略的路徑下）有另一個獨立的 git repo：git status 看不到，git worktree remove 卻會連它
+  # （含未提交的檔案與未推的提交）一起刪掉。掃的是候選目錄底下除了它自己頂層 .git 以外的任何 .git（檔案或目錄）
+  rc=0
+  out=$(find "$p" -mindepth 2 -iname .git -print -quit 2>/dev/null </dev/null) || rc=$?
+  if [ "$rc" != 0 ]; then WHY="無法掃描目錄內容，無法確認裡面沒有其他 git repo"; return 0; fi
+  if [ -n "$out" ]; then WHY="目錄內含其他 git repo"; return 0; fi
 }
 
 # 結果清單
-P_WT=(); P_NAME=(); P_L=(); P_R=()   # 要刪：每一組一筆（worktree 路徑、分支名、本機 SHA、遠端 SHA；沒有的欄位為空）
+P_WT=(); P_WH=(); P_NAME=(); P_L=(); P_R=()   # 要刪：每一組一筆（worktree 路徑、檢查時的 HEAD、分支名、本機 SHA、遠端 SHA；沒有的欄位為空）
 S_KIND=(); S_LABEL=(); S_WHY=()      # 跳過
-declare -A FOUND=() WT_WHY=() WT_HANDLED=() WT_OF=()
+declare -A FOUND=() WT_WHY=() WT_HANDLED=() WT_OF=() WT_N=() WT_LIST=()
 
 add_skip() { S_KIND+=("$1"); S_LABEL+=("$2"); S_WHY+=("$3"); }
 
+# 每條分支被哪些 worktree 使用：簽出它的，加上 rebase 中正在改寫它的（HEAD 是 detached）
 for ((i = 0; i < nwt; i++)); do
-  if [ -n "${WB[i]}" ]; then WT_OF["${WB[i]}"]=$i; fi
+  ub=${WB[i]}
+  if [ -z "$ub" ]; then ub=${RB[i]}; fi
+  if [ -n "$ub" ]; then
+    WT_OF["$ub"]=$i
+    WT_N["$ub"]=$(( ${WT_N[$ub]:-0} + 1 ))
+    WT_LIST["$ub"]="${WT_LIST[$ub]:-} $i"
+  fi
 done
 
 # 先判斷所有候選 worktree 的結果（分支比對成功的、detached 且目錄名稱比對成功的）
 declare -A WT_CAND=()
 for ((i = 0; i < nwt; i++)); do
-  if [ -n "${WB[i]}" ]; then
-    if branch_ticket "${WB[i]}"; then
+  cb=${WB[i]}
+  if [ -z "$cb" ] && [ -n "${RB[i]}" ] && branch_ticket "${RB[i]}"; then cb=${RB[i]}; fi
+  if [ -n "$cb" ]; then
+    if branch_ticket "$cb"; then
       WT_CAND[$i]=1
       FOUND["$MATCHED"]=1
       wt_verdict "$i"
@@ -241,6 +288,17 @@ for nm in "${SORTED[@]+"${SORTED[@]}"}"; do
   wi=${WT_OF[$nm]-}
   if [ -n "$wi" ]; then WT_HANDLED[$wi]=1; fi
 
+  # 同一條分支被多個工作區使用：這組分支和用到它的每個工作區都跳過（分不清哪個才是「它的」工作區）
+  if [ "${WT_N[$nm]:-0}" -gt 1 ]; then
+    for w in ${WT_LIST[$nm]}; do
+      WT_HANDLED[$w]=1
+      add_skip "工作區" "${WP[w]}（分支 $nm）" "分支同時被多個工作區使用"
+    done
+    if [ -n "$l" ]; then add_skip "本機分支" "$nm" "分支同時被多個工作區使用"; fi
+    if [ -n "$r" ]; then add_skip "遠端分支" "origin/$nm" "分支同時被多個工作區使用"; fi
+    continue
+  fi
+
   # worktree 只看它自己的條件（WT_WHY）；分支這一組另有自己的結果（lwhy／rwhy）。
   # 單向連動：worktree 被跳過 → 它的本機與遠端分支一併跳過；分支被跳過不影響 worktree 要不要刪。
   lwhy=""; rwhy=""; wwhy=""
@@ -279,11 +337,11 @@ for nm in "${SORTED[@]+"${SORTED[@]}"}"; do
   if [ -n "$r" ] && [ -n "$rwhy" ]; then add_skip "遠端分支" "origin/$nm" "$rwhy"; fi
 
   # 要刪：worktree 自己沒有跳過理由就刪；分支兩端都沒有跳過理由才刪（刪除時還要 worktree 移除成功）
-  wtpath=""; dl=""; dr=""
-  if [ -n "$wi" ] && [ -z "$wwhy" ]; then wtpath=${WP[wi]}; fi
+  wtpath=""; wthead=""; dl=""; dr=""
+  if [ -n "$wi" ] && [ -z "$wwhy" ]; then wtpath=${WP[wi]}; wthead=${WH[wi]}; fi
   if [ -z "$lwhy" ] && [ -z "$rwhy" ]; then dl=$l; dr=$r; fi
   if [ -n "$wtpath" ] || [ -n "$dl" ] || [ -n "$dr" ]; then
-    P_WT+=("$wtpath"); P_NAME+=("$nm"); P_L+=("$dl"); P_R+=("$dr")
+    P_WT+=("$wtpath"); P_WH+=("$wthead"); P_NAME+=("$nm"); P_L+=("$dl"); P_R+=("$dr")
   fi
 done
 
@@ -295,7 +353,7 @@ for ((i = 0; i < nwt; i++)); do
   elif [ -n "${WT_WHY[$i]-}" ]; then
     add_skip "工作區" "${WP[i]}（detached）" "${WT_WHY[$i]}"
   else
-    P_WT+=("${WP[i]}"); P_NAME+=(""); P_L+=(""); P_R+=("")
+    P_WT+=("${WP[i]}"); P_WH+=("${WH[i]}"); P_NAME+=(""); P_L+=(""); P_R+=("")
   fi
 done
 
@@ -356,25 +414,52 @@ run_git() {
 }
 fail_item() { FAILS+=("$1"); }
 
+# 這個路徑是不是還登記在 git worktree list 裡
+wt_registered() {
+  local line
+  while IFS= read -r -d '' line; do
+    case "$line" in
+      "worktree "*) if same_path "${line#worktree }" "$1"; then return 0; fi ;;
+    esac
+  done < <(git -C "$MAIN" worktree list --porcelain -z 2>/dev/null </dev/null)
+  return 1
+}
+
 say "刪除"
 for ((k = 0; k < ${#P_NAME[@]}; k++)); do
   wt=${P_WT[k]}; nm=${P_NAME[k]}; l=${P_L[k]}; r=${P_R[k]}
   ok=1
   if [ -n "$wt" ]; then
+    # 等確認的這段時間裡 worktree 可能多了提交或換了 HEAD（git worktree remove 只擋未提交的變更，不擋這個）：
+    # 刪除前再讀一次 HEAD，和檢查時的不一樣就不動它
+    nowhead=""
+    headok=1
+    nowhead=$(git -C "$wt" rev-parse HEAD 2>/dev/null </dev/null) || headok=0
     gitok=1
-    run_git git -C "$MAIN" worktree remove "$wt" || gitok=0
-    gitmsg=$OUT
-    if [ "$gitok" = 1 ] && [ ! -e "$wt" ]; then
-      DONE+=("工作區 $wt")
-      echo "  已刪除工作區 $wt"
-    else
+    gitmsg=""
+    if [ "$headok" = 0 ] || [ "$nowhead" != "${P_WH[k]}" ]; then
+      gitok=0
       ok=0
-      if [ -e "$wt" ]; then
-        fail_item "工作區 $wt：目錄被占用，請關閉後手動刪除${gitmsg:+（git：$gitmsg）}"
-      else
-        fail_item "工作區 $wt：git worktree remove 失敗（$gitmsg）"
-      fi
+      fail_item "工作區 $wt：HEAD 已變動（檢查時 ${P_WH[k]:0:8}，現在 ${nowhead:0:8}），未刪除"
       echo "  失敗：工作區 $wt"
+    else
+      run_git git -C "$MAIN" worktree remove "$wt" || gitok=0
+      gitmsg=$OUT
+      if [ "$gitok" = 1 ] && [ ! -e "$wt" ]; then
+        DONE+=("工作區 $wt")
+        echo "  已刪除工作區 $wt"
+      else
+        ok=0
+        if wt_registered "$wt"; then
+          # 還登記在 git 裡：是 git 拒絕移除（例如含 submodule），不是目錄被占用
+          fail_item "工作區 $wt：git 拒絕：$gitmsg"
+        elif [ -e "$wt" ]; then
+          fail_item "工作區 $wt：目錄被占用，請關閉後手動刪除${gitmsg:+（git：$gitmsg）}"
+        else
+          fail_item "工作區 $wt：git worktree remove 失敗（$gitmsg）"
+        fi
+        echo "  失敗：工作區 $wt"
+      fi
     fi
   fi
   if [ "$ok" = 0 ]; then
