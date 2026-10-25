@@ -386,6 +386,21 @@ const cases = [
     assert.strictEqual(h, 'sha256:' + crypto.createHash('sha256').update('a\n', 'utf8').digest('hex'));
     assert.match(h, /^sha256:[0-9a-f]{64}$/);
   }],
+  ['4.8 issue 連結只看 id：href 編碼、slug、有無 href、屬性順序不影響雜湊', () => {
+    const base = approval.hashDescription('見 <issue id="a" href="https://x/E-1/中文">E-1</issue> 說明\n');
+    const variants = [
+      '見 <issue id="a" href="https://x/E-1/%E4%B8%AD%E6%96%87">E-1</issue> 說明\n',
+      '見 <issue id="a" href="https://x/E-1/other-slug">E-1</issue> 說明\n',
+      '見 <issue id="a">E-1</issue> 說明\n',
+      '見 <issue href="https://x/E-1/中文" id="a">E-1</issue> 說明\n',
+    ];
+    for (const text of variants) assert.strictEqual(approval.hashDescription(text), base, text);
+  }],
+  ['4.9 issue 連結的 id 或內文改了 -> 雜湊不同', () => {
+    const base = approval.hashDescription('見 <issue id="a" href="https://x/E-1">E-1</issue>\n');
+    assert.notStrictEqual(approval.hashDescription('見 <issue id="b" href="https://x/E-1">E-1</issue>\n'), base);
+    assert.notStrictEqual(approval.hashDescription('見 <issue id="a" href="https://x/E-1">E-2</issue>\n'), base);
+  }],
   ['5.1 沒有留言 -> 不通過', () => {
     const r = approval.findApproval([]);
     assert.strictEqual(r.ok, false);

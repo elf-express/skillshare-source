@@ -18,11 +18,13 @@ const SAFE_VALUE_RE = /^[^\r\n#"']+$/;
 
 const FENCE_RE = /^[ \t]*```/;
 const CHECKED_RE = /^([ \t]*)- \[[xX]\]/;
+const ISSUE_TAG_RE = /<issue\b[^>]*?\bid="([^"]*)"[^>]*>/g;
 const MODIFIED_RE = /^計畫已修改 v(\d+)/;
 const REVOKED_RE = /^核准撤回/;
 const APPROVED_RE = /^計畫已核准(?: v(\d+))?（(\d{4}-\d{2}-\d{2})，審計員：([^）\n]+)）/;
 
-// 正規化 Plan 描述：換行統一為 LF；圍欄外行首的已勾 checkbox 改回未勾；結尾恰好一個 LF。
+// 正規化 Plan 描述（E-397 第 18 點）：換行統一為 LF；圍欄外行首的已勾 checkbox 改回未勾；
+// <issue> 連結標籤只保留 id 屬性；結尾恰好一個 LF。
 function normalizeDescription(text) {
   let inFence = false;
   const lines = String(text).replace(/\r\n?/g, '\n').split('\n').map((line) => {
@@ -32,7 +34,7 @@ function normalizeDescription(text) {
     }
     return inFence ? line : line.replace(CHECKED_RE, '$1- [ ]');
   });
-  return lines.join('\n').replace(/\n+$/, '') + '\n';
+  return lines.join('\n').replace(ISSUE_TAG_RE, '<issue id="$1">').replace(/\n+$/, '') + '\n';
 }
 
 // 正規化後對 UTF-8 位元組算 SHA-256，回傳 `sha256:<hex>`。
