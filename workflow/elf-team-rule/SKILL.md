@@ -6,7 +6,8 @@ description: |
   設定分支保護、核對 release 分支 CI/CD 為什麼沒過、檢查分支與來源（上游／dev／release／main）是否對齊、
   正式版出問題要緊急修正（hotfix）、使用者要求「直接改 release／main」、
   多個 AI 同時開發、PR 合進 `dev` 的合併方式、整理 commit、`.gitattributes`／行尾、
-  或建立／拆分一個 Task 很多的 Plan 時觸發。
+  建立／拆分一個 Task 很多的 Plan、發版後清理（刪分支、清理 worktree、release-cleanup）、
+  或擔任／指派發版審計員時觸發。
 metadata:
   version: 1.8.0
   owner: Elf Express
@@ -55,14 +56,14 @@ metadata:
 7. `main` 只用來同步：只快轉（`--ff-only`），MUST NOT 在上面提交，MUST NOT 當穩定版或部署來源。
 8. `release` 是唯一的穩定版：給下游同步、給部署使用，MUST 只從測過的 `origin/dev` 快轉（緊急修正例外：從 `origin/hotfix/*` 快轉，見規則 25），MUST NOT 提交、MUST NOT force push。
    為什麼：第 2 種的 `main` 用 `--ff-only` 從第 1 種的 `release` 同步，`release` 一旦改寫歷史，所有下游同步都會失敗。
-9. `dev` 是整合測試：只能經由開發分支的 PR 合併進來，MUST NOT 直接在 `dev` 上開發。例外只有兩種，都由維護者直接推送：第 1、2 種的「`main` → `dev` 同步合併」（見規則 18），以及 hotfix 發佈後的「`release` → `dev` 合回」（見規則 26）。
+9. `dev` 是整合測試：只能經由開發分支的 PR 合併進來，MUST NOT 直接在 `dev` 上開發。例外只有兩種：第 1、2 種的「`main` → `dev` 同步合併」由維護者直接推送（見規則 18）；hotfix 發佈後的「`release` → `dev` 合回」由發版審計員在 Eddie「允許發版」後直接推送（見規則 26、39）。
 10. 開發分支命名 MUST 為 `<類型>/e-<編號>-<英文短名>`，例如 `feat/e-235-elf-team-rule`、`fix/e-88-upload-timeout`、`hotfix/e-250-login-crash`；沒有 Linear 單時才用 `<類型>/<英文短名>`。類型限 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`。短名用英文小寫加連字號。
     編號：有 `[Spec]`＋`[Plan]` 時用 **Plan 編號**；沒有 Spec／Plan 的單一工作單（例如緊急修正）用**該單編號**。本規則是團隊唯一的分支命名，Linear「開發流程規範」引用本規則，不另外定義。
     **工作單狀態**：
     - 有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo：
       - 開 PR → Plan「進行中」（自動）；PR 合進 `dev` → 「驗證中」（自動，Eddie 依目標分支設定）；Spec 維持「進行中」。
       - 「已完成」由發版審計員（規則 39）在步驟 7（`workflow__elf-linear-superpowers`）**手動設定**，三個條件都要滿足：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。Plan 完成後 Spec 由父子自動化關閉。
-    - hotfix：快轉到 `release`、不經 PR，從「進行中」到「已完成」全部由發版審計員（規則 39）手動設定，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
+    - hotfix：快轉到 `release`、不經 PR，狀態全部手動設定：「進行中」由負責的 session 設定，只有「已完成」由發版審計員（規則 39）設定，用同樣三個條件（① 改為 `release` 已快轉到該 `origin/hotfix/*`）。規則 25 的 draft PR 在 `release` 快轉後會被 GitHub 標成已合併，可能觸發 Linear 的 merge 自動化；三個條件還沒全部滿足就被改成「已完成」時，手動改回「進行中」並留言原因。
     - 沒有 `release` 分支（還沒導入 dev／release）的 repo：維持 Linear 預設規則「merge → 已完成」，合進主線即發版。
     - 過渡期：Eddie 在 E-310 留言確認自動化已設定之前，`dev` 合併後若被自動關單，AI 手動把 Plan 改回「驗證中」、Spec 改回「進行中」，留言「自動化依 dev 合併觸發，實際尚未發版」。
 
@@ -112,7 +113,7 @@ metadata:
     - (2) Spec 寫一行固定格式的 `疊加順序：E-701 → E-702 → E-703`；彼此沒有相依的 Plan 也排成一條線。
     - (3) 全組每一張都有「計畫已核准」留言與有效的核准憑證（`workflow__elf-linear-superpowers` 步驟 3 第 9 項）後，才開始實作任何一張；已核准的那張也要等。
     - (4) 全組各自驗證通過後，只開**一個整合 PR**；不替前面的 Plan 個別開 PR。
-    - (5) PR 審查與 CI／PR 檢查的修復留在同一組、同一個 PR，不另開 Spec 或修正單；修法是該張 Plan 的實質變更時，該張 Plan 留言「計畫已修改 vN」、撤回憑證、重新核准後重建憑證。
+    - (5) PR 審查與 CI／PR 檢查的修復留在同一組、同一個 PR，不另開 Spec 或修正單；修法是該張 Plan 的實質變更時，該張 Plan 留言「計畫已修改 vN」、撤回憑證；審計員重新核准並 `create` 憑證後，實作者 `verify` 通過才繼續。
 
     為什麼（群組）：只核准一張就開工，後面的 Plan 寫到一半才發現要改前面的設計，已做完的那張只能重做；全組一起審，審計員才看得到整件事的切法與相依。一個 Spec 是一件事，拆 Plan 只是為了讓每次處理的 Task 不要太多，所以審查與發版仍是一次（E-397 第 24 點，Eddie 2026-10-25 決定）。
 
@@ -153,20 +154,21 @@ metadata:
 19. 開發分支、它的 worktree（含 Orca 的 `.ocrca/…`）與遠端分支，MUST 等發版完成、Linear 的 Plan 與 Spec 已完成、發版審計員已在 Plan 留下發版證據之後（沒有 Spec／Plan 的單一工作單，例如 hotfix、維運，後兩項分別改為「該單已完成」、「在該單留下發版證據」），由**清理實作者**刪除。合進 `dev` 不是清理的時點。
     - **清理實作者**：全新 session、與發版審計員不同模型（可以與原實作者相同）、在主 worktree 執行；MUST NOT 在要刪的 worktree 裡執行。
     - **先核對**：清理實作者 MUST 獨立重讀 Linear 與 git，確認目標已在 `origin/release`、發版證據（SHA、check runs、部署）完整，且 Plan 群組（規則 17）的每一張都已改為已完成；群組只完成一部分時 MUST NOT 開始清理。
-    - **再執行**：用 `release-cleanup` 清理：在要清理的 repo 的主 worktree，以完整路徑執行 skillshare-source 的 `scripts/release-cleanup.sh [--dry-run] E-<n> …`／`release-cleanup.ps1 [-DryRun] E-<n> …`。MUST 先跑 `--dry-run`；列出的目標與理由都正確、相關的 Orca 工作區與終端都已關閉，才由清理實作者自己輸入字面 `yes` 正式執行。
-    - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除本單的開發分支（本機與遠端）與它的 worktree。只有清理實作者可依規則 19 執行清理；已取消的 Plan 不走 `release-cleanup`，依「已取消的 Plan」一項由 Eddie 個案決定。`pr/`、`merge/conflict-*` 分支與它們的 worktree 不在此限，依「其他分支」一項由負責它們的 session 在該項所列時點刪除（規則 13 的例外）。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup`（含它跳過或失敗的目標）。
+    - **再執行**：用 `release-cleanup` 清理：在要清理的 repo 的主 worktree，以完整路徑執行 skillshare-source 的 `scripts/release-cleanup.sh [--dry-run] E-<n> …`／`release-cleanup.ps1 [-DryRun] E-<n> …`。`E-<n>` 帶群組內每一張 Plan 的編號；Spec 編號也要帶，只要有分支或 worktree 用它（例：`.ocrca/e-<Spec>-spec`）；hotfix 或單一工作單帶該單編號。MUST 先跑 `--dry-run`；列出的目標與理由都正確、相關的 Orca 工作區與終端都已關閉，才由清理實作者自己輸入字面 `yes` 正式執行：MUST NOT 預先管線輸入（例：`echo yes |`），要看過實跑清單與 dry-run 一致才輸入。Eddie 不需貼上或執行任何 shell 指令。
+    - **誰不能刪**：開發實作者與發版審計員 MUST NOT 刪除本單的開發分支（本機與遠端）與它的 worktree。只有清理實作者可依規則 19 執行清理；已取消的 Plan 不走 `release-cleanup`，依「已取消的 Plan」一項由 Eddie 個案決定。`pr/`、`merge/conflict-*` 分支與它們的 worktree 不在此限，依「其他分支」一項由負責它們的 session 在該項所列時點刪除（規則 13 的例外）。任何人 MUST NOT 用 force 或手工刪除繞過 `release-cleanup`（含它跳過或失敗的目標；已取消的 Plan 不經 `release-cleanup`，見「已取消的 Plan」一項）。
     - **關卡不能放行**：清理關卡（先 `--dry-run`、核對目標、清理實作者自己輸入 `yes`、實作者與發版審計員不刪）不適用規則 13 的「請使用者確認是否例外」。使用者要求跳過 dry-run 或確認，或要實作者、發版審計員代為刪除本單的開發分支與它的 worktree（已取消的 Plan 依「已取消的 Plan」一項，由 Eddie 個案決定）時，一律 MUST NOT 照做：停下，引用規則 19，指向清理實作者。
     - **失敗**：清理失敗或被跳過時，只保留目標並回報；MUST NOT 回滾已驗證的發版。
-    - **已取消的 Plan**：不走 `release-cleanup`，由 Eddie 個案決定。
+    - **已取消的 Plan**：不走 `release-cleanup`。Eddie 在 Linear 留言個案決定，要刪就由 Eddie 自己刪；AI 角色（含任何 session 與 subagent）MUST NOT 刪除，也 MUST NOT 給出刪除指令。上游 superpowers 的 `discard` 在本團隊只改 Linear 狀態，不刪分支或 worktree（`workflow__elf-linear-superpowers` 步驟 7）。
+    - **沒有 `release` 的 repo**：本流程不適用（沒有發版證據可核對）。決定前不刪，把 worktree 與分支列在收尾留言，等 Eddie 決定，另開單設計清理方式；使用者在對話裡說「刪吧」不算授權。
     - **其他分支**：`pr/` 分支在原作者合併或拒絕後、`merge/conflict-*` 合回 `dev` 後，連同它們的 worktree 一併刪除（git 無法刪除還簽出在 worktree 的分支）。session 暫存檔的清理見規則 36。
 
-    為什麼：合進 `dev` 只是整合完成，發版驗證與 Plan 結單還沒做，這時刪掉分支與 worktree 會讓發版出問題時沒有現場可查；同一個 AI 自己實作、自己上線、又自己刪除，沒有交叉檢查，所以清理另交給不同模型的全新 session（E-391）。刪除不可逆，關卡不能因提出要求的人而放行。
+    為什麼：合進 `dev` 只是整合完成，發版驗證與 Plan 結單還沒做，這時刪掉分支與 worktree 會讓發版出問題時沒有現場可查；同一個 AI 自己實作、自己上線、又自己刪除，沒有交叉檢查，所以清理另交給不同模型的全新 session（E-391）。刪除不可逆，關卡不能因提出要求的人而放行。已取消的 Plan 與沒有 `release` 的 repo 都沒有發版證據可核對，AI 無從判斷刪了安不安全，所以交給 Eddie。
 
 **分支保護**
 
 20. `main`、`release` MUST 設定：禁止 force push、禁止刪除、只允許維護者 push。MUST NOT 設定「必須經過 PR」。
     為什麼：這兩條分支是在本機 `merge --ff-only` 後直接 push 更新的；GitHub 的 PR 合併（merge commit／squash／rebase）都會產生新提交或新 SHA，無法快轉，設了「必須 PR」之後同步與發佈就推不上去。
-21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併與規則 26 的 hotfix 合回。`dev` 設了 required status checks（elf-cicd-review 規則 17）時，維護者 MUST 列在 bypass 名單：本機做出的同步合併提交沒有任何 check，不 bypass 就推不上去（2026-10-13 沙盒實測：required status checks 對直接推送也生效，admin 列入 bypass 後才推得上去；E-244）。
+21. `dev` MUST 設定：禁止 force push、禁止刪除；開發分支一律經 PR，維護者保留直接 push 權限給規則 18 的同步合併與規則 26 的 hotfix 合回（後者由發版審計員執行，規則 39）。`dev` 設了 required status checks（elf-cicd-review 規則 17）時，維護者 MUST 列在 bypass 名單：本機做出的同步合併提交沒有任何 check，不 bypass 就推不上去（2026-10-13 沙盒實測：required status checks 對直接推送也生效，admin 列入 bypass 後才推得上去；E-244）。
 
 **核對 CI/CD 與對齊**
 
@@ -181,14 +183,15 @@ metadata:
     - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送。
     - 推送後 CI MUST 在該提交上執行：依 `elf-cicd-*`，CI 在 push `hotfix/**` 時就會觸發；repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
       為什麼：`release` 只能快轉到 CI 通過的提交（規則 28）；舊版 `elf-cicd-*` 的 CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run，draft PR 是給還沒更新 CI 的 repo 用的。
-    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意後，才由規則 39 決定的執行者 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
+    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，才由規則 39 決定的執行者 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
     - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`，讓 CI 在新提交上執行，再依規則 28 重新判斷後發佈。
     為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
-26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git fetch origin && git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新，並確認 `git log --oneline origin/dev..dev` 是空的（快轉失敗或有輸出，代表本機 `dev` 有沒推的提交，依規則 13 停下；使用者要保留那些提交時，改用 `git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`），再 `git merge --no-edit origin/release`，沒有衝突時由維護者直接 `git push origin dev`（規則 9 的例外）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`（依規則 18 用 merge commit）。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。hotfix 分支不由實作者刪除：該單已完成、發版證據齊全後，由清理實作者依規則 19 清理。
+26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git fetch origin && git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新，並確認 `git log --oneline origin/dev..dev` 是空的（快轉失敗或有輸出，代表本機 `dev` 有沒推的提交，依規則 13 停下；使用者要保留那些提交時，改用 `git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`），再 `git merge --no-edit origin/release`，沒有衝突時由發版審計員在 Eddie「允許發版」後直接 `git push origin dev`（規則 9 的例外，也是任何 AI 角色唯一可推 `dev` 的情形，規則 39）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`（依規則 18 用 merge commit）。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。hotfix 分支不由實作者刪除：該單已完成、發版證據齊全後，由清理實作者依規則 19 清理。
     為什麼：不合回 `dev`，下一次 `dev → release` 會無法快轉，修正也會在下一版消失。
+    為什麼（由發版審計員推 `dev`）：合回是發版的一部分，授權來自同一則「允許發版」；其他 AI 角色推 `dev` 會繞過 PR 審查，所以規則 39 把這一步以外的 `dev` 推送都禁止（E-391，Eddie 2026-10-25 決定）。
 27. MUST NOT 在 `release`、`main` 上直接修改或提交，即使是緊急修正。使用者要求「直接改 release」時，依規則 13 說明違反規則 8、27，並引導改走規則 25。
 28. 快轉 `release`（來源是 `origin/dev` 或 `origin/hotfix/*`）前，MUST 查要發佈那個提交的 check runs，**每個 check 只看最新一次結果**（`check-runs?filter=latest&per_page=100`；規則 22 的 `filter=all` 只用在排查），步驟見 `references/04-release-ci-check.md` 第 0 節：
-    - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意後快轉。
+    - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後快轉。
     - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。`stale` 沒有可讀的 log，告訴使用者後重跑該 check（`gh run rerun`），再重新判斷。
     - **完全沒有 check runs**，先分兩種情況：
       - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 CI 沒有 `hotfix/**` 觸發、也沒開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
@@ -228,7 +231,7 @@ metadata:
 35. 刪除或移動共用路徑前，MUST 在相關的單上確認沒有人在用。
     為什麼：E-303 刪了舊 clone，稍早的稽核正在讀那份。
     - 規則 34、35 的「確認有沒有人在用」：查同一里程碑、同一專案裡狀態為「進行中」或「驗證中」的 Plan，有就在那張單留言；判斷不了就問使用者。
-36. session 收尾時 MUST 清理自己建立的暫存檔（匯出檔、log、暫存目錄），MUST NOT 移除本單的開發分支與它的 worktree（`pr/`、`merge/conflict-*` 依規則 19「其他分支」處理）。本單的 worktree、分支與 Orca 自動建立、沒用到的 `.ocrca/…` 目錄，MUST 列在收尾留言（路徑、分支、最後一個提交），留給規則 19 的清理實作者。刪除 superpowers 工作區（`.superpowers/sdd/E-<Plan 編號>-plan/`，`release-cleanup` 移除 worktree 時也會一起刪掉）之前，MUST 先在 Plan 留言「Rulings I made」總表（`workflow__elf-linear-superpowers` 步驟 5-1）；實作者在收尾留言時留下，清理實作者執行前確認 Plan 上已有，沒有就停下回報。
+36. session 收尾時 MUST 清理自己建立的暫存檔（匯出檔、log、暫存目錄；不含 `.superpowers/sdd/` 工作區，它隨 worktree 由 `release-cleanup` 移除，session 不自己刪），MUST NOT 移除本單的開發分支與它的 worktree（`pr/`、`merge/conflict-*` 依規則 19「其他分支」處理）。本單的 worktree、分支與 Orca 自動建立、沒用到的 `.ocrca/…` 目錄，MUST 列在收尾留言（路徑、分支、最後一個提交），留給規則 19 的清理實作者。superpowers 工作區（`.superpowers/sdd/E-<Plan 編號>-plan/`）在 `release-cleanup` 移除 worktree 時一起刪掉，所以 MUST 先在 Plan 留言「Rulings I made」總表（`workflow__elf-linear-superpowers` 步驟 5-1）；實作者在收尾留言時留下，清理實作者執行前確認 Plan 上已有，沒有就停下回報。
     為什麼：E-302、E-310 都留下了這種目錄。
     為什麼（Rulings I made）：ledger 不進版控，工作區一刪就沒了；各 Task 的裁決雖已隨完成留言留到 Plan，總表是使用者與稽核一次看完所有裁決的地方。
     為什麼（不自己移除 worktree 與分支）：session 收尾時通常只開了 PR 或剛合進 `dev`，還沒發版，自己建立又自己刪除沒有第二個角色核對；目錄也可能正是目前的工作目錄而刪不掉（規則 31）。移除留給發版後的清理實作者（規則 19，E-391）。
@@ -256,12 +259,13 @@ metadata:
 
 39. 本規則只適用於有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo；沒有 `release` 分支（還沒導入 dev／release）的 repo 維持規則 10 的「merge → 已完成」，合進主線就等於發版。
     發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由**發版審計員**負責；依規則 24 列出提交給使用者看時，一併確認發版審計員是誰。
-    - **發版審計員**：全新 session（不是任何實作者的 session；可由最終審計員的 session 接續，見下）、與本次任何實作者不同模型。Eddie 在 Linear 留下明確的「允許發版」之前 MUST NOT 發版。
+    - **發版審計員**：全新 session（不是任何實作者的 session；可由最終審計員的 session 接續，見下）、與本次任何實作者不同模型。「本次任何實作者」指為這個 Plan 群組寫過程式、commit，或控制、派工過的每個 session 與 subagent，含 subagent-driven 的控制者。Eddie 在 Linear 留下明確的「允許發版」之前 MUST NOT 發版。清理實作者的要求不變：與發版審計員不同模型。
+    - **發版審計員的職責範圍**：除了快轉 `release`／`main`（及 `skillshare sync`，規則 40）與規則 26 的 hotfix 合回，不做別的推送。任何 AI 角色 MUST NOT 推 `dev`；唯一例外是發版審計員在「允許發版」後執行規則 26 的 hotfix 合回（`git push origin dev`），規則 18 由維護者推送的同步合併不在此列。清理實作者只跑 `release-cleanup`。為什麼：`dev` 只經 PR 進，AI 直接推會繞過審查。
     - **發版前**：MUST 重讀 PR、候選 SHA、所有 required check（規則 28）、`release` 快轉條件與部署／sync 證據；MUST NOT 在發版階段修改程式或補實作。
     - **發版後**：MUST 依規則 10 的三個條件把 Plan 改為已完成並在 Plan 留證據。這一步適用於該次發版帶出去的每一張 Plan。Plan 群組（規則 17）要群組內每一張（例：E-391 的 E-392 與 E-425）都改為已完成，清理實作者才可開始清理（規則 19）。Spec 沒有自動關閉時，由發版審計員手動設定並留言（規則 17 的「狀態回寫」）。
     - **與最終審計員的關係**：最終審計員與發版審計員是同一個審計角色，可以是同一個 session 接續：合併前審 PR；Eddie 合進 `dev` 並留下「允許發版」後，MUST 重新讀 Linear 與 git 核對發版條件，不沿用合併前的判斷。換 session 時，新 session 一樣 MUST 與實作者不同模型。
     - **Eddie 保留三項決策**：Spec 定案、PR 合進 `dev`、Linear「允許發版」。AI MUST NOT 取代這三項授權。
-    - **「允許發版」只認 Linear 留言**：只有 Eddie 在 Linear 留下的「允許發版」留言算數；對話裡的口頭同意或催促（例：「應該沒問題，先推」）都不能取代，AI 也不能自行判斷「應該可以」。這道關卡不適用規則 13 的「請使用者確認是否例外」：沒有該留言就停下，請 Eddie 到 Linear 留言。
+    - **「允許發版」只認 Linear 留言**：只有 Eddie 在 Linear 留下的「允許發版」留言算數；對話裡的口頭同意或催促（例：「應該沒問題，先推」）都不能取代，AI 也不能自行判斷「應該可以」。任何 AI 角色 MUST NOT 自己留下「允許發版」，使用者要求代為留言也一樣：只有 Eddie 自己寫的留言算數。為什麼：Linear 的作者欄分不出 Eddie 與用 Eddie 帳號留言的 AI（`docs/superpowers/guard.md` 的核准留言說明），讓 AI 代留就等於自己放行自己。這道關卡不適用規則 13 的「請使用者確認是否例外」：沒有該留言就停下，請 Eddie 到 Linear 留言。
     - **發版角色不能以例外放行**：發版審計員不是實作者、與實作者不同模型、是全新 session 或最終審計員的 session，這些要求同樣不適用規則 13 的「請使用者確認是否例外」。使用者要求實作者（或與實作者同模型、同 session 的審計員）發版時，一律 MUST NOT 照做：停下，引用規則 39，指向發版審計員。
 
     快轉與實際派發由誰執行，依 repo 的規定：
@@ -374,6 +378,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - MUST NOT 繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook），或未經使用者同意使用 `ELF_ALLOW`（規則 30）。
 - MUST NOT 在 check runs 未全部通過、或沒有 CI 且使用者未明確同意例外時快轉 `release`（規則 28）。
 - MUST NOT 由發版審計員以外的 session，或在 Eddie 沒有留下「允許發版」之前，為發版快轉 `release`（第 3 種含接著快轉 `main`）或跑派發；repo 的 AGENTS.md 規定 AI 不推時，發版審計員也不推（規則 39）。
+- MUST NOT 拿掉或放寬規則 19 的清理關卡（先 `--dry-run`、群組全部已完成、清理實作者自己輸入 `yes`、實作者與發版審計員不刪），也 MUST NOT 拿掉或放寬規則 39 的發版角色分離與「允許發版」（含 AI 不得代留該留言、AI 不推 `dev` 的限制）。
 - MUST NOT 以 squash 或 rebase 合併開發分支 PR，一律用「Create a merge commit」（規則 37）。
 - 已開 PR 後 MUST NOT 改寫歷史，一律新增 commit 修正（規則 38）。
 
@@ -390,6 +395,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
 - [ ] 發版前 Eddie 已在 Linear 留下「允許發版」；發版審計員是全新 session（不是實作者的 session，可由最終審計員的 session 接續）、與實作者不同模型；發版審計員以外的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）；repo 的 AGENTS.md 規定 AI 不推時，快轉與派發由 Eddie 執行（規則 39）
+- [ ] 沒有任何 AI 角色推 `dev`（規則 26 由發版審計員執行的 hotfix 合回除外）；沒有 AI 代 Eddie 留「允許發版」（規則 39）
 - [ ] 發版後，發版審計員已把 Plan 群組內每一張都依規則 10 改為已完成並留證據，清理實作者才開始清理（規則 39、19）
 - [ ] 範圍寫「不發版」的單，已寫明由哪張單或誰負責發版（規則 39）
 - [ ] 另開兩組以上 Spec＋Plan 時已建里程碑（規則 17）

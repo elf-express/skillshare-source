@@ -209,13 +209,15 @@ git switch main    && git merge --ff-only origin/release && git push origin main
 `scripts/release-ff.sh` (Git Bash) and `scripts/release-ff.ps1` (Windows PowerShell 5.1 / PowerShell 7) run the
 same steps with the rule 24 and 28 checks (commit list, check runs on `origin/dev`) and ask for the first 8 characters
 of the SHA before each push; `--dry-run` / `-DryRun` only checks. The release auditor runs them, and only after
-Eddie leaves 「允許發版」 in Linear. For the first rollout of this rule the fast-forward and `skillshare sync` are run
-by Eddie, per the transition clause in elf-team-rule rule 39.
+Eddie leaves 「允許發版」 in Linear himself (an AI MUST NOT post it on his behalf). Transition, for the E-392/E-425 group only:
+in the release that ships these rules, Eddie runs the fast-forward and `skillshare sync`, and the auditor only checks and
+records evidence (elf-team-rule rule 39 transition clause). From the next release the release auditor runs the fast-forward
+and `skillshare sync`.
 
 Do **not** commit on `main` or `release` — it breaks the FF chain. Three roles touch branches (elf-team-rule rules 19 and 39):
 
-- Implementers open a feature branch and a PR. They MUST NOT push to `dev`, `release` or `main`, and MUST NOT delete branches or worktrees.
-- The release auditor (fresh session, a different model from the implementers) fast-forwards `release` and `main` after Eddie's 「允許發版」.
+- No AI role pushes `dev`, with one exception below. Implementers open a feature branch and a PR. They MUST NOT push to `dev`, `release` or `main`, and MUST NOT delete the ticket's development branch or its worktree (rule 19's `pr/` and `merge/conflict-*` cleanup by the owning session is separate).
+- The release auditor (fresh session, a different model from every implementer) fast-forwards `release` and `main` and runs `skillshare sync` after Eddie's 「允許發版」. Its only `dev` push is rule 26's hotfix merge-back, after that same 「允許發版」. "Every implementer" means each session or subagent that wrote code, committed, or controlled or dispatched work for the Plan group, including a subagent-driven controller.
 - The cleanup implementer (fresh session, a different model from the release auditor, run from the main worktree) deletes released branches and worktrees with `release-cleanup`, only after every Plan in the group is 已完成.
 
 When `--ff-only` refuses, the target carries commits the source never saw — report that instead of forcing anything.

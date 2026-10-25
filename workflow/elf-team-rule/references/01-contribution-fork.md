@@ -108,7 +108,7 @@ gh pr create --repo elf-express/<repo> --base dev --head feat/e-<編號>-<短名
 
 ### B4. 發佈給下游（`dev` → `release`）
 
-`dev` 測試通過、使用者同意後，由規則 39 決定的執行者快轉：
+`dev` 測試通過、使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者快轉：
 
 ```
 git fetch origin
@@ -145,7 +145,7 @@ git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
 gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
 ```
 
-使用者同意後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26）：
+使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行，是任何 AI 角色唯一可推 `dev` 的情形）：
 
 ```
 git fetch origin                 # 等待同意期間 release／dev 可能被更新

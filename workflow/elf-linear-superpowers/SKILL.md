@@ -1,6 +1,6 @@
 ---
 name: elf-linear-superpowers
-description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用。
+description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用；也用於發版後清理（刪分支、清理 worktree、release-cleanup）與擔任發版審計員。
 metadata:
   version: 2.4.0
   owner: Elf Express
@@ -43,6 +43,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 計畫和實際不符時只有四種情況停下來 | 另加兩種：需要改規格（裁決不能改 Spec）；elf-team-rule 規則 13 列的 git 停止條件（`--ff-only` 失敗、衝突、push 被拒等），一律照規則 13 停下，不適用裁決制 | 規格變更要使用者核准；git 異常一律先回報 |
 | 最終審查後殘留的問題，到 finishing-a-development-branch 列選項時才告訴使用者 | 殘留的 Critical 不進步驟 6：先在 Plan 留言列出，由使用者決定修或停 | 驗證與發版前先處理嚴重問題 |
 | finishing-a-development-branch 選單有「本地合併」 | 開發分支只開 PR 合進 `dev`；本地合併只用於規則 18、26 的情況 | 分支規範 |
+| 使用者打字 `discard` 後，finishing-a-development-branch 執行 `git branch -D` 與 `git worktree remove` | `discard` 只改 Linear 狀態（Plan → 已取消，見步驟 7），不刪分支，也不移除 worktree；要刪由 Eddie 個案決定並自己刪，AI 不刪、不給刪除指令（規則 19「已取消的 Plan」） | 刪除不可逆，已取消的 Plan 沒有發版證據可核對（E-391，Eddie 2026-10-25 決定） |
 | 裁決（Ruling）記在 ledger，收尾時在對話回報 | 每個 Task 完成時把該 Task 的裁決原文留言到 Plan；刪 superpowers 工作區前再留一則「Rulings I made」總表 | ledger 不進版控、會隨工作區刪除；session 中斷時 Linear 仍有紀錄 |
 
 另有幾項是團隊另加的限制，上游沒有規定、也不衝突：單一 Plan 的 Task 建議 3–5 個、超過 10 個必拆（elf-team-rule 規則 16）；工作量大時在同一個 Spec 底下增加 Plan（規則 17）；超出 Spec 的需求不裁決（見步驟 4）；並行的問題調查同時最多兩條線；計畫可以交給計畫撰寫隊友寫（見隊友表）；階段 Guard（E-377，Claude Code 的 hook）在核准失效（「計畫已修改 vN」或「核准撤回」使憑證被 `revoke`）或本機還沒有憑證時，擋檔案工具寫 repo 裡 `docs/superpowers/` 以外的檔案，靠步驟 2 的狀態檔與步驟 3 第 9 項的核准憑證運作（憑證由留下核准的審計員依 Linear 核准留言用建立器建立，實作者只 `verify`；Linear 留言是唯一正本、憑證只是快取），說明見 skillshare-source 的 `docs/superpowers/guard.md`。
@@ -289,7 +290,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 
 測試全綠，且對 Spec＋Plan 跑完巡檢全部規則、錯誤已修正，才繼續。
 
-上游的選單固定三項：本地合併、推送並開 PR、保留分支。開發分支只能選「推送並開 PR」（base 為 `dev`）或「保留分支」；本地合併只用於下表「本地 merge」列的情況。捨棄只在使用者明確要求時做，且要使用者打字 `discard` 確認。上游只清理 `.worktrees/` 或 `worktrees/` 底下的 worktree，我們的 worktree 在 repo 外，由清理實作者在發版後用 `release-cleanup` 清理（見本節最後一段，規則 19）。
+上游的選單固定三項：本地合併、推送並開 PR、保留分支。開發分支只能選「推送並開 PR」（base 為 `dev`）或「保留分支」；本地合併只用於下表「本地 merge」列的情況。捨棄只在使用者明確要求時做，且要使用者打字 `discard` 確認；`discard` 在本團隊只改 Linear 狀態，不刪分支或 worktree（見「與上游 superpowers 的分工」表）。上游只清理 `.worktrees/` 或 `worktrees/` 底下的 worktree，我們的 worktree 在 repo 外，由清理實作者在發版後用 `release-cleanup` 清理（見本節最後一段，規則 19）。
 
 依使用者選擇：
 
@@ -297,24 +298,24 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 |---|---|---|
 | 開 PR 合進 `dev`（base 為 `dev`） | PR 自動連到 Plan；開 PR → 進行中；合進 `dev` → 驗證中（自動；自動化設定完成前依 elf-team-rule 規則 10 的過渡期處理）。PR 描述**只寫 Plan 編號**，不寫 Spec 編號，避免 PR 自動化連帶改動 Spec 狀態 | 維持進行中（多張 Plan 時，最後一張完成才自動關閉） |
 | 發版完成 | 發版審計員（規則 39）在 elf-team-rule 規則 10 的三個條件都滿足後，把群組內每一張 Plan 改為 已完成並在 Plan 留證據（首次導入的這一次照規則 39「過渡：」）：① `release` 已快轉到含這些提交的 `origin/dev`；② 該提交的 check runs 全部通過（規則 28）；③ 有部署或派發步驟的 repo 已確認新版生效（例：skillshare-source 已 `skillshare sync`）。實作者與清理實作者不改已完成 | 自動關閉（多張 Plan 時，最後一張完成才關閉）；沒關由發版審計員手動設定並留言 |
-| hotfix | 不經 PR 合回 `dev`（elf-team-rule 規則 11）：依規則 25 快轉 `release`（repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開 draft PR，只用來觸發 CI）；依規則 26 在本機把 `release` 合回 `dev` 後直接推送（規則 9 的例外），有衝突時經 `merge/conflict-*` 的 PR 合回、用 merge commit（規則 18、37）。規則 10 的三個條件都滿足後，由發版審計員（規則 39）手動改為 已完成（條件 ① 改為 `release` 已快轉到該 `origin/hotfix/*`） | —（hotfix 是單一工作單，沒有 Spec） |
+| hotfix | 不經 PR 合回 `dev`（elf-team-rule 規則 11）：依規則 25 快轉 `release`（repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開 draft PR，只用來觸發 CI）；依規則 26 由發版審計員在「允許發版」後把 `release` 合回 `dev` 並直接推送（規則 9 的例外，AI 角色唯一可推 `dev` 的情形），有衝突時經 `merge/conflict-*` 的 PR 合回、用 merge commit（規則 18、37）。規則 10 的三個條件都滿足後，由發版審計員（規則 39）手動改為 已完成（條件 ① 改為 `release` 已快轉到該 `origin/hotfix/*`） | —（hotfix 是單一工作單，沒有 Spec） |
 | Plan 群組（規則 17） | 只有疊加順序最後一張的分支開 PR，PR 描述只寫它的 Plan 編號；不替前面的 Plan 個別開 PR，使用者要求也一樣，先說明規則 17。前面的 Plan 在自己的單上留言附 PR 連結。前面的 Plan 不會被 PR 自動化改狀態：整合 PR 合進 `dev` 後手動改為驗證中；發版後由發版審計員（規則 39）依規則 10 的三個條件逐張手動改為已完成並留言證據（含 PR 連結）；條件看的是整合 PR 的提交，前面的 Plan 還停在進行中或驗證中也照樣改，不等它們自己變；群組內每一張都改完，清理實作者才可開始（規則 19）。「保留分支」與「捨棄」用在群組時先問 Eddie | 最後一張完成時應自動關閉；沒關就由發版審計員手動設為已完成並留言 |
 | 未導入 dev／release 的 repo | PR 合併 → 已完成（預設自動化） | 自動關閉 |
 | 本地 merge | 只用於第 1、2 種 `main` → `dev` 同步合併（elf-team-rule 規則 18）與 hotfix 的 `release` → `dev` 合回（規則 26），開發分支不適用 | — |
 | 保留分支 | 維持 驗證中，留言原因；保留工作區，不走清理 | 維持進行中 |
-| 捨棄（使用者打字 `discard` 確認） | 先問使用者 Spec 要一併取消還是保留重新規劃。一併取消：等 Spec 改為已取消後，再改為 已取消，各留言原因。保留：改回 待規劃，留言作廢的內容與原因，之後照新規格重寫同一張 Plan（不另開 Plan） | 一併取消：先於 Plan 改為已取消；保留：維持進行中，回步驟 1 |
+| 捨棄（使用者打字 `discard` 確認；只改 Linear 狀態，不刪分支與 worktree） | 先問使用者 Spec 要一併取消還是保留重新規劃。一併取消：等 Spec 改為已取消後，再改為 已取消，各留言原因。保留：改回 待規劃，留言作廢的內容與原因，之後照新規格重寫同一張 Plan（不另開 Plan） | 一併取消：先於 Plan 改為已取消；保留：維持進行中，回步驟 1 |
 
 **收尾的交叉角色流程**（有 `release` 分支的 repo；elf-team-rule 規則 19、36、39）：實作者做到開 PR 為止，之後每一棒都換角色，不由同一個模型一路實作、審計、發版、清理：
 
-1. 實作者：開 PR（base 為 `dev`），在 Plan 留收尾留言：選項、PR 連結、本單的 worktree 路徑、分支與最後一個提交（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）。「Rulings I made」總表（步驟 5-1）也要已在 Plan 上，清理實作者執行前會確認（規則 36）。實作者只清理自己的暫存檔，不刪 worktree 與分支（規則 36）。
-2. 最終審計：全新 session、與實作者不同模型，審整個分支、PR、CI 與驗證證據；可與發版審計員是同一個 session 接續（規則 39）。
+1. 實作者：開 PR（base 為 `dev`），在 Plan 留收尾留言：選項、PR 連結、本單的 worktree 路徑、分支與最後一個提交（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）。「Rulings I made」總表（步驟 5-1）也要已在 Plan 上，清理實作者執行前會確認（規則 36）。實作者只清理自己的暫存檔（不含 `.superpowers/sdd/`，它隨 worktree 由 `release-cleanup` 移除），不刪 worktree 與分支（規則 36）。
+2. 最終審計：全新 session、與本 Plan 群組的**每一位**實作者（含控制者與 subagent，規則 39）不同模型，審整個分支、PR、CI 與驗證證據；可與發版審計員是同一個 session 接續（規則 39）。步驟 5-1 的「最終審查」是實作者自己的 session 派出的 subagent，不算這裡的最終審計。為什麼：它與實作者同源，審不出實作者共有的盲點。
 3. Eddie 把 PR 合進 `dev`，並在 Linear 留下「允許發版」；沒有這則留言不發版（規則 39）。
 4. 發版審計員（規則 39）：重讀 Linear 與 git 後核對並發版（快轉與派發由誰執行依規則 39；首次導入的過渡照規則 39「過渡：」），在 Plan 留發版證據，把群組內每一張 Plan 改為已完成（見上表「發版完成」列）。
-5. 清理實作者（規則 19）：全新 session、與發版審計員不同模型、在主 worktree 執行。先確認 Plan 群組每一張與 Spec 都已完成（只完成一部分就不開始）、目標已在 `origin/release`，重讀 Linear 與 git 的發版證據，跑 `release-cleanup --dry-run`，確認目標與理由都正確、相關的 Orca 工作區與終端都已關閉，再自己輸入 `yes` 正式執行；在 Plan 留完整輸出與清理摘要（已刪、跳過、失敗各項）。不改 Plan 與 Spec 的狀態；失敗或被跳過的目標只保留並回報，不用 force、不手工刪除。
+5. 清理實作者（規則 19）：全新 session、與發版審計員不同模型、在主 worktree 執行。先確認 Plan 群組每一張與 Spec 都已完成（只完成一部分就不開始）、目標已在 `origin/release`，重讀 Linear 與 git 的發版證據，跑 `release-cleanup --dry-run`（單號帶群組每一張 Plan；Spec 若有分支或 worktree 也帶；hotfix 或單一工作單帶該單，見規則 19），確認目標與理由都正確、相關的 Orca 工作區與終端都已關閉，再自己輸入 `yes` 正式執行：MUST NOT 預先管線輸入（例：`echo yes |`），要看過實跑清單與 dry-run 一致才輸入。Eddie 不需貼上或執行任何 shell 指令。在 Plan 留完整輸出與清理摘要（已刪、跳過、失敗各項）。不改 Plan 與 Spec 的狀態；失敗或被跳過的目標只保留並回報，不用 force、不手工刪除。
 
-**每次交接都在 Plan 留言**：角色、實際模型、是否全新 session、輸入範圍（例：PR 連結、候選 SHA）與驗證證據。Linear 帳號作者欄證明不了模型或 session，所以寫在留言本文。
+**每次交接都在 Plan 留言**：角色、實際模型、是否全新 session、輸入範圍（例：PR 連結、候選 SHA）與驗證證據。Linear 帳號作者欄證明不了模型或 session，所以寫在留言本文。一般 Task 完成時只要求測試、commit 與證據（Task 完成留言），不另插人工審計關卡；刪除、資安或資料遷移等高風險 Task 可在 Plan 明定額外審計。
 
-**已取消的 Plan**（含「捨棄」）不走清理：AI 不跑 `release-cleanup`，也不下任何刪除分支或 worktree 的指令，由 Eddie 個案決定；使用者在對話裡說「清一清」或確認也一樣，依規則 19「已取消的 Plan」一項，且刪除遠端分支或未合併的提交本來就是規則 13 的停止條件，停下，說明由 Eddie 個案決定。
+**已取消的 Plan**（含「捨棄」）不走清理：AI 不跑 `release-cleanup`，也不下任何刪除分支或 worktree 的指令，不給刪除指令；Eddie 在 Linear 留言個案決定，要刪就由 Eddie 自己刪。使用者在對話裡說「清一清」或確認也一樣，依規則 19「已取消的 Plan」一項；刪除遠端分支本來就是規則 13 的停止條件，停下，說明由 Eddie 在 Linear 留言決定。
 
 Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree 與分支，全組都已完成才清理。為什麼：前面的分支是後面分支的基線，群組還沒發版就刪，修正時找不到完成點；實作、發版與刪除拆給不同模型與 session，避免同一個 AI 自己審、自己上線、自己刪。
 
@@ -346,7 +347,7 @@ Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree �
 完整規則見《分支規範》。
 
 - 不在 `main`、`release` 上提交，不 force push；部署一律用 `release`。
-- 所有改動經開發分支進 `dev`，不直接在 `dev` 上開發。
+- 所有改動經開發分支進 `dev`，不直接在 `dev` 上開發；任何 AI 角色都不推 `dev`，唯一例外是發版審計員在「允許發版」後做規則 26 的 hotfix 合回。「允許發版」只認 Eddie 自己在 Linear 的留言，AI 不代留（規則 39）。
 - 快轉 `release` 前，要發佈的提交上每個 check run 都必須通過；沒有 CI 時需 Eddie 明確同意例外。
 - 不繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook）；未經 Eddie 同意不使用 `ELF_ALLOW`。
 - 遇到衝突一律先回報使用者，不自行解決。
@@ -394,7 +395,7 @@ Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree �
   - 會改到同一批檔案的單用 blocked by 排序；同一專案有兩組以上未完成的單時，Spec 定案前在「## 並行」一節寫 `並行：可（與 E-xxx）` 或 `並行：不可（blocked by E-xxx）`，下一行 `理由：` 寫兩邊要改的檔案清單比對結果（規則 32）。
   - 別張單只留言，不改它的描述，由負責那張單的 session 更新（規則 33）。
   - 改動共用本機狀態（skillshare 設定與 `skillshare sync`、全域 git 設定、Credential Manager）或刪除、移動共用路徑前，先確認沒有其他 session 在用，並在里程碑或相關的單留言告知（規則 34、35）。
-  - 收尾時清理自己的暫存檔（匯出檔、log、暫存目錄）；worktree 與分支（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）列在收尾留言，留給清理實作者，自己不刪（規則 19、36）。
+  - 收尾時清理自己的暫存檔（匯出檔、log、暫存目錄；不含 `.superpowers/sdd/`，它隨 worktree 由清理實作者清掉）；worktree 與分支（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）列在收尾留言，留給清理實作者，自己不刪（規則 19、36）。
 - 狀態變更、裁決（偏離計畫的決定）、審查與驗證結果都要在 Linear 留言，保留完整紀錄，Deloitte 稽核可追溯；裁決隨每個 Task 完成時留言，步驟 5-1 刪除工作區前再留一則總表。
 - 修改規則時改 Linear 正本，再同步本 skill；改 skill 的 PR 先出核准稿，發版時才改正本。新增可檢查的規則時同步加進巡檢規則。
 
@@ -405,5 +406,5 @@ Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree �
 - **模型級別對應的模型名稱**：「最便宜／中階／最強」在 Eddie 的環境（經 omniroute）各對應哪個模型名稱，以 Agent 工具 `model` 參數實際接受的值為準。確認前派發時寫 Agent 工具列出的名稱，留言寫實際用的名稱。 實測（2026-10-22）：沒能實測 Claude Code／omniroute 的對應；Codex 派發接受 gpt-6-luna、gpt-6.1-sol、gpt-6-astra，但三個子代理都只回報「無法確認」，不能把參數當成已驗證的執行模型名稱。
 - **派發參數覆蓋 `model: inherit`**：依 Claude Code 文件，Agent 工具的 `model` 參數優先於 agent 檔的 `model`。確認前，派出後看隊友回報的模型名稱，不符就停下來回報使用者。 實測（2026-10-22）：沒能實測；本次 Codex 派發工具沒有選擇 elf-reviewer 角色的參數，一般子代理不能代替 Claude Code 原生 Agent 的角色覆寫測試。
 - **`EnterWorktree` 的 `path` 參數**：Eddie 的 Claude Code 版本是否已有。依 Claude Code 文件，從啟動目錄第一次切換時才能切到 repo 外的 worktree；session 已經在別的 worktree 裡時，只能切到 `.claude/worktrees/` 底下，這時改開新 session。沒有 `path` 參數時改用 `cd`，但 session 的專案設定（CLAUDE.md、記憶）不會跟著切換。 實測（2026-10-22）：沒能實測；本次 session 從 Orca 的 .ocrca worktree 啟動，且 Codex 沒有 EnterWorktree 工具。逐指令指定 cwd 可進入 repo 外 worktree，但不等同 Claude Code 的 path 切換。
-- **未導入 dev／release 的 repo 的收尾**：這類 repo 沒有 `release` 分支，`release-cleanup` 以 `origin/release` 為準，規則 39 也只適用於有 `release` 的 repo，規則 19 的前提又是發版審計員留下的發版證據，所以步驟 7 的發版審計員與清理實作者流程不適用；PR 合併後 Plan 自動完成，worktree 與分支怎麼清、由誰清，規則沒有明定。這是等 Eddie 決定的規則缺口，不是待實測的項目；決定前不自行刪除，先問使用者。
+- **未導入 dev／release 的 repo 的收尾**：這類 repo 沒有 `release` 分支，`release-cleanup` 以 `origin/release` 為準，規則 39 也只適用於有 `release` 的 repo，規則 19 的前提又是發版審計員留下的發版證據，所以步驟 7 的發版審計員與清理實作者流程不適用；PR 合併後 Plan 自動完成，worktree 與分支怎麼清、由誰清，規則沒有明定。這是等 Eddie 決定的規則缺口，不是待實測的項目（Eddie 2026-10-25 決定處理方式，見 elf-team-rule 規則 19「沒有 `release` 的 repo」）：決定前不刪、把 worktree 與分支列在收尾留言、等 Eddie 決定，另開單設計清理方式；使用者在對話裡說「刪吧」不算授權。
 - **審計員與實作者不在同一台機器時如何建立核准憑證**：未定，也是等 Eddie 決定的規則缺口。核准憑證存在本機，步驟 3 第 9 項只寫審計員建立；確認前實作者停下，在 Plan 留言請審計員處理。`docs/superpowers/guard.md` 的建立者說明尚未對齊本 skill，另開單處理。
