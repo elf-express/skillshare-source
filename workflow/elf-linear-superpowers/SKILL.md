@@ -241,7 +241,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
   1. 用 `save_issue` 的 `patch`（op `replace`）把該 Task 的每一行 `- [ ] 步驟 N.M` 改為 `- [x] 步驟 N.M`，只改這些行，不重送整份描述。Linear 會存成 `- [X]`，兩者都代表已完成。
   2. 在 Plan 留言一則：`Task N 完成（commits <a>..<b>）`、驗證結果（4-1：`task-done` 的測試結果；4-2：Task 審查的規格與品質結論、修正了幾輪）、本 Task 期間 ledger 的 `Ruling:` 行原文（開工前掃描計畫時的裁決併入 Task 1 這則）、隊友換人與原因。
 - commit 訊息附 Plan 編號，例如 `feat(E-32): 新增匯率同步排程`。
-- Plan 群組裡發現前面 Plan 的問題（規則 17「疊加分支」(4)）：最後一張的分支已存在就在它上面修；還不存在就在目前最末端、已存在的分支上修，下一張再從修正後的完成點開。已被後續 Plan 當作基線的分支不再加 commit，即使它的 worktree 還開著。修正的 commit 訊息寫所屬 Plan 的編號（例 `fix(E-701): …`），並在那張 Plan 留言。整合 PR 的審查或 CI／PR 檢查要修時也一樣在 PR 所在的最後一張分支修、重跑受影響的測試與 PR 檢查，不另開 Spec 或修正單；修法是某張 Plan 的實質變更（例如要加 Task），那張 Plan 照步驟 3 第 8 項留言「計畫已修改 vN」、`revoke`、重新核准後 `create`。為什麼：往已被當作基線的分支加 commit，後續分支就不含這個修正，只能再合併或改寫歷史。
+- Plan 群組裡發現前面 Plan 的問題（規則 17「疊加分支」(4)）：最後一張的分支已存在就在它上面修；還不存在就在目前最末端、已存在的分支上修，下一張再從修正後的完成點開。已被後續 Plan 當作基線的分支不再加 commit，即使它的 worktree 還開著。修正的 commit 訊息寫所屬 Plan 的編號（例 `fix(E-701): …`），並在那張 Plan 留言。整合 PR 的審查或 CI／PR 檢查要修時也一樣在 PR 所在的最後一張分支修、重跑受影響的測試與 PR 檢查，不另開 Spec 或修正單；修法是某張 Plan 的實質變更（例如要加 Task），那張 Plan 照步驟 3 第 8 項留言「計畫已修改 vN」、`revoke`，審計員重新核准並 `create` 後，實作者 `verify` 通過才繼續。為什麼：往已被當作基線的分支加 commit，後續分支就不含這個修正，只能再合併或改寫歷史。
 - **計畫與實際不符：照上游的裁決制**，不停下來等。以 Spec 為最高依據自己決定，記進 ledger：`Ruling: <決定> — <理由> — <錯了的代價>`，然後繼續。超出 Spec 範圍的需求不裁決（團隊補充）：照 Spec 也能完成 Plan、只是發現 Spec 沒涵蓋的新需求，就不做，記進 ledger，收尾時回報（需要就另開單）；不改 Spec 就完成不了 Plan，屬於下面的「需要改規格」。停下來問使用者的情況：上游的四種（不可逆或破壞性的操作；安全相關的動作；worktree 以外的副作用，例如合併、推送共用分支、發佈；計畫壞到每條路都只能猜），加上本團隊的兩種（需要改規格；elf-team-rule 規則 13 列的 git 停止條件，例如 `--ff-only` 失敗、衝突、push 被拒）。上游本來也要求停下來的：基線測試不乾淨（using-git-worktrees）、連續 3 次修不好（systematic-debugging；4-2 的做法見 S2）。
 - 派發 subagent **一律明確指定模型**（上游 Model Selection；省略會繼承 session 模型）。各角色用哪一級見「隊友（subagent）規則摘要」。
 - 4-1 Native：照 executing-plans，本 session 就是實作者，用 `task-start`／`task-done` 記 ledger；最後一樣派最強模型的審查者審整個分支（步驟 5-1）。
@@ -309,12 +309,12 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 1. 實作者：開 PR（base 為 `dev`），在 Plan 留收尾留言：選項、PR 連結、本單的 worktree 路徑、分支與最後一個提交（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）。「Rulings I made」總表（步驟 5-1）也要已在 Plan 上，清理實作者執行前會確認（規則 36）。實作者只清理自己的暫存檔，不刪 worktree 與分支（規則 36）。
 2. 最終審計：全新 session、與實作者不同模型，審整個分支、PR、CI 與驗證證據；可與發版審計員是同一個 session 接續（規則 39）。
 3. Eddie 把 PR 合進 `dev`，並在 Linear 留下「允許發版」；沒有這則留言不發版（規則 39）。
-4. 發版審計員（規則 39）：重讀 Linear 與 git 後發版（首次導入的過渡照規則 39「過渡：」），在 Plan 留發版證據，把群組內每一張 Plan 改為已完成（見上表「發版完成」列）。
-5. 清理實作者（規則 19）：全新 session、與發版審計員不同模型、在主 worktree 執行。先確認 Plan 群組內每一張都已完成（只完成一部分就不開始），重讀 Linear 與 git 的發版證據，跑 `release-cleanup --dry-run`，確認目標與理由都正確、相關的 Orca 工作區與終端都已關閉，再自己輸入 `yes` 正式執行；在 Plan 留完整輸出與清理摘要（已刪、跳過、失敗各項）。不改 Plan 與 Spec 的狀態；失敗或被跳過的目標只保留並回報，不用 force、不手工刪除。
+4. 發版審計員（規則 39）：重讀 Linear 與 git 後核對並發版（快轉與派發由誰執行依規則 39；首次導入的過渡照規則 39「過渡：」），在 Plan 留發版證據，把群組內每一張 Plan 改為已完成（見上表「發版完成」列）。
+5. 清理實作者（規則 19）：全新 session、與發版審計員不同模型、在主 worktree 執行。先確認 Plan 群組每一張與 Spec 都已完成（只完成一部分就不開始）、目標已在 `origin/release`，重讀 Linear 與 git 的發版證據，跑 `release-cleanup --dry-run`，確認目標與理由都正確、相關的 Orca 工作區與終端都已關閉，再自己輸入 `yes` 正式執行；在 Plan 留完整輸出與清理摘要（已刪、跳過、失敗各項）。不改 Plan 與 Spec 的狀態；失敗或被跳過的目標只保留並回報，不用 force、不手工刪除。
 
 **每次交接都在 Plan 留言**：角色、實際模型、是否全新 session、輸入範圍（例：PR 連結、候選 SHA）與驗證證據。Linear 帳號作者欄證明不了模型或 session，所以寫在留言本文。
 
-**已取消的 Plan**（含「捨棄」）不走清理：AI 不跑 `release-cleanup`，也不下任何刪除分支或 worktree 的指令，由 Eddie 個案決定；使用者在對話裡說「清一清」或確認也一樣，這不是規則 13 的「請使用者確認是否例外」，依規則 19「關卡不能放行」停下，說明由 Eddie 個案決定。「保留分支」保留工作區。
+**已取消的 Plan**（含「捨棄」）不走清理：AI 不跑 `release-cleanup`，也不下任何刪除分支或 worktree 的指令，由 Eddie 個案決定；使用者在對話裡說「清一清」或確認也一樣，依規則 19「已取消的 Plan」一項，且刪除遠端分支或未合併的提交本來就是規則 13 的停止條件，停下，說明由 Eddie 個案決定。
 
 Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree 與分支，全組都已完成才清理。為什麼：前面的分支是後面分支的基線，群組還沒發版就刪，修正時找不到完成點；實作、發版與刪除拆給不同模型與 session，避免同一個 AI 自己審、自己上線、自己刪。
 
@@ -405,4 +405,5 @@ Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree �
 - **模型級別對應的模型名稱**：「最便宜／中階／最強」在 Eddie 的環境（經 omniroute）各對應哪個模型名稱，以 Agent 工具 `model` 參數實際接受的值為準。確認前派發時寫 Agent 工具列出的名稱，留言寫實際用的名稱。 實測（2026-10-22）：沒能實測 Claude Code／omniroute 的對應；Codex 派發接受 gpt-6-luna、gpt-6.1-sol、gpt-6-astra，但三個子代理都只回報「無法確認」，不能把參數當成已驗證的執行模型名稱。
 - **派發參數覆蓋 `model: inherit`**：依 Claude Code 文件，Agent 工具的 `model` 參數優先於 agent 檔的 `model`。確認前，派出後看隊友回報的模型名稱，不符就停下來回報使用者。 實測（2026-10-22）：沒能實測；本次 Codex 派發工具沒有選擇 elf-reviewer 角色的參數，一般子代理不能代替 Claude Code 原生 Agent 的角色覆寫測試。
 - **`EnterWorktree` 的 `path` 參數**：Eddie 的 Claude Code 版本是否已有。依 Claude Code 文件，從啟動目錄第一次切換時才能切到 repo 外的 worktree；session 已經在別的 worktree 裡時，只能切到 `.claude/worktrees/` 底下，這時改開新 session。沒有 `path` 參數時改用 `cd`，但 session 的專案設定（CLAUDE.md、記憶）不會跟著切換。 實測（2026-10-22）：沒能實測；本次 session 從 Orca 的 .ocrca worktree 啟動，且 Codex 沒有 EnterWorktree 工具。逐指令指定 cwd 可進入 repo 外 worktree，但不等同 Claude Code 的 path 切換。
-- **未導入 dev／release 的 repo 的收尾**：這類 repo 沒有 `release` 分支，`release-cleanup` 以 `origin/release` 為準，規則 39 也只適用於有 `release` 的 repo，規則 19 的前提又是發版審計員留下的發版證據，所以本節的發版審計員與清理實作者流程不適用；PR 合併後 Plan 自動完成，worktree 與分支怎麼清、由誰清，規則沒有明定。確認前不自行刪除，先問使用者。
+- **未導入 dev／release 的 repo 的收尾**：這類 repo 沒有 `release` 分支，`release-cleanup` 以 `origin/release` 為準，規則 39 也只適用於有 `release` 的 repo，規則 19 的前提又是發版審計員留下的發版證據，所以步驟 7 的發版審計員與清理實作者流程不適用；PR 合併後 Plan 自動完成，worktree 與分支怎麼清、由誰清，規則沒有明定。這是等 Eddie 決定的規則缺口，不是待實測的項目；決定前不自行刪除，先問使用者。
+- **審計員與實作者不在同一台機器時如何建立核准憑證**：未定，也是等 Eddie 決定的規則缺口。核准憑證存在本機，步驟 3 第 9 項只寫審計員建立；確認前實作者停下，在 Plan 留言請審計員處理。`docs/superpowers/guard.md` 的建立者說明尚未對齊本 skill，另開單處理。
