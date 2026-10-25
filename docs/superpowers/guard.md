@@ -33,6 +33,8 @@ Task 子 agent 寫檔同樣會觸發 PreToolUse，適用上表所有規則。已
 - 規則 3：`Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准憑證只能用核准憑證建立器（elf-approval.cjs）建立。`
 - 規則 9：`Superpowers 階段 Guard：E-<N> 計畫未核准，目前只能修改 docs/superpowers/ 底下的檔案。請先完成 spec／plan，由審計員在 Linear 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。`
 
+規則 9 的訊息寫的是「計畫未核准」，但狀態檔在計畫核准後才建（見「狀態檔」），所以實際觸發多半是核准失效（「計畫已修改 vN」、「核准撤回」）或這台電腦還沒建憑證。
+
 ## 狀態檔
 
 路徑：`docs/superpowers/state/E-<Spec>.yaml`，檔名用 Spec 編號。同一個 Spec 底下第二張以後的 Plan（elf-team-rule 規則 17）各建一份 `docs/superpowers/state/E-<Plan>.yaml`，檔名用該 Plan 的編號，`ticket` 仍填 Spec 編號；第一張 Plan 用的 `E-<Spec>.yaml` 不改。
@@ -45,7 +47,7 @@ plan: E-377
 
 - `ticket`：Spec 編號。
 - `phase`：目前階段，SessionStart 摘要原樣顯示。
-- `plan`：Plan 編號。寫完 Plan 後要填上；核准憑證以此欄位的值命名。
+- `plan`：Plan 編號。建狀態檔時計畫已核准，所以一開始就填；核准憑證以此欄位的值命名。
 
 Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>/e-<N>-<英文短名>`），再找狀態檔：
 
@@ -56,7 +58,7 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 
 `plan:` 沒填時，Plan 分支（`e-<Plan 編號>` 或 `<類型>/e-<Plan 編號>-…`）找不到狀態檔，Guard 不會擋。Spec 分支上 `plan:` 空白時視為未核准，會擋。
 
-依 E-369 的設計，團隊流程（elf-linear-superpowers 步驟 2，由 E-372 實作）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
+團隊流程（`workflow__elf-linear-superpowers` 步驟 2）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號；而 worktree、分支與狀態檔都要等 Plan 取得「計畫已核准」、核准憑證 `verify` 通過、相依條件確認之後才建立（E-424，2026-10-25，取代 E-369 原本「Spec 定案後先建」的設計）。核准前沒有該 Plan 的 worktree，Guard 在那個階段沒有保護對象；主目錄仍在，但它的分支不是 `e-<N>` 或 `<類型>/e-<N>-<英文短名>`，依規則 5 一律放行，核准前不在主目錄寫實作檔是靠 elf-team-rule 規則 31 與 elf-linear-superpowers 步驟 3 第 1 項，不是靠 Guard。狀態檔的實際作用在核准之後：Plan 留言「計畫已修改 vN」或「核准撤回」、憑證被 `revoke` 之後，憑證不再通過規則 7，Guard 依規則 9 重新擋住 `docs/superpowers/` 以外的寫入。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
 
 狀態檔合進 `dev` 後留著當紀錄，不刪。之後的分支只要沿用同一個 Spec 或 Plan 編號，Guard 一樣會管。核准憑證只存在建立它的那台電腦；換一台電腦時，在那台電腦依同一則 Linear 核准留言再建一份，建好之前這類分支在 `docs/superpowers/` 以外的寫入會被擋。
 
