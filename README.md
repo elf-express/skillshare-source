@@ -114,7 +114,7 @@ skillshare-source/
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
 ├── scripts/elf-search-guard.*       擋從根目錄或整顆磁碟遞迴搜尋的 hook（說明見 docs/search-guard.md）
 ├── scripts/validate.sh              提交前檢查
-├── scripts/elf-guard.*、make-hooks-yaml.cjs   superpowers 階段 Guard hooks（說明見 docs/superpowers/guard.md）
+├── scripts/elf-guard.*、elf-approval.cjs、make-hooks-yaml.cjs   superpowers 階段 Guard hooks 與核准憑證建立器（說明見 docs/superpowers/guard.md）
 └── docs/                            截圖與 docs/superpowers/（Guard 說明、狀態檔）
 ```
 

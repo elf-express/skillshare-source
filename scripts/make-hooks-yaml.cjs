@@ -1,4 +1,4 @@
-// 產生器：把 elf-guard.cjs 與 elf-sessionstart.cjs 原文內嵌成 skillshare hooks entry YAML。
+// 產生器：把 elf-guard.cjs、elf-sessionstart.cjs 與 elf-approval.cjs 原文內嵌成 skillshare hooks entry YAML。
 // 用法：node scripts/make-hooks-yaml.cjs          寫出 scripts/elf-guard.hooks.yaml
 //       node scripts/make-hooks-yaml.cjs --check  比對現有 YAML，不同步則 exit 1
 //       同一次執行也寫出／比對 scripts/elf-search-guard.hooks.yaml（內嵌 elf-search-guard.cjs，E-423）
@@ -10,7 +10,7 @@ const path = require('path');
 const SCRIPTS_DIR = __dirname;
 const OUT_FILE = path.join(SCRIPTS_DIR, 'elf-guard.hooks.yaml');
 // 內嵌的來源檔，順序即 YAML 內的順序
-const SOURCES = ['elf-guard.cjs', 'elf-sessionstart.cjs'];
+const SOURCES = ['elf-guard.cjs', 'elf-sessionstart.cjs', 'elf-approval.cjs'];
 const FILE_KEY_INDENT = ' '.repeat(6);
 const CONTENT_INDENT = ' '.repeat(8);
 // hook command 使用的腳本安裝目錄（由 shell 展開 $HOME）
@@ -40,7 +40,7 @@ function generate(sources) {
   const fileBlocks = SOURCES.map((name) => `${FILE_KEY_INDENT}${name}: |\n${indentBlock(sources[name])}\n`).join('');
   return (
     '# 由 scripts/make-hooks-yaml.cjs 產生，請勿手改\n' +
-    'description: Superpowers 階段 Guard 與狀態檔注入(E-377)\n' +
+    'description: Superpowers 階段 Guard、狀態檔注入與核准憑證建立器(E-377、E-399)\n' +
     'bindings:\n' +
     '  claude:\n' +
     '    files:\n' +
