@@ -29,7 +29,8 @@ _superpowers/                      tracked repo obra/superpowers (own .git, giti
 scripts/elf-search-guard.*         Claude Code hook: block recursive searches of / or a whole drive (see docs/search-guard.md)
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
-scripts/release-ff.{sh,ps1}        maintainer release: fast-forward dev → release → main
+scripts/release-ff.{sh,ps1}        release: fast-forward dev → release → main (release auditor)
+scripts/release-cleanup.{sh,ps1}   post-release cleanup by issue number, run by the cleanup implementer
 scripts/elf-guard.*, elf-approval.cjs, make-hooks-yaml.cjs   superpowers phase Guard hooks and approval-credential builder (see docs/superpowers/guard.md)
 docs/                              screenshots and docs/superpowers/ (Guard doc, state files) — not a skill
 ```
@@ -195,6 +196,8 @@ feature branch → PR → `dev` → `release` → `main`.
 | `release` | the only stable version — teammates' skillshare sources sit on it; fast-forwarded from `origin/dev` |
 | `main`    | 主庫 — the protected main line and the external baseline; only fast-forwarded from `origin/release`, never committed to, never used as the stable version or install source (renamed from `master` on 2026-10-11) |
 
+The release steps (run by the release auditor, see below):
+
 ```bash
 git fetch origin
 git log --oneline origin/release..origin/dev     # show what is about to ship
@@ -205,10 +208,17 @@ git switch main    && git merge --ff-only origin/release && git push origin main
 
 `scripts/release-ff.sh` (Git Bash) and `scripts/release-ff.ps1` (Windows PowerShell 5.1 / PowerShell 7) run the
 same steps with the rule 24 and 28 checks (commit list, check runs on `origin/dev`) and ask for the first 8 characters
-of the SHA before each push; `--dry-run` / `-DryRun` only checks. They are for the maintainer: the rule below still
-applies to AI agents.
+of the SHA before each push; `--dry-run` / `-DryRun` only checks. The release auditor runs them, and only after
+Eddie leaves 「允許發版」 in Linear himself (an AI MUST NOT post it on his behalf). Transition, for the E-392/E-425 group only:
+in the release that ships these rules, Eddie runs the fast-forward and `skillshare sync`, and the auditor only checks and
+records evidence (elf-team-rule rule 39 transition clause). From the next release the release auditor runs the fast-forward
+and `skillshare sync`.
 
-Do **not** commit on `main` or `release` — it breaks the FF chain. AI agents open a feature branch and a PR; they never push to `dev`, `release` or `main`.
+Do **not** commit on `main` or `release` — it breaks the FF chain. Three roles touch branches (elf-team-rule rules 19 and 39):
+
+- No AI role pushes `dev`, with the exception below (rule 18's upstream sync pushes `dev` too, but it applies only to type 1/2 forks, not to this type 3 repo). Implementers open a feature branch and a PR. They MUST NOT push to `dev`, `release` or `main`, and MUST NOT delete the ticket's development branch or its worktree (rule 19's `pr/` and `merge/conflict-*` cleanup by the owning session is separate).
+- The release auditor (fresh session, a different model from every implementer) fast-forwards `release` and `main` and runs `skillshare sync` after Eddie's 「允許發版」. Its only `dev` push is rule 26's hotfix merge-back, after that same 「允許發版」. "Every implementer" means each session or subagent that wrote code, committed, or controlled or dispatched work for the Plan group, including a subagent-driven controller.
+- The cleanup implementer (fresh session, a different model from the release auditor, run from the main worktree) deletes released branches and worktrees with `release-cleanup`, only after every Plan in the group is 已完成.
 
 When `--ff-only` refuses, the target carries commits the source never saw — report that instead of forcing anything.
 

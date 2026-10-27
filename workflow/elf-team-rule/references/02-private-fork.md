@@ -82,6 +82,7 @@ git merge main
 git push origin dev
 ```
 
+* 合併只含上游提交、沒有衝突時，AI 或維護者都可以執行 `git push origin dev`（規則 18）。
 * 這是整條鏈上**唯一可能出現衝突的地方**：上游的改動和我們私有的改動在這裡相遇。
 * 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），說明每個檔案兩邊各改了什麼，不要自行解。
 * 使用者可能會要求在獨立分支上處理衝突，做法是先放棄 `dev` 上這次合併，再開衝突處理分支：
@@ -113,11 +114,11 @@ gh pr create --repo elf-express/<私有repo> --base dev --head feat/e-<編號>-<
 
 經 PR 合回 `dev`，用 merge commit（規則 37），不可 squash 或 rebase。
 
-合併後刪除 `feat/e-<編號>-<短名>`。
+合進 `dev` 後不刪除 `feat/e-<編號>-<短名>`（本地、遠端與它的 worktree）：發版完成、Plan 與 Spec 已完成後，由清理實作者依規則 19 用 `release-cleanup` 刪除；實作者不刪。
 
 ### B4. 發佈（`dev` → `release`）
 
-`dev` 測試通過、使用者同意後，由規則 39 決定的執行者快轉：
+`dev` 測試通過、使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者快轉：
 
 ```
 git fetch origin
@@ -153,7 +154,7 @@ git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
 gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
 ```
 
-使用者同意後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26）：
+使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行；AI 角色推 `dev` 只有這一種與 B2 的上游同步，規則 18、39）：
 
 ```
 git fetch origin                 # 等待同意期間 release／dev 可能被更新
@@ -175,7 +176,7 @@ git push origin dev              # 被拒 → 停下來回報，不要 pull --re
 * 合回 `dev` 有衝突 → `git merge --abort`，**停下來回報**；使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>`（同一天已有就加 `-2`），合併 `origin/release`、解衝突、測試後經 PR 合回 `dev`，**MUST 用「Create a merge commit」合併**，不可 squash 或 rebase，否則 `release` 不再是 `dev` 的祖先，下次發佈無法快轉。
 * CI 已有 `hotfix/**` 推送觸發時（`elf-cicd-*` 現行範本），推送後就會有 check run，不用開 draft PR。draft PR 只用來觸發 CI：`release` 快轉後 GitHub 會自動把它標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了卻沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 依規則 28、29 處理，不要一直等。
 * 只在本 repo 修，不回饋第 1 種或原作者。問題如果出在上游，另外跟使用者確認是否到第 1 種修正（見 C 節第一題）。
-* 最後刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）。
+* 發佈後不由實作者刪除 `hotfix/e-<編號>-<短名>`（本地與遠端）：該單已完成、發版證據齊全後，由清理實作者依規則 19 用 `release-cleanup` 刪除。
 
 ---
 
