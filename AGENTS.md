@@ -216,7 +216,7 @@ and `skillshare sync`.
 
 Do **not** commit on `main` or `release` — it breaks the FF chain. Three roles touch branches (elf-team-rule rules 19 and 39):
 
-- No AI role pushes `dev`, with one exception below. Implementers open a feature branch and a PR. They MUST NOT push to `dev`, `release` or `main`, and MUST NOT delete the ticket's development branch or its worktree (rule 19's `pr/` and `merge/conflict-*` cleanup by the owning session is separate).
+- No AI role pushes `dev`, with the exception below (rule 18's upstream sync pushes `dev` too, but it applies only to type 1/2 forks, not to this type 3 repo). Implementers open a feature branch and a PR. They MUST NOT push to `dev`, `release` or `main`, and MUST NOT delete the ticket's development branch or its worktree (rule 19's `pr/` and `merge/conflict-*` cleanup by the owning session is separate).
 - The release auditor (fresh session, a different model from every implementer) fast-forwards `release` and `main` and runs `skillshare sync` after Eddie's 「允許發版」. Its only `dev` push is rule 26's hotfix merge-back, after that same 「允許發版」. "Every implementer" means each session or subagent that wrote code, committed, or controlled or dispatched work for the Plan group, including a subagent-driven controller.
 - The cleanup implementer (fresh session, a different model from the release auditor, run from the main worktree) deletes released branches and worktrees with `release-cleanup`, only after every Plan in the group is 已完成.
 

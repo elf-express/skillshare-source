@@ -82,6 +82,7 @@ git merge main
 git push origin dev
 ```
 
+* 合併只含上游提交、沒有衝突時，AI 或維護者都可以執行 `git push origin dev`（規則 18）。
 * 這是整條鏈上**唯一可能出現衝突的地方**：上游的改動和我們私有的改動在這裡相遇。
 * 有衝突 → **停下來回報**，列出衝突檔案（`git diff --name-only --diff-filter=U`），說明每個檔案兩邊各改了什麼，不要自行解。
 * 使用者可能會要求在獨立分支上處理衝突，做法是先放棄 `dev` 上這次合併，再開衝突處理分支：
@@ -153,7 +154,7 @@ git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
 gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
 ```
 
-使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行，是任何 AI 角色唯一可推 `dev` 的情形）：
+使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行；AI 角色推 `dev` 只有這一種與 B2 的上游同步，規則 18、39）：
 
 ```
 git fetch origin                 # 等待同意期間 release／dev 可能被更新

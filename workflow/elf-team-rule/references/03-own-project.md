@@ -121,7 +121,7 @@ git log --oneline origin/release..origin/hotfix/e-<編號>-<短名>
 gh api "repos/elf-express/<repo>/commits/$(git rev-parse origin/hotfix/e-<編號>-<短名>)/check-runs?filter=latest&per_page=100" --jq '.check_runs[]|"\(.status) \(.conclusion) \(.name)"'
 ```
 
-使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行，是任何 AI 角色唯一可推 `dev` 的情形），再依 B3 更新主庫（`main` 只依賴 `release`，合回卡在衝突走 PR 時也可以先快轉 `main`）：
+使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，由規則 39 決定的執行者發佈，並**立刻**把 `release` 合回 `dev`（規則 26；其中 `git push origin dev` 由發版審計員執行，是第 3 種任何 AI 角色唯一可推 `dev` 的情形；規則 18 的上游同步只用於第 1、2 種，規則 39），再依 B3 更新主庫（`main` 只依賴 `release`，合回卡在衝突走 PR 時也可以先快轉 `main`）：
 
 ```
 git fetch origin                 # 等待同意期間 release／dev 可能被更新
