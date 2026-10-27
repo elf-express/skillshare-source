@@ -1,0 +1,29 @@
+AGENTS.md
+  s_07b5a578942260::t_bf5b4992c6c09d 219
+workflow/elf-linear-superpowers/SKILL.md
+  s_07b5a578942260::t_be21d4ec12210e 47-48,98,272,302,315,319,351,400,405,410
+workflow/elf-team-rule/SKILL.md
+  s_07b5a578942260::t_993701f5bff405 59,151,154,158,172,190,192,199,264,273-275,281,382,399
+workflow/elf-team-rule/references/01-contribution-fork.md
+  s_07b5a578942260::t_f3bfafb9d02e66 80,149
+workflow/elf-team-rule/references/02-private-fork.md
+  s_07b5a578942260::t_dba23bf15d9df2 85,157
+workflow/elf-team-rule/references/03-own-project.md
+  s_07b5a578942260::t_958ea24adf2403 124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c023c872438f5e0ad1340f9e025bc5aee7556bc3",
+  "prompts": {},
+  "sessions": {
+    "s_07b5a578942260": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12c3956d-92ce-4691-a821-16b097874bfc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
