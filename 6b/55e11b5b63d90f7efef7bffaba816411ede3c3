@@ -1,0 +1,26 @@
+.metadata.json
+  h_77f3bffb3ce32a 202,205-207,209,214,216,218,221,224
+skillshare/SKILL.md
+  h_77f3bffb3ce32a 7,12,84,86-98,135-150,166-171
+skillshare/references/hooks.md
+  h_77f3bffb3ce32a 7-9
+skillshare/references/install.md
+  h_77f3bffb3ce32a 10-15,68-110,122-123,164,169,208,215,217-220,222
+skillshare/references/mcp.md
+  h_77f3bffb3ce32a 28,68,87-91,126,144-145,189-190,194,234
+skillshare/references/plugins.md
+  h_77f3bffb3ce32a 5,10-38,71,108-109,113-116,122-123,173-179,205-207,249-251
+skillshare/references/targets.md
+  h_77f3bffb3ce32a 17,19-20,81-83,121,124-165,247-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6b55e11b5b63d90f7efef7bffaba816411ede3c3",
+  "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
