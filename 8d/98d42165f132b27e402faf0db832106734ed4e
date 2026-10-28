@@ -1,0 +1,29 @@
+docs/superpowers/guard.md
+  s_6f3c68dcb4a185::t_9618b8af3bba43 22,34,63,67,71-74,76,78,80,89-91,96,100-102,108-123,156,167
+scripts/elf-approval.cjs
+  s_6f3c68dcb4a185::t_c566ab0add6904 2,4,14,46-56,59,82,103-105,107,252
+scripts/elf-guard.cjs
+  s_6f3c68dcb4a185::t_a653897f0f0220 23-29,131,143,210,253
+scripts/elf-guard.hooks.yaml
+  s_6f3c68dcb4a185::t_85281a9f655828 29-35,137,149,216,259,339,341,351,383-393,396,419,440-442,444,589
+scripts/elf-guard.test.cjs
+  s_6f3c68dcb4a185::t_572b6b3d832cc0 93-101,103-104,463-538,703-706
+workflow/elf-linear-superpowers/SKILL.md
+  s_6f3c68dcb4a185::t_ef7290e3ecc494 172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8d98d42165f132b27e402faf0db832106734ed4e",
+  "prompts": {},
+  "sessions": {
+    "s_6f3c68dcb4a185": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4aeb7b18-eb26-42ca-affc-76751b252fd1",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
