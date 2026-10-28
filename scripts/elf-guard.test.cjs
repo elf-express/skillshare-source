@@ -90,7 +90,18 @@ function comment(id, body, minute, authorId = guard.APPROVER_ID) {
   return { id, body, createdAt, author: { id: authorId } };
 }
 
+// Multica Gatekeeper agent id（APPROVER_IDS 第二個）。
+const GATEKEEPER_ID = '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82';
+
+// 組一則 Multica CLI 形狀的留言（multica issue comment list --output json 的欄位名）。
+function multicaComment(id, content, minute, authorId = GATEKEEPER_ID) {
+  const created_at = new Date(Date.UTC(2026, 9, 28, 0, minute)).toISOString().replace('.000Z', 'Z');
+  return { id, content, created_at, author_id: authorId, author_type: 'agent', parent_id: null };
+}
+
 const APPROVE_V1 = '計畫已核准（2026-10-25，審計員：Codex）';
+// Multica 上 Gatekeeper 的實際核准留言開頭（E-4）。
+const MULTICA_APPROVE_V4 = '計畫已核准 v4（2026-10-28，審計員：OpenAI Codex）。\n\n**Approved — E-4 revision 31（詳細 Plan v4）**';
 const PLAN_DESC = '# [Plan] E-399\n\n- [ ] 步驟 1.1：寫測試\n- [ ] 步驟 1.2：跑測試\n';
 
 // 建立器的輸入：形狀同 Linear MCP 的 get_issue／list_comments。
@@ -449,6 +460,82 @@ const cases = [
     const revoke = { id: 'c2', body: '核准撤回', createdAt: '2026-10-25T17:00:00+08:00', author: { id: guard.APPROVER_ID } };
     assert.strictEqual(approval.findApproval([approve, revoke]).ok, true);
   }],
+  ['5.10 Multica CLI 形狀的留言（content／created_at／author_id）可解析，依 created_at 排序', () => {
+    const r = approval.findApproval([multicaComment('m1', MULTICA_APPROVE_V4, 1)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.comment.id, 'm1');
+    assert.strictEqual(r.comment.body, MULTICA_APPROVE_V4);
+    assert.strictEqual(r.comment.createdAt, '2026-10-28T00:01:00Z');
+    assert.strictEqual(r.comment.author.id, GATEKEEPER_ID);
+    assert.strictEqual(r.auditor, 'OpenAI Codex');
+    assert.strictEqual(r.approvedAt, '2026-10-28');
+    assert.strictEqual(r.version, 4);
+    // 修改與撤回留言同樣接受 Multica 形狀，且依 created_at 排序。
+    assert.strictEqual(approval.findApproval([multicaComment('m2', '核准撤回', 2), multicaComment('m1', MULTICA_APPROVE_V4, 1)]).ok, false);
+    const mixed = [comment('c1', '計畫已修改 v4（改 T2）', 1, OTHER_ID), multicaComment('m2', MULTICA_APPROVE_V4, 2)];
+    assert.strictEqual(approval.findApproval(mixed).comment.id, 'm2');
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准 v3（2026-10-28，審計員：OpenAI Codex）', 1), ...mixed]).comment.id, 'm2');
+  }],
+  ['5.11 Multica 形狀的作者不在核准者名單 -> 不通過', () => {
+    assert.strictEqual(approval.findApproval([multicaComment('m1', MULTICA_APPROVE_V4, 1, OTHER_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m1', MULTICA_APPROVE_V4, 1, '419a91a3-9735-4e17-bfd4-6851cc6c58d6')]).ok, false);
+    // Linear 欄位優先：author.id 不在名單時，不回頭看 author_id。
+    const both = { ...comment('c1', APPROVE_V1, 1, OTHER_ID), author_id: GATEKEEPER_ID };
+    assert.strictEqual(approval.findApproval([both]).ok, false);
+  }],
+  ['6.12 Multica Gatekeeper 核准 -> 建立憑證，linear_comment_id 為 Multica 留言 id，Guard 放行', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
+    const target = write(repo, 'scripts', 'x.cjs');
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    const comments = [
+      multicaComment('m1', '**Returned for Revision — E-4 revision 5 退修，尚未核准。**', 1),
+      multicaComment('m2', '計畫已改成 v2，送回審計。', 2, '419a91a3-9735-4e17-bfd4-6851cc6c58d6'),
+      multicaComment('m3', MULTICA_APPROVE_V4, 3),
+    ];
+    const input = { plan: 'E-4', spec: 'E-2', description: PLAN_DESC, comments };
+    const r = approval.createCredential(input, { plan: 'E-4', approvalsDir });
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.deepStrictEqual(guard.readCredential(approvalsDir, 'E-4'), {
+      ticket: 'E-4',
+      plan: 'E-4',
+      spec: 'E-2',
+      approver_id: GATEKEEPER_ID,
+      linear_comment_id: 'm3',
+      comment_created_at: '2026-10-28T00:03:00Z',
+      approved_at: '2026-10-28',
+      auditor: 'OpenAI Codex',
+      plan_hash: approval.hashDescription(PLAN_DESC),
+    });
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+    assert.strictEqual(approval.verifyCredential(input, { plan: 'E-4', approvalsDir }).ok, true);
+    // Linear 形狀的留言由 Gatekeeper id 核准同樣有效。
+    const linearDir = mkApprovalsDir();
+    const r2 = approval.createCredential(planInput({ comments: [comment('c1', APPROVE_V1, 1, GATEKEEPER_ID)] }), { plan: 'E-399', approvalsDir: linearDir });
+    assert.strictEqual(r2.ok, true, r2.reason);
+    assert.strictEqual(guard.readCredential(linearDir, 'E-399').approver_id, GATEKEEPER_ID);
+  }],
+  ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
+    const target = write(repo, 'scripts', 'x.cjs');
+    const input = { plan: 'E-4', spec: 'E-2', description: PLAN_DESC, comments: [multicaComment('m3', MULTICA_APPROVE_V4, 3, OTHER_ID)] };
+    const r = approval.createCredential(input, { plan: 'E-4', approvalsDir });
+    assert.strictEqual(r.ok, false);
+    assert.match(r.reason, /找不到有效的核准留言/);
+    assert.deepStrictEqual(fs.readdirSync(approvalsDir), []);
+    // Multica 形狀缺 created_at 或 author_id 也拒絕。
+    const { created_at, ...noTime } = multicaComment('m3', MULTICA_APPROVE_V4, 3);
+    const { author_id, ...noAuthor } = multicaComment('m3', MULTICA_APPROVE_V4, 3);
+    for (const c of [noTime, noAuthor]) {
+      const bad = approval.createCredential({ ...input, comments: [c] }, { plan: 'E-4', approvalsDir });
+      assert.strictEqual(bad.ok, false);
+      assert.match(bad.reason, /留言欄位不完整/);
+    }
+    assert.deepStrictEqual(fs.readdirSync(approvalsDir), []);
+    writeFile(path.join(approvalsDir, 'E-4.yaml'), credentialText('E-4', 'E-2', { approver_id: OTHER_ID }));
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    writeFile(path.join(approvalsDir, 'E-4.yaml'), credentialText('E-4', 'E-2', { approver_id: GATEKEEPER_ID }));
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
   ['6.11 留言缺 createdAt、時間無法解析或缺 id／author -> 拒絕，不寫檔', () => {
     const dir = mkApprovalsDir();
     const { createdAt, ...noTime } = comment('c1', APPROVE_V1, 1);
@@ -612,6 +699,10 @@ const cases = [
     for (const name of ['decide', 'findGitRoot', 'readBranch', 'findState', 'readApproval', 'branchTicket']) {
       assert.strictEqual(typeof guard[name], 'function', name);
     }
+  }],
+  ['介面 APPROVER_IDS 含 Linear 與 Multica 兩個 id，APPROVER_ID 仍指向 Linear', () => {
+    assert.deepStrictEqual(guard.APPROVER_IDS, ['f7c5792e-6252-49dd-8210-b15b30c5229d', GATEKEEPER_ID]);
+    assert.strictEqual(guard.APPROVER_ID, 'f7c5792e-6252-49dd-8210-b15b30c5229d');
   }],
 ];
 

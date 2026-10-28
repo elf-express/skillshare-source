@@ -169,7 +169,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 8. 審計員在 Plan 留言「計畫已核准（YYYY-MM-DD，審計員：<模型>）」後才進步驟 2、3a／4。對話裡的口頭同意不算，自己派的 subagent 審查只算自審。核准後若再改 Plan 描述（勾步驟與完成檢查不算），先留言「計畫已修改 v2（原因）」，用建立器 `revoke` 刪掉核准憑證，再重新送審；審計員留言「計畫已核准 v2（YYYY-MM-DD，審計員：<模型>）」後，由審計員照第 9 項重新 `create`，實作者 `verify` 通過才繼續；之後再改依序用 v3、v4。審計員退回時，依留言修改、重做 5 項自審後再送。核准到手、審計員已照第 9 項建好憑證、實作者 `verify` 通過、相依條件也確認後，才回步驟 2 建 worktree、分支與狀態檔，然後進 3a／4。
 9. **核准憑證**（給階段 Guard）：審計員留言「計畫已核准」後，由留下這則留言的審計員，在核准後自己依這則 Linear 留言用核准憑證建立器 `create` 憑證，不請 Eddie 手建，也不等使用者在對話裡另外同意。
    - **實作者 MUST NOT `create` 或恢復憑證**，在這些情況下一樣：Guard 擋下寫檔、核准目錄只有舊格式核准檔、憑證遺失、雜湊不符、`verify` 回 `recreate`。實作者只用 `verify` 檢查；結果不是通過就停下，在 Plan 留言請審計員處理，不開工、不繼續寫檔。即使使用者催促、Linear 上核准留言明明存在，也不例外。
-   - 有效的核准留言：在對應的 Plan 上；作者是固定的 Linear user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`；文字開頭是「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」；依 `createdAt` 由舊到新看，「計畫已修改 vN」之後要有版號 ≥ N 的核准、「核准撤回」之後要有新的核准。
+   - 有效的核准留言：在對應的 Plan 上；作者在核准者名單內（Linear user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`，或 Multica Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，見 guard.md「有效的核准留言」）；文字開頭是「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」；依 `createdAt` 由舊到新看，「計畫已修改 vN」之後要有版號 ≥ N 的核准、「核准撤回」之後要有新的核准。
    - 做法（審計員）：用 `get_issue`／`list_comments` 取 Plan 描述與全部留言，寫成 repo 外的暫存 JSON（例 `%TEMP%/E-<Plan 編號>-approval.json`，格式見 `guard.md`「建立器用法」），執行 `node "$HOME/.claude/hooks/skillshare/elf-guard/elf-approval.cjs" create --plan E-<Plan 編號> --input <暫存 JSON>`；把 stdout 的稽核摘要留言到 Plan，再刪掉暫存 JSON。
    - 建立器拒絕（exit 1）或 Linear 讀不到時：審計員不建立，回報 Eddie；實作者不開工。
    - 只透過建立器碰核准憑證：不用 Write／Edit／Bash／PowerShell 直接讀寫或刪除核准目錄，指令裡也不寫核准目錄的路徑（Guard 會擋）。要確認憑證內容時用 Read。

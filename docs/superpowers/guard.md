@@ -19,7 +19,7 @@ Guard 是 Claude Code 的 PreToolUse hook：分支 `e-<N>`（Orca）或 `<類型
 | 4 | 目標路徑往上找不到 `.git` | 放行 |
 | 5 | 該 repo 目前 branch 不是 `e-<數字>`，也不是 `<類型>/e-<數字>-<英文短名>`（類型 `feat`、`fix`、`docs`、`chore`、`test`、`hotfix`；短名小寫英數字，以 `-` 連接；含 detached HEAD） | 放行 |
 | 6 | 找不到對應狀態檔，或狀態檔 `ticket` 與 `plan` 都解析不出值 | 放行 |
-| 7 | 核准憑證存在且通過格式檢查（九欄皆非空、`ticket`＝`plan`＝檔名、`approver_id` 為固定 id、`plan_hash` 為 sha256） | 放行 |
+| 7 | 核准憑證存在且通過格式檢查（九欄皆非空、`ticket`＝`plan`＝檔名、`approver_id` 在核准者名單內、`plan_hash` 為 sha256） | 放行 |
 | 8 | 目標在 repo 內的 `docs/superpowers/` 底下 | 放行 |
 | 9 | 其餘 | 擋 |
 
@@ -31,7 +31,7 @@ Task 子 agent 寫檔同樣會觸發 PreToolUse，適用上表所有規則。已
 
 - 規則 1：`Superpowers 階段 Guard：禁止用 Bash 或 PowerShell 存取 superpowers/approvals 核准目錄。核准憑證只能用核准憑證建立器（elf-approval.cjs）建立。`
 - 規則 3：`Superpowers 階段 Guard：禁止用檔案工具寫入 superpowers/approvals 核准目錄。核准憑證只能用核准憑證建立器（elf-approval.cjs）建立。`
-- 規則 9：`Superpowers 階段 Guard：E-<N> 計畫未核准，目前只能修改 docs/superpowers/ 底下的檔案。請先完成 spec／plan，由審計員在 Linear 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。`
+- 規則 9：`Superpowers 階段 Guard：E-<N> 計畫未核准，目前只能修改 docs/superpowers/ 底下的檔案。請先完成 spec／plan，由審計員在 Linear 或 Multica 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。`
 
 規則 9 的訊息寫的是「計畫未核准」，但狀態檔在計畫核准後才建（見「狀態檔」），所以實際觸發多半是核准失效（「計畫已修改 vN」、「核准撤回」）或這台電腦還沒建憑證。
 
@@ -60,22 +60,24 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 
 團隊流程（`workflow__elf-linear-superpowers` 步驟 2）在建好 worktree 後就建狀態檔並 commit，`plan:` 一開始就填 Plan 編號；而 worktree、分支與狀態檔都要等 Plan 取得「計畫已核准」、核准憑證 `verify` 通過、相依條件確認之後才建立（E-424，2026-10-25，取代 E-369 原本「Spec 定案後先建」的設計）。核准前沒有該 Plan 的 worktree，Guard 在那個階段沒有保護對象；主目錄仍在，但它的分支不是 `e-<N>` 或 `<類型>/e-<N>-<英文短名>`，依規則 5 一律放行，核准前不在主目錄寫實作檔是靠 elf-team-rule 規則 31 與 elf-linear-superpowers 步驟 3 第 1 項，不是靠 Guard。狀態檔的實際作用在核准之後：Plan 留言「計畫已修改 vN」或「核准撤回」、憑證被 `revoke` 之後，憑證不再通過規則 7，Guard 依規則 9 重新擋住 `docs/superpowers/` 以外的寫入。單一開發工作單與 hotfix 不建狀態檔，分支單號對不到任何狀態檔，依規則 6 放行。
 
-狀態檔合進 `dev` 後留著當紀錄，不刪。之後的分支只要沿用同一個 Spec 或 Plan 編號，Guard 一樣會管。核准憑證只存在建立它的那台電腦；換一台電腦時，在那台電腦依同一則 Linear 核准留言再建一份，建好之前這類分支在 `docs/superpowers/` 以外的寫入會被擋。
+狀態檔合進 `dev` 後留著當紀錄，不刪。之後的分支只要沿用同一個 Spec 或 Plan 編號，Guard 一樣會管。核准憑證只存在建立它的那台電腦；換一台電腦時，在那台電腦依同一則核准留言再建一份，建好之前這類分支在 `docs/superpowers/` 以外的寫入會被擋。
 
 ## 核准憑證
 
-**Linear 留言是核准的唯一正本。** 本機的 `~/.claude/superpowers/approvals/E-<Plan>.yaml` 叫「核准憑證」，只是讓離線的 Guard 讀得到的快取，不是核准本身；狀態檔裡若有 `approved_by_auditor` 之類的欄位，也只是顯示用，Guard 不看。
+**Linear 或 Multica 上的核准留言是正本，憑證只是快取。** 本機的 `~/.claude/superpowers/approvals/E-<Plan>.yaml` 叫「核准憑證」，只是讓離線的 Guard 讀得到的快取，不是核准本身；狀態檔裡若有 `approved_by_auditor` 之類的欄位，也只是顯示用，Guard 不看。
 
 ### 有效的核准留言
 
-- 在對應的 Plan 上。
-- 作者是固定的 Linear user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`（不比對顯示名稱）。
+- 在對應的 Plan 上（Linear 的 Plan issue，或 Multica 的 Plan issue）。
+- 作者 id 在核准者名單 `APPROVER_IDS` 內（不比對顯示名稱）：
+  - Linear：user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`（Eddie），留言欄位 `author.id`。
+  - Multica：Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
 - 文字開頭符合「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」。
-- 留言依 `createdAt` 由舊到新判斷：「計畫已修改 vN」之後要有版號 ≥ N 的「計畫已核准 vN」才算；「核准撤回」之後要有新的核准留言才算。這兩種留言不限作者。
+- 留言依 `createdAt`（Multica 為 `created_at`）由舊到新判斷：「計畫已修改 vN」之後要有版號 ≥ N 的「計畫已核准 vN」才算；「核准撤回」之後要有新的核准留言才算。這兩種留言不限作者。
 
-Linear 讀不到、找不到有效留言或欄位不完整時，一律不建立憑證、不開工。
+Linear／Multica 讀不到、找不到有效留言或欄位不完整時，一律不建立憑證、不開工。
 
-user ID 比對只能排除其他帳號。Linear MCP 以 Eddie 的帳號發言，AI 與審計員 session 的留言作者也都是 Eddie，所以它不是人類身分驗證，也不是防止 AI 自我核准的安全邊界。A 方案的保障是流程提醒與事後稽核，不是不可偽造的授權。
+id 比對只能排除其他帳號與其他 agent。Linear MCP 以 Eddie 的帳號發言，AI 與審計員 session 的留言作者也都是 Eddie；Multica 上任何能以 Gatekeeper 身分發言的 run 也會通過比對。所以它不是人類身分驗證，也不是防止 AI 自我核准的安全邊界。A 方案的保障是流程提醒與事後稽核，不是不可偽造的授權。
 
 ### 憑證欄位
 
@@ -84,21 +86,39 @@ user ID 比對只能排除其他帳號。Linear MCP 以 Eddie 的帳號發言，
 | `ticket` | Plan 編號，與檔名 `E-<N>` 相同 |
 | `plan` | Plan 編號，與 `ticket` 相同 |
 | `spec` | Spec 編號 |
-| `approver_id` | 核准留言作者的 Linear user ID，必須是固定 id |
-| `linear_comment_id` | 那則「計畫已核准」留言的 id |
-| `comment_created_at` | 該留言的 `createdAt` 原字串 |
+| `approver_id` | 核准留言作者的 id（Linear user ID 或 Multica Gatekeeper agent id），必須在核准者名單內 |
+| `linear_comment_id` | 那則「計畫已核准」留言的 id；Multica 來源也存在這欄（欄位名不改） |
+| `comment_created_at` | 該留言的 `createdAt`（Multica 為 `created_at`）原字串 |
 | `approved_at` | 留言文字裡的日期，`YYYY-MM-DD` |
 | `auditor` | 留言文字裡的審計員 |
 | `plan_hash` | 核准時 Plan 描述正規化後的雜湊，`sha256:` 加 64 個小寫十六進位 |
 
-九欄缺任一欄、`ticket` 或 `plan` 與檔名不同、`approver_id` 不是固定 id、`plan_hash` 格式不對，Guard 都視為未核准。E-377 的舊四欄位核准檔（`ticket`、`approved_at`、`auditor`、`linear_comment_id`）因此一律視為未核准，不做相容。
+九欄缺任一欄、`ticket` 或 `plan` 與檔名不同、`approver_id` 不在核准者名單內、`plan_hash` 格式不對，Guard 都視為未核准。E-377 的舊四欄位核准檔（`ticket`、`approved_at`、`auditor`、`linear_comment_id`）因此一律視為未核准，不做相容。
 
 ### 建立器用法
 
-AI 用 Linear MCP 的 `get_issue`／`list_comments` 取 Plan 描述與全部留言，寫成 repo 外的暫存 JSON（例 `%TEMP%/E-<N>-approval.json`）：
+AI 取 Plan 描述與全部留言，寫成 repo 外的暫存 JSON（例 `%TEMP%/E-<N>-approval.json`）。兩種來源擇一，留言陣列也可混用兩種形狀，建立器會先把每則留言統一成 Linear 形狀再判斷：
+
+Linear：用 Linear MCP 的 `get_issue`／`list_comments`：
 
 ```json
 { "plan": "E-<N>", "spec": "E-<Spec>", "description": "<Linear 上的 Plan 描述原文>", "comments": [ { "id": "…", "body": "…", "createdAt": "…", "author": { "id": "…" } } ] }
+```
+
+Multica：`description` 貼 `multica issue get E-<N> --output json` 的 `description`，`comments` 直接貼 `multica issue comment list E-<N> --output json` 的整個輸出（欄位 `id`、`content`、`created_at`、`author_id`，其餘欄位忽略）：
+
+```bash
+multica issue get E-<N> --output json > "$TEMP/E-<N>-issue.json"
+multica issue comment list E-<N> --output json > "$TEMP/E-<N>-comments.json"
+node -e '
+const fs = require("node:fs"); const [issue, comments, spec, out] = process.argv.slice(1);
+const i = JSON.parse(fs.readFileSync(issue, "utf8"));
+fs.writeFileSync(out, JSON.stringify({ plan: i.identifier, spec, description: i.description, comments: JSON.parse(fs.readFileSync(comments, "utf8")) }));
+' "$TEMP/E-<N>-issue.json" "$TEMP/E-<N>-comments.json" E-<Spec> "$TEMP/E-<N>-approval.json"
+```
+
+```json
+{ "plan": "E-<N>", "spec": "E-<Spec>", "description": "<Multica 上的 Plan 描述原文>", "comments": [ { "id": "…", "content": "…", "created_at": "…", "author_id": "…" } ] }
 ```
 
 再執行（Git Bash 與 PowerShell 寫法相同）：
@@ -133,7 +153,7 @@ exit code：0＝成功、1＝驗證不通過、2＝參數錯誤。stdout 印稽�
 
 ### 驗證時點與撤回
 
-Guard 離線讀不到 Linear，所以由 AI 在四個驗證時點各做兩件事：重讀 Plan 留言，確認憑證引用的核准留言還在、符合上面的條件、之後沒有「核准撤回」；取 Linear 上目前的 Plan 描述跑 `verify` 比對雜湊。
+Guard 離線讀不到 Linear 或 Multica，所以由 AI 在四個驗證時點各做兩件事：重讀 Plan 留言，確認憑證引用的核准留言還在、符合上面的條件、之後沒有「核准撤回」；取 Linear 或 Multica 上目前的 Plan 描述跑 `verify` 比對雜湊。
 
 1. 建立憑證前
 2. 開工前
@@ -144,7 +164,7 @@ Eddie 在 Plan 留言「核准撤回」，或核准留言被刪除時，Guard �
 
 ### 多台機器與舊格式遷移
 
-多台機器各自建立本機憑證，都引用同一則 Linear 核准留言。
+多台機器各自建立本機憑證，都引用同一則核准留言。
 
 發佈新版 Guard 前，先列出仍在待辦／進行中／驗證中的 Plan 並留言。只有以下條件全部成立，才能依原核准留言用建立器產生新版憑證：Plan 尚未完成或取消、後續仍可能寫實作檔；找得到原核准留言；原核准留言之後沒有未重新核准的實質 Plan 修改（只有勾選變化可忽略）。無法證明時必須重新送審。已完成、已取消的 Plan 不必遷移。
 

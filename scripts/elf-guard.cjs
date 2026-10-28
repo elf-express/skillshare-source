@@ -20,8 +20,13 @@ const CREDENTIAL_FIELDS = [
   'auditor',
   'plan_hash',
 ];
-// 核准留言唯一認可的 Linear user ID（Eddie）。
-const APPROVER_ID = 'f7c5792e-6252-49dd-8210-b15b30c5229d';
+// 核准留言認可的核准者 id：Linear user（Eddie）與 Multica 的 Gatekeeper agent。
+const APPROVER_IDS = [
+  'f7c5792e-6252-49dd-8210-b15b30c5229d', // Linear user（Eddie）
+  '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82', // Multica Gatekeeper agent
+];
+// Linear 核准者 id，供既有呼叫端與測試沿用。
+const APPROVER_ID = APPROVER_IDS[0];
 const TICKET_RE = /^E-\d+$/;
 const PLAN_HASH_RE = /^sha256:[0-9a-f]{64}$/;
 
@@ -123,7 +128,7 @@ function findState(gitRoot, n) {
 }
 
 // 讀核准憑證 <dir>/<plan>.yaml：九欄皆非空、ticket 與 plan 等於檔名、spec 為 E-<數字>、
-// approver_id 為固定 user ID、plan_hash 為 sha256 格式才回傳欄位物件；其餘回 null。
+// approver_id 在核准者名單內、plan_hash 為 sha256 格式才回傳欄位物件；其餘回 null。
 function readCredential(dir, plan) {
   if (typeof plan !== 'string' || !TICKET_RE.test(plan)) return null;
   try {
@@ -135,7 +140,7 @@ function readCredential(dir, plan) {
       cred[key] = value;
     }
     if (cred.ticket !== plan || cred.plan !== plan) return null;
-    if (!TICKET_RE.test(cred.spec) || cred.approver_id !== APPROVER_ID || !PLAN_HASH_RE.test(cred.plan_hash)) return null;
+    if (!TICKET_RE.test(cred.spec) || !APPROVER_IDS.includes(cred.approver_id) || !PLAN_HASH_RE.test(cred.plan_hash)) return null;
     return cred;
   } catch {
     return null;
@@ -202,7 +207,7 @@ function decideUnsafe(payload, opts) {
   const id = state.plan || state.ticket;
   return deny(
     `Superpowers 階段 Guard：${id} 計畫未核准，目前只能修改 docs/superpowers/ 底下的檔案。` +
-      '請先完成 spec／plan，由審計員在 Linear 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。',
+      '請先完成 spec／plan，由審計員在 Linear 或 Multica 留言核准後，用核准憑證建立器建立核准憑證，再繼續實作。',
   );
 }
 
@@ -245,6 +250,7 @@ module.exports = {
   readCredential,
   branchTicket,
   APPROVER_ID,
+  APPROVER_IDS,
   CREDENTIAL_FIELDS,
 };
 

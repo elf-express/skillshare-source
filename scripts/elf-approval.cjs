@@ -1,6 +1,7 @@
 'use strict';
-// Superpowers 核准憑證建立器：依 AI 從 Linear 讀出的 Plan 描述與留言，判斷核准留言、計算 Plan 內容雜湊，
+// Superpowers 核准憑證建立器：依 AI 從 Linear 或 Multica 讀出的 Plan 描述與留言，判斷核准留言、計算 Plan 內容雜湊，
 // 並建立（create）、驗證（verify）、撤回（revoke）單一 Plan 的核准憑證。
+// 留言同時接受 Linear 形狀（body／createdAt／author.id）與 Multica CLI 形狀（content／created_at／author_id）。
 // 用法：node elf-approval.cjs create|verify --plan E-<N> --input <json>
 //       node elf-approval.cjs revoke --plan E-<N> [--reason <文字>]
 // exit 0＝成功、1＝驗證不通過、2＝參數錯誤。只用同步 fs 與 crypto，不啟動子行程、不連網路。
@@ -10,7 +11,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { APPROVER_ID, CREDENTIAL_FIELDS, readCredential } = require('./elf-guard.cjs');
+const { APPROVER_IDS, CREDENTIAL_FIELDS, readCredential } = require('./elf-guard.cjs');
 
 const TICKET_RE = /^E-\d+$/;
 // 憑證欄位值不得含換行、# 與引號：單層 YAML 的行級解析會把它們讀成別的意思。
@@ -42,9 +43,20 @@ function hashDescription(text) {
   return 'sha256:' + crypto.createHash('sha256').update(normalizeDescription(text), 'utf8').digest('hex');
 }
 
-// 依 createdAt 的實際時間由舊到新（同時間保留原順序）找出目前有效的核准留言；修改與撤回不限作者，核准只認 APPROVER_ID。
+// 把一則留言統一成 Linear 形狀 { id, body, createdAt, author: { id } }：
+// 有 Linear 欄位就用 Linear 欄位，否則取 Multica CLI 的 content／created_at／author_id；不是物件回 null。
+function normalizeComment(c) {
+  if (!c || typeof c !== 'object') return null;
+  const body = typeof c.body === 'string' ? c.body : c.content;
+  const createdAt = c.createdAt !== undefined ? c.createdAt : c.created_at;
+  const authorId = c.author && typeof c.author === 'object' && c.author.id !== undefined ? c.author.id : c.author_id;
+  return { id: c.id, body, createdAt, author: { id: authorId } };
+}
+
+// 依 createdAt 的實際時間由舊到新（同時間保留原順序）找出目前有效的核准留言；修改與撤回不限作者，核准只認 APPROVER_IDS 內的作者。
 function findApproval(comments) {
   const sorted = (Array.isArray(comments) ? comments : [])
+    .map(normalizeComment)
     .filter((c) => c && typeof c.body === 'string')
     .map((c, i) => ({ c, i, t: Date.parse(c.createdAt) }))
     .sort((x, y) => x.t - y.t || x.i - y.i)
@@ -67,7 +79,7 @@ function findApproval(comments) {
       continue;
     }
     const approved = APPROVED_RE.exec(body);
-    if (!approved || !c.author || c.author.id !== APPROVER_ID) continue;
+    if (!approved || !APPROVER_IDS.includes(c.author.id)) continue;
     const version = approved[1] ? Number(approved[1]) : 1;
     if (version < required) continue;
     current = { ok: true, comment: c, auditor: approved[3].trim(), approvedAt: approved[2], version };
@@ -88,10 +100,11 @@ function checkInput(input, plan) {
   if (typeof input.spec !== 'string' || !TICKET_RE.test(input.spec)) return `輸入的 spec 格式不符：${input.spec}`;
   if (typeof input.description !== 'string' || input.description === '') return '輸入缺少 Plan 描述';
   if (!Array.isArray(input.comments)) return '輸入缺少留言陣列';
-  for (const c of input.comments) {
-    const ok = c && typeof c.id === 'string' && c.id !== '' && typeof c.body === 'string' && c.author && typeof c.author.id === 'string'
+  for (const raw of input.comments) {
+    const c = normalizeComment(raw);
+    const ok = c && typeof c.id === 'string' && c.id !== '' && typeof c.body === 'string' && typeof c.author.id === 'string'
       && Number.isFinite(Date.parse(c.createdAt));
-    if (!ok) return `留言欄位不完整（需要 id、body、createdAt、author.id）：${JSON.stringify(c && c.id)}`;
+    if (!ok) return `留言欄位不完整（需要 id、body|content、createdAt|created_at、author.id|author_id）：${JSON.stringify(raw && raw.id)}`;
   }
   return null;
 }
@@ -236,6 +249,7 @@ function main(argv) {
 module.exports = {
   normalizeDescription,
   hashDescription,
+  normalizeComment,
   findApproval,
   createCredential,
   verifyCredential,
