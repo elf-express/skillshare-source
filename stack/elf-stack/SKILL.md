@@ -65,7 +65,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 | vue-tsc | `^3.3.13` | —（目標；BasicApp 例外見 3.6） | devDependencies ＋ lockfile |
 | Pinia | `^2.2.6` | — | dependencies |
 | vue-router | `^4.4.5` | — | dependencies |
-| vue-i18n | `^10.0.5` | — | dependencies |
+| vue-i18n | `^11.4.16` | — | dependencies |
 | Vitest | `^5.0.1` | — | devDependencies |
 | @playwright/test | `^1.63.0` | — | 根 `package.json` devDependencies |
 | eslint-plugin-vue | `^10.11.1` | 10.11.1 | 根 `package.json` devDependencies ＋ lockfile |
@@ -159,7 +159,7 @@ pnpm catalog 專案把 range 集中在 `pnpm-workspace.yaml`，使用端寫 `cat
 | ELF.Studio | 目前 ESLint 9＋手動 recommended＋Prettier；TS `^5.6.3`、vue-tsc `^2.1.10`。既有 CI 與 repo 專屬規則需整組遷移，不能只升 ESLint 或只換 formatter | 另單遷到完整 antfu 與本表工具鏈；保留 schema UI 中立守門、SFC 樣式限制、browser／node globals 的語意與工作區 ignores；根目錄納入 lint 且 0 錯誤 0 警告，typecheck／測試／build／E2E 通過；全庫排版獨立 commit |
 | ELF.BasicApp `frontend` | antfu `^9.5.1`、ESLint `^10.12.0`；`formatters` 啟用 CSS／HTML，但獨立 Prettier CLI 仍處理 JSON／CSS／HTML／MD，尚未完整收斂；Node 型別為 `^26.6.4`。另外固定 vue-tsc `3.3.11` 避開模板誤報，override TS ESLint plugin `8.71.0` 避開 `.mjs` no-unused-vars 誤報；lint 入口先跑 oxlint 再跑 ESLint；lockfile 被忽略，解析值只是本機快照 | 另單對齊 antfu 與 ESLint，保留 oxlint 先行守門並確認規則分工；提交 lockfile 並驗證 frozen install；盤點各副檔名由單一入口處理，確認 Node runtime／型別一致；重現並驗證兩項誤報已由穩定版修復、typecheck／lint／測試／build 通過，才解除固定版與 override；不因 latest 存在就移除例外 |
 
-完整盤點（含 range、lockfile、registry、逐項建議與代價）、上游連結及重現指令見 [查證紀錄](references/lint-format-e426.md)。產品跟進：ELF.Studio 為 [E-427](https://linear.app/elf-express/issue/E-427)，ELF.BasicApp 為 [E-428](https://linear.app/elf-express/issue/E-428)；Vite／Pinia／vue-i18n／vue-router 等執行期另由 [E-429](https://linear.app/elf-express/issue/E-429) 決策，3.2 的這些列維持原值。
+完整盤點（含 range、lockfile、registry、逐項建議與代價）、上游連結及重現指令見 [查證紀錄](references/lint-format-e426.md)。產品跟進：ELF.Studio 為 [E-427](https://linear.app/elf-express/issue/E-427)，ELF.BasicApp 為 [E-428](https://linear.app/elf-express/issue/E-428)；vue-i18n 已由 E-21 依安全性修補（GHSA-83rm-6c8r-g728、GHSA-8rc2-428q-7ww3）決議升為 `^11.4.16`，E-22 補登於 3.2；Vite／Pinia／vue-router 等執行期仍由 [E-429](https://linear.app/elf-express/issue/E-429) 決策，3.2 的這些列維持原值。
 
 **生效與交接**：本次只送 PR 到 `dev`。合併後 E-426 維持「驗證中」，留待 E-391 群組完成，由該批獨立發版審計員核對候選 SHA／CI、快轉 `release`／`main`，並在停於 `release` 的 source 執行 pull／sync、確認各 AI 工具讀到新版後留下證據，才具備結案條件。E-426 實作者不執行發版或實際同步；本 worktree 的隔離 config、`targets: {}` 與 dry-run 只驗證內容，不代表規範已派發。
 

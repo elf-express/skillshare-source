@@ -12,7 +12,7 @@ metadata:
 
 # Elf Express i18n 與 IME 規範
 
-> 事實來源：參考專案 `TypingTrainer/apps/src/i18n/`（vue-i18n 10、`legacy: false`、`en` / `zh-TW` / `zh-CN` JSON）、
+> 事實來源：參考專案 `TypingTrainer/apps/src/i18n/`（vue-i18n，版本以 `elf-stack` 為準，現行 `^11.4.16`；`legacy: false`、`en` / `zh-TW` / `zh-CN` JSON）、
 > `docs/architecture.md`（copy vs data）、`CLAUDE.md` 與 `.github/workflows/claude-review.yml`（IME 規則）。
 > 完整範本：[`references/setup.md`](references/setup.md)。
 

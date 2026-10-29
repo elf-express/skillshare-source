@@ -98,7 +98,7 @@ engine-strict 只由 `pnpm-workspace.yaml` 的 `engineStrict: true` 設定（團
     "axios": "^1.7.9",
     "pinia": "^2.2.6",
     "vue": "^3.5.13",
-    "vue-i18n": "^10.0.5",
+    "vue-i18n": "^11.4.16",
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
