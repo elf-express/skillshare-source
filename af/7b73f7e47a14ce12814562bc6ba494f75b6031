@@ -1,0 +1,14 @@
+e-455-openspec-skill-e-373-1
+  h_77f3bffb3ce32a 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "af7b73f7e47a14ce12814562bc6ba494f75b6031",
+  "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
