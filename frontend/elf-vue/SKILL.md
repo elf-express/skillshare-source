@@ -320,7 +320,7 @@ pnpm --filter ./apps add <pkg>        # 前端依賴加在 apps，不加在根�
 以下項目**不要自行猜測**；遇到時沿用本檔預設並在 PR 中標注：
 
 1. **pnpm 確切版號**：11.x 或 12 由 `elf-stack` 決定；定案前 `packageManager` 寫 `pnpm@<PNPM_VERSION>` 並填本機完整版號。
-2. **套件版本基準**：Pinia 2（參考專案）或 3（`platform.client`）；vue-i18n 10 或 11；Vitest 主版本。以 `elf-stack` 為準，`elf-stack` 未定前沿用參考專案版本。
+2. **套件版本基準**：Pinia 2（參考專案）或 3（`platform.client`）；vue-i18n 以 `elf-stack` 為準（現行 `^11.4.16`）；Vitest 主版本。以 `elf-stack` 為準，`elf-stack` 未定前沿用參考專案版本。
 3. **`defineOptions({ name })`**：SoybeanAdmin 規範要求每個元件都加；參考專案沒有。是否全團隊強制（KeepAlive `include` 需要）待定，本檔預設不強制。
 4. **v-model 寫法**：本檔規定 `defineModel`；參考專案 `ToggleSwitch.vue` 仍用 `modelValue` + `update:modelValue`。舊元件是否回頭統一待定。
 5. **覆蓋率排除清單擴充**：include / exclude 已固定（規則 41）；是否再排除 `router/`、`i18n/locales/` 等，待團隊決定（與 `elf-cicd-frontend` 同一項）。
