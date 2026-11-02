@@ -1,0 +1,27 @@
+"Claude outputs/exceptions.md"
+  s_f6cd795e3cb08c::t_805f019c7845e2 1-67
+"Claude outputs/lint-toolchain-audit.md"
+  s_f6cd795e3cb08c::t_ca18b064eeb8bf 1-117
+"Claude outputs/skillshare-workflow-prompts.md"
+  s_f6cd795e3cb08c::t_f831bf562921a1 1-124
+e-455-openspec-skill-e-373-1
+  s_f6cd795e3cb08c::t_1d71d5a22fd713 1
+elf-stack.md
+  s_f6cd795e3cb08c::t_7c967f9e2ef0f0 1-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c88607e43ebcf527616eccba057a543c507a55ae",
+  "prompts": {},
+  "sessions": {
+    "s_f6cd795e3cb08c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b146829f-fd4b-460e-bfec-0f2a4835381e",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
