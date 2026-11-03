@@ -1,0 +1,28 @@
+scripts/elf-guard.test.cjs
+  s_aa47a447e01641::t_8252ded594ad1c 426-427
+  s_aa47a447e01641::t_8da9375fd6973a 531-551
+docs/superpowers/guard.md
+  s_aa47a447e01641::t_4d3fba6fcd4975 76
+scripts/elf-approval.cjs
+  s_aa47a447e01641::t_dd7622572550f4 14,26-32,89-97,99
+scripts/elf-guard.cjs
+  s_aa47a447e01641::t_1009bc0400ab2c 29-30,257
+scripts/elf-guard.hooks.yaml
+  s_aa47a447e01641::t_381dbac929c42e 35-36,263,355,367-373,430-438,440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "787785d4acc612648e13bd1fbf23fe0dc77974f1",
+  "prompts": {},
+  "sessions": {
+    "s_aa47a447e01641": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2891c356-2731-47bf-a115-f174331b7699",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
