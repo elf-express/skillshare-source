@@ -146,8 +146,8 @@ caveats below never apply there.
 
 ### Script tests (not run by CI)
 
-The hook and release scripts under `scripts/` have their own test suites. `validate.sh` and CI run none
-of them, so run the matching one yourself after touching a script:
+The scripts in the table below have their own test suites (`release-ff.{sh,ps1}` has none). `validate.sh`
+and CI run none of them, so run the matching one yourself after touching one of these scripts:
 
 | Changed | Run |
 |---|---|
@@ -158,7 +158,8 @@ of them, so run the matching one yourself after touching a script:
 
 `elf-guard.hooks.yaml` and `elf-search-guard.hooks.yaml` embed the `.cjs` sources verbatim and are
 generated — never hand-edit them. After changing any embedded `.cjs`, run `node scripts/make-hooks-yaml.cjs`
-and commit both YAML files; `node scripts/make-hooks-yaml.cjs --check` exits 1 when they are out of sync.
+and commit whichever YAML it changed (`elf-search-guard.cjs` feeds only `elf-search-guard.hooks.yaml`; the
+other three feed `elf-guard.hooks.yaml`). `node scripts/make-hooks-yaml.cjs --check` exits 1 when they are out of sync.
 
 ### What validation does not cover
 
