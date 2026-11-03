@@ -1,0 +1,19 @@
+stack/elf-stack/SKILL.md
+  s_66d229fb454bb6::t_9b3cf566866a74 61-62,65-97,101,106-113,124-126,132-152,160,172,174-177,179,181,183-193,195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "efa93fbd9d6a4ddb17e4e156ea0c885987d9fbc0",
+  "prompts": {},
+  "sessions": {
+    "s_66d229fb454bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e305e619-4d02-4c28-8129-e6ddb1cc3b73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
