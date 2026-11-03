@@ -13,3 +13,15 @@
 
 - E1–E3 → 規則 9（`uses:` 釘 SHA）、規則 10（不得改回 tag）
 - E4 → 規則 11（下游啟用 Dependabot `github-actions`）
+
+## 版本政策（Multica E-45，elf-stack v2）
+
+> 調查日期：2026-11-03。來源：`72639dd0`（E-45 Task 1，對 `5e13bd2a` 的舊 skill 跑 RED 的紀錄）。
+
+| # | Commit / 位置 | 檔案 | 內容 | 重現方式 |
+|---|---|---|---|---|
+| E5 | `72639dd0` | `evals/stack__elf-stack/old-project-review-gap/evidence/red.md` | 舊 skill 沒有既有專案的登記位置：代理只能把上線一年的舊專案的落後當「衝突」回報、全部併成一張對齊單，並自己指出「elf-stack 也沒有寫『已上線的舊專案』要怎麼處理」（原文用「」） | `git show 72639dd0:evals/stack__elf-stack/old-project-review-gap/evidence/red.md` |
+| E6 | `72639dd0` | `evals/stack__elf-stack/user-says-latest/evidence/red.md` | 使用者要求新專案「全部用最新版」時，代理預設寫 v1 值（Node `24.18`、.NET `10.0.100`、pnpm 待確認），沒有寫出任何釘選檔 | `git show 72639dd0:evals/stack__elf-stack/user-says-latest/evidence/red.md` |
+
+- E5 → 第 9 節「不得把『舊專案可緩步』簡化成『舊專案永遠不升』」（每筆例外寫收斂條件或 none yet）
+- E6 → 第 9 節「不得把『新專案用 v2』簡化成『新專案先開在 v1 比較省事』，也不得簡化成『舊專案也要立刻對齊』」
