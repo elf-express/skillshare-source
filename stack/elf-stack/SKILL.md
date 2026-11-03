@@ -58,57 +58,59 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 
 ## 3. 版本表
 
+range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`packageManager`、`global.json`、docker tag 與 action SHA 寫精確值。「v1」是前一版表（1.1.0）的值，「v2」是本表現行值。「待確認」指沒有裁定的項目，沿用 v1。
+
 ### 3.1 Runtime / SDK / 基礎設施
 
-| 項目 | 版本 | 釘選方式 | 備註 |
-|------|------|----------|------|
-| Node.js | **24.18** | `.nvmrc`（內容 `24.18`）＋ `package.json` `"engines": { "node": ">=24.18" }` ＋ `pnpm-workspace.yaml` `engineStrict: true` | 參考專案用 npm，以 `.npmrc` `engine-strict=true` 達成；新專案改由 `pnpm-workspace.yaml` 設定，`.npmrc` 只放 registry / auth |
-| pnpm | **11.x**（暫定）「待確認：11.x 或 12」 | `package.json` `"packageManager": "pnpm@<PNPM_VERSION>"`（完整版號）；CI 用 `pnpm/action-setup`（不寫 `version:`，讀 `packageManager`）；Docker 用 `npm install -g pnpm@${PNPM_VERSION}`。**不使用 corepack** | 參考專案仍用 npm（`package-lock.json`）；新專案用 pnpm |
-| .NET SDK | **10.0**（feature band「待確認」） | repo 根目錄 `global.json`：`"version": "10.0.100"`, `"rollForward": "latestFeature"` | CI 以 `global-json-file: global.json` 讀取 |
-| .NET TFM | **net10.0** | `server/Directory.Build.props` 的 `<TargetFramework>net10.0</TargetFramework>` | 參考專案寫在每個 csproj；新專案集中 |
-| ASP.NET Core 套件 | **10.0.12** | `Directory.Packages.props`（`Microsoft.AspNetCore.OpenApi` 等） | 取自參考專案 |
-| PostgreSQL | **18** | docker image `postgres:18`（compose 與 Testcontainers 用相同 tag） | 參考專案用 SQLite；團隊標準改 PostgreSQL，見 elf-postgresql |
-| SqlSugarCore | **5.1.4.x**（參考專案 `5.1.4.221`；確切 minor「待確認」） | `Directory.Packages.props` `<PackageVersion Include="SqlSugarCore" Version="5.1.4.221" />` | 見 elf-sqlsugar |
-| Npgsql | 由 SqlSugarCore 5.1.4.221 間接帶入 **5.0.18** | 不直接引用（是否顯式升級「待確認」） | 見 elf-postgresql 的時間欄位說明 |
-| Rust | **stable** | CI：`dtolnay/rust-toolchain`（SHA 見 3.5）；`Cargo.toml` `rust-version = "1.77.2"`（MSRV）、`edition = "2021"` | 參考專案無 `rust-toolchain.toml`；是否加「待確認」 |
+| 項目 | v1 | **v2** | 釘選方式 | 備註 |
+|------|----|--------|----------|------|
+| Node.js | 24.18 | **24.22.2**（24 線） | `.nvmrc`（內容 `24.22.2`）＋ `package.json` `"engines": { "node": ">=24.22.2" }` ＋ `pnpm-workspace.yaml` `engineStrict: true` | Node 26 LTS 是 major，要團隊決議並附遷移計畫（第 6 節）；`@types/node` 跟著 Node 維持 24 線。參考專案用 npm，以 `.npmrc` `engine-strict=true` 達成；新專案改由 `pnpm-workspace.yaml` 設定，`.npmrc` 只放 registry / auth |
+| pnpm | 11.x（暫定） | **12.16.1** | `package.json` `"packageManager": "pnpm@12.16.1"`（完整版號）；CI 用 `pnpm/action-setup`（不寫 `version:`，讀 `packageManager`）；Docker 用 `npm install -g pnpm@${PNPM_VERSION}`（值為 `12.16.1`）。**不使用 corepack** | 已決定 12 線。v4.4.0 的 `pnpm/action-setup`（3.5）能否讀 pnpm 12 的 `packageManager` 尚未查到證據，見第 8 節；第一個新 repo 的 CI 要實際確認。參考專案仍用 npm（`package-lock.json`）；新專案用 pnpm |
+| .NET SDK | 10.0（feature band 未定） | **10.0.403** | repo 根目錄 `global.json`：`"version": "10.0.403"`, `"rollForward": "latestFeature"` | 最低 feature band 改為 4xx。CI 以 `global-json-file: global.json` 讀取 |
+| .NET TFM | net10.0 | **net10.0** | `server/Directory.Build.props` 的 `<TargetFramework>net10.0</TargetFramework>` | 參考專案寫在每個 csproj；新專案集中 |
+| ASP.NET Core 套件 | 10.0.12 | **10.0.14** | `Directory.Packages.props`（`Microsoft.AspNetCore.OpenApi` 等） | 與 `Microsoft.AspNetCore.Mvc.Testing`（3.3）同批、同版 |
+| PostgreSQL | 18 | **18.6** | docker image `postgres:18.6`（compose 與 Testcontainers 用相同 tag） | 釘到 minor；OS 變體（`-bookworm`／`-alpine`）待確認（第 8 節）。參考專案用 SQLite；團隊標準改 PostgreSQL，見 elf-postgresql |
+| SqlSugarCore | 5.1.4.221 | **5.1.4.221** | `Directory.Packages.props` `<PackageVersion Include="SqlSugarCore" Version="5.1.4.221" />` | 確切 minor 待確認（第 8 節）；見 elf-sqlsugar |
+| Npgsql | 由 SqlSugarCore 5.1.4.221 間接帶入 5.0.18 | **間接 5.0.18** | 不直接引用；`Directory.Packages.props` 不寫 Npgsql | 方向是 10.0.3。SqlSugarCore 5.1.4.221 的 `PostgreSQLProvider` 預設開啟 `Npgsql.EnableLegacyTimestampBehavior`（`StaticConfig.AppContext_ConvertInfinityDateTime = true` 時不開），Npgsql 10.0.3 仍讀這個開關，但還沒在團隊專案實跑；由 Multica E-47（Npgsql 10.0.3 `timestamptz` 驗證）驗過才改成顯式引用。新 repo 用間接 5.0.18 就是本表值，不算例外。見 elf-postgresql 的時間欄位說明 |
+| Rust | stable | **stable ＋ `rust-toolchain.toml`** | `rust-toolchain.toml`（`channel = "stable"`、`components = ["rustfmt", "clippy"]`）；`Cargo.toml` `rust-version = "1.77.2"`（MSRV）、`edition = "2021"`；CI `dtolnay/rust-toolchain`（SHA 見 3.5） | 新 repo 附 toolchain 檔（v1 對此待確認）。參考專案無 `rust-toolchain.toml` |
 
-### 3.2 前端 / 桌面（取自參考專案 `apps/package.json`、`src-tauri/Cargo.toml`）
+### 3.2 前端 / 桌面（v1 取自參考專案 `apps/package.json`、`src-tauri/Cargo.toml`）
 
-| 項目 | 版本（range） | lockfile 實際解析 | 釘選方式 |
-|------|---------------|-------------------|----------|
-| Vue | `^3.5.13` | 3.5.43 | `package.json` dependencies ＋ lockfile |
-| Vite | `^6.4.3` | 6.4.3 | devDependencies ＋ lockfile |
-| @vitejs/plugin-vue | `^6.0.9` | — | devDependencies |
-| TypeScript | `^6.0.3` | —（目標；現況見 3.6） | devDependencies ＋ lockfile；受 typescript-eslint `<6.1.0` 限制 |
-| vue-tsc | `^3.3.13` | —（目標；BasicApp 例外見 3.6） | devDependencies ＋ lockfile |
-| Pinia | `^2.2.6` | — | dependencies |
-| vue-router | `^4.4.5` | — | dependencies |
-| vue-i18n | `^11.4.16` | — | dependencies |
-| Vitest | `^5.0.1` | — | devDependencies |
-| @playwright/test | `^1.63.0` | — | 根 `package.json` devDependencies |
-| eslint-plugin-vue | `^10.11.1` | 10.11.1 | 根 `package.json` devDependencies ＋ lockfile |
-| globals | `^17.13.0` | 17.13.0 | 根 `package.json` devDependencies ＋ lockfile |
-| Tauri CLI（@tauri-apps/cli） | `^2.11.4` | 2.11.4 | 根 `package.json` devDependencies |
-| @tauri-apps/api | `^2.11.1` | — | dependencies |
-| tauri（Rust crate） | `"2"` | `Cargo.lock` | `src-tauri/Cargo.toml` ＋ commit `Cargo.lock` |
-| tauri-build | `"2"` | `Cargo.lock` | `[build-dependencies]` |
-| ant-design-vue | `^4.2.6` | — | dependencies（`apps/package.json`） |
+| 項目 | v1 | **v2** | 批次 | 釘選方式／備註 |
+|------|----|--------|------|----------------|
+| Vue | `^3.5.13` | **`^3.5.44`** | — | `package.json` dependencies ＋ lockfile（v1 參考專案解析 3.5.43） |
+| Vite | `^6.4.3` | **`^8.3.5`** | Vite | devDependencies ＋ lockfile。比 v1 跨兩個 major；既有 repo 照 §0 登記例外或開升級單，遷移要團隊決議 |
+| @vitejs/plugin-vue | `^6.0.9` | **`^6.0.10`** | Vite | devDependencies；不與 Vite 分開升 |
+| TypeScript | `^6.0.3` | **`^6.0.3`** | TS | devDependencies ＋ lockfile；受 typescript-eslint `<6.1.0` 限制（3.6）。Eddie 指定方向是 `^7.0.2`；3.6 上限解除前維持 `^6.0.3`，由 Multica E-48（TypeScript 7 解除條件追蹤）追蹤。新 repo 用 `^6.0.3` 就是本表值，不算例外 |
+| vue-tsc | `^3.3.13` | **`^3.3.13`** | TS | devDependencies ＋ lockfile；BasicApp 例外見 `references/exceptions.md`；TS 上限解除時重新確認 |
+| Pinia | `^2.2.6` | **`^4.1.0`** | Router | dependencies；與 vue-router 同一張單 |
+| vue-router | `^4.4.5` | **`^5.4.0`** | Router | dependencies |
+| vue-i18n | `^11.4.16` | **`^11.4.16`** | — | dependencies。BasicApp 已依安全性修補升級（Multica E-21 升級、Multica E-22 補登） |
+| Vitest | `^5.0.1` | **`^5.0.5`** | — | devDependencies；V8 覆蓋率門檻由 elf-cicd-frontend 擁有 |
+| @playwright/test | `^1.63.0` | **`^1.64.1`** | — | 根 `package.json` devDependencies |
+| eslint-plugin-vue | `^10.11.1` | **`^10.12.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile；與 3.6 同值 |
+| globals | `^17.13.0` | **`^17.13.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile |
+| Tauri CLI（@tauri-apps/cli） | `^2.11.4` | **`^2.12.4`** | Tauri | 根 `package.json` devDependencies |
+| @tauri-apps/api | `^2.11.1` | **`^2.12.4`** | Tauri | dependencies |
+| tauri（Rust crate） | `"2"` | **`"2.12.5"`** | Tauri | `src-tauri/Cargo.toml` ＋ commit `Cargo.lock` |
+| tauri-build | `"2"` | **`"2.7.4"`** | Tauri | `[build-dependencies]` |
+| ant-design-vue | `^4.2.6` | **`^4.2.6`** | — | dependencies（`apps/package.json`） |
 
 > UI 元件庫（已決議）：**ant-design-vue 4** 是團隊標準。既有 SoybeanAdmin / NaiveUI repo 屬歷史例外，依該 repo 自己的 CLAUDE.md；AI 不得在任何 repo 自行替換 UI 庫。
 
-> eslint-plugin-vue 10 與 globals（E-415 補入，取自 ELF.Studio v0.1.1）：v10 的 flat config 不再提供 v9 給的 browser globals，也不再把 `globals` 列為自己的相依，所以用 v10 的 repo 必須自己裝 `globals` 並在 `eslint.config.js` 供應（`.vue` 用 `globals.browser`、Node 腳本用 `globals.node`）；`.ts` 不受影響，typescript-eslint 的 `eslint-recommended` 對 TS 檔關掉 `no-undef`。v10 另宣告 `postcss-selector-parser: ^7.1.4`，這是 ELF.Studio 升到 v10 的原因（6.x 線沒有 GHSA-rj75-hqrm-r3gf 的修補版）。
+> eslint-plugin-vue 10 與 globals（Linear E-415 補入，取自 ELF.Studio v0.1.1）：v10 的 flat config 不再提供 v9 給的 browser globals，也不再把 `globals` 列為自己的相依，所以用 v10 的 repo 必須自己裝 `globals` 並在 `eslint.config.js` 供應（`.vue` 用 `globals.browser`、Node 腳本用 `globals.node`）；`.ts` 不受影響，typescript-eslint 的 `eslint-recommended` 對 TS 檔關掉 `no-undef`。v10 另宣告 `postcss-selector-parser: ^7.1.4`，這是 ELF.Studio 升到 v10 的原因（6.x 線沒有 GHSA-rj75-hqrm-r3gf 的修補版）。
 > 上段是直接組裝設定時的責任；採 3.6 的 antfu 組合時，`globals`、Vue plugin 與 parser 由 preset 帶入。設定檔若自行 import 套件，仍須直接宣告相依，不能依賴 pnpm 未公開的間接相依。
 
 ### 3.3 .NET 測試（團隊已決議：`server/tests/<Project>.Tests/`、整合測試 `server/tests/<App>.Api.IntegrationTests/`、xUnit、`coverlet.msbuild`、合併後 line 55% 強制 / branch 50% 建議）
 
-| 套件 | 版本 | 釘選方式 |
-|------|------|----------|
-| xunit | 2.9.3 | `Directory.Packages.props` |
-| xunit.runner.visualstudio | 3.1.4 | `Directory.Packages.props` |
-| Microsoft.NET.Test.Sdk | 17.14.1 | `Directory.Packages.props` |
-| coverlet.msbuild | 6.0.4 | `Directory.Packages.props`（**不用** `coverlet.collector` / `--collect:"XPlat Code Coverage"`） |
-| Microsoft.AspNetCore.Mvc.Testing | 10.0.12 | `Directory.Packages.props`（與 ASP.NET Core 套件同版） |
-| Testcontainers.PostgreSql | 4.15.0 | `Directory.Packages.props`（整合測試用，見 elf-integration） |
+| 套件 | v1 | **v2** | 批次 | 釘選方式 |
+|------|----|--------|------|----------|
+| xunit | 2.9.3 | **2.9.3** | — | `Directory.Packages.props` |
+| xunit.runner.visualstudio | 3.1.4 | **4.0.1** | .NET 測試 | `Directory.Packages.props`；major，與同批另兩個 major 共用一張「測試工具鏈遷移」單 |
+| Microsoft.NET.Test.Sdk | 17.14.1 | **18.11.0** | .NET 測試 | `Directory.Packages.props`；major，升級後重新確認 CI 覆蓋率門檻寫法仍有效 |
+| coverlet.msbuild | 6.0.4 | **10.1.0** | .NET 測試 | `Directory.Packages.props`（**不用** `coverlet.collector` / `--collect:"XPlat Code Coverage"`）；major，升級後重跑下方門檻指令 |
+| Microsoft.AspNetCore.Mvc.Testing | 10.0.12 | **10.0.14** | ASP.NET | `Directory.Packages.props`（與 ASP.NET Core 套件同版） |
+| Testcontainers.PostgreSql | 4.15.0 | **4.16.0** | — | `Directory.Packages.props`（整合測試用，見 elf-integration） |
 
 覆蓋率指令（門檻看**所有測試專案合併後**的總覆蓋率，不要求每個測試專案單獨達 55%；多個測試專案時的報告合併寫法由 elf-cicd-backend 擁有）：
 
@@ -119,33 +121,35 @@ dotnet test server/<App>.slnx -c Release \
 
 ### 3.4 MCP server（Node / TypeScript，elf-mcp-server 範本）
 
-| 項目 | 版本（range） | lockfile 實際解析 | 釘選方式 |
-|------|---------------|-------------------|----------|
-| express-rate-limit | `^8.7.1` | 8.7.1 | `elf-mcp-server` 範本 `templates/package.json` dependencies ＋ lockfile |
+| 項目 | v1 | **v2** | lockfile 實際解析 | 釘選方式 |
+|------|----|--------|-------------------|----------|
+| express-rate-limit | `^8.7.1` | **`^8.7.1`** | 8.7.1 | `elf-mcp-server` 範本 `templates/package.json` dependencies ＋ lockfile |
 
 ### 3.5 GitHub Actions 釘選（commit SHA）
 
 `uses:` 一律寫 40 碼 commit SHA，行尾以 `# <版本>` 註解版本；SHA 與版本以本表為準（規則 9–11）。SHA 取得方式：`gh api repos/<owner>/<repo>/commits/<版本> --jq .sha`（取 commit，不取 annotated tag 物件）。
 
-| Action | 版本 | Commit SHA | 備註 |
-|--------|------|------------|------|
-| `actions/checkout` | v5.1.0 | `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` |  |
-| `actions/setup-dotnet` | v5.4.0 | `26b0ec14cb23fa6904739307f278c14f94c95bf1` |  |
-| `actions/setup-node` | v5.0.0 | `a0853c24544627f65ddf259abe73b1d18a591444` |  |
-| `actions/upload-artifact` | v5.0.0 | `330a01c490aca151604b8cf639adc76d48f6c5d4` |  |
-| `actions/download-artifact` | v5.0.0 | `634f93cb2916e3fdff6788551b99b062d0335ce0` | 只出現在 elf-allure-report 的說明文字（沒有 `uses:` 行），validate.sh 對它報「未使用」警告是預期的 |
-| `anthropics/claude-code-action` | v1.0.252 | `f27be6b65a4652f08a2ba3cff79114829b588967` |  |
-| `docker/build-push-action` | v6.19.2 | `10e90e3645eae34f1e60eeb005ba3a3d33f178e8` |  |
-| `docker/login-action` | v3.7.0 | `c94ce9fb468520275223c153574b00df6fe4bcc9` |  |
-| `docker/setup-buildx-action` | v3.12.0 | `8d2750c68a42422c14e847fe6c8ac0403b4cbd6f` |  |
-| `pnpm/action-setup` | v4.4.0 | `fc06bc1257f339d1d5d8b3a19a8cae5388b55320` |  |
-| `Swatinem/rust-cache` | v2.9.2 | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |  |
-| `tauri-apps/tauri-action` | v0.6.2 | `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` |  |
-| `dtolnay/rust-toolchain` | master@2026-10-16 | `683b588c487a69d01f6c6ddf40f036ff682cc2c8` | 需人工更新：釘的是分支 commit，Dependabot 可能只把 SHA 升到最新 commit 而不更新 `master@<日期>` 註解（證據 E4），日期與 SHA 要人工核對 |
+這張表沒有 v2 裁定，維持 v1 SHA；各 major 各自開單，Dependabot 的 patch／minor PR 要等本表改成同一 SHA 才合併。「2026-10-29 最新」欄取自 Eddie 的盤點，只供規劃，不是核准的版本。
 
-### 3.6 lint／format 工具鏈（E-426，2026-10-25）
+| Action | 版本 | Commit SHA | 2026-10-29 最新 | 備註 |
+|--------|------|------------|-----------------|------|
+| `actions/checkout` | v5.1.0 | `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` | v7.0.1 | major → 開單 |
+| `actions/setup-dotnet` | v5.4.0 | `26b0ec14cb23fa6904739307f278c14f94c95bf1` | v6.0.0 | major → 開單 |
+| `actions/setup-node` | v5.0.0 | `a0853c24544627f65ddf259abe73b1d18a591444` | v7.1.0 | major → 開單；與 Node 批次一起動 |
+| `actions/upload-artifact` | v5.0.0 | `330a01c490aca151604b8cf639adc76d48f6c5d4` | v7.0.2 | major → 開單 |
+| `actions/download-artifact` | v5.0.0 | `634f93cb2916e3fdff6788551b99b062d0335ce0` | v8.0.2 | 只出現在 elf-allure-report 的說明文字（沒有 `uses:` 行），validate.sh 對它報「未使用」警告是預期的 |
+| `anthropics/claude-code-action` | v1.0.252 | `f27be6b65a4652f08a2ba3cff79114829b588967` | v1.0.264 | patch：先更新本列，再接受 Dependabot PR |
+| `docker/build-push-action` | v6.19.2 | `10e90e3645eae34f1e60eeb005ba3a3d33f178e8` | v7.4.0 | major → 開單，docker 批次 |
+| `docker/login-action` | v3.7.0 | `c94ce9fb468520275223c153574b00df6fe4bcc9` | v4.7.0 | docker 批次 |
+| `docker/setup-buildx-action` | v3.12.0 | `8d2750c68a42422c14e847fe6c8ac0403b4cbd6f` | v4.4.1 | docker 批次 |
+| `pnpm/action-setup` | v4.4.0 | `fc06bc1257f339d1d5d8b3a19a8cae5388b55320` | v6.1.0 | major → 開單 |
+| `Swatinem/rust-cache` | v2.9.2 | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` | v2.9.3 | patch：先更新本列，再接受 Dependabot PR |
+| `tauri-apps/tauri-action` | v0.6.2 | `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` | action-v1.0.0 | major → 開單；重跑 elf-cicd-desktop 三平台矩陣 |
+| `dtolnay/rust-toolchain` | master@2026-10-16 | `683b588c487a69d01f6c6ddf40f036ff682cc2c8` | master HEAD | 需人工更新：釘的是分支 commit，Dependabot 可能只把 SHA 升到最新 commit 而不更新 `master@<日期>` 註解（證據 E4），日期與 SHA 要人工核對 |
 
-**目標是完整採用 `@antfu/eslint-config`**，由 ESLint／preset 管理 JS／TS／Vue、JSON／JSONC、YAML／TOML 等，CSS／HTML／Markdown 等依需要啟用 `formatters`，逐副檔名驗證覆蓋；不是只加 `eslint-plugin-format`。新版本取查證當日最新穩定版，不採 beta／RC；TS 與 Node 型別的相容例外見下方。表列值是**目標版本**，不是兩個產品已安裝或已通過 CI 的宣告。
+### 3.6 lint／format 工具鏈（Linear E-426 lint／format／TS 盤點，2026-10-25）
+
+**目標是完整採用 `@antfu/eslint-config`**，由 ESLint／preset 管理 JS／TS／Vue、JSON／JSONC、YAML／TOML 等，CSS／HTML／Markdown 等依需要啟用 `formatters`，逐副檔名驗證覆蓋；不是只加 `eslint-plugin-format`。新版本取查證當日最新穩定版，不採 beta／RC；TS 與 Node 型別的相容例外見下方。表列值是**目標版本**，不是兩個產品已安裝或已通過 CI 的宣告。除 eslint-plugin-vue 與 3.2 一致改為 `^10.12.0` 外，其餘沿用 v1，整張表同批（Lint）移動。
 
 | 套件 | 版本（range） | 釘選方式／適用範圍 |
 |------|---------------|-------------------|
@@ -153,7 +157,7 @@ dotnet test server/<App>.slnx -c Release \
 | @antfu/eslint-config | `^10.0.0` | devDependencies ＋ lockfile；完整 preset |
 | eslint-plugin-format | `^2.0.1` | devDependencies ＋ lockfile；啟用外部 formatters 時直接安裝的 optional peer |
 | typescript-eslint | `^8.72.0` | 手動組裝設定才直接裝；antfu 透過 `@typescript-eslint/parser`／`eslint-plugin` 的 `^8.72.0` 帶入，不重疊啟用兩套 recommended |
-| eslint-plugin-vue | `^10.11.1` | antfu 間接帶入並由 lockfile 固定；自行 import 時直接宣告（同 3.2） |
+| eslint-plugin-vue | `^10.12.0` | antfu 間接帶入並由 lockfile 固定；自行 import 時直接宣告（同 3.2） |
 | vue-eslint-parser | `^10.4.1` | antfu 間接帶入並由 lockfile 固定；自行 import 時直接宣告 |
 | globals | `^17.13.0` | antfu 間接帶入並由 lockfile 固定；自行 import 時直接宣告（同 3.2） |
 | @types/node | `^24.19.2` | devDependencies ＋ lockfile；跟隨 3.1 的 Node 24，不採最新主版 26 的 API 型別 |
@@ -165,21 +169,30 @@ pnpm catalog 專案把 range 集中在 `pnpm-workspace.yaml`，使用端寫 `cat
 
 **已核對的相容組合與上限**
 
-- `typescript-eslint` 的 ESLint peer 支援 `^8.57.0 || ^9.0.0 || ^10.0.0`，TypeScript 支援 `>=4.8.4 <6.1.0`。因此 3.2 的 TS 維持 `^6.0.3`，即使 registry 最新穩定為 TS 7，也不能直接升；antfu 內部同樣受這個上限限制。**解除條件**：typescript-eslint 穩定版正式支援 TS 7，重新確認 antfu／parser／vue-tsc 組合、更新本表，再由產品另單驗證。
+- `typescript-eslint` 的 ESLint peer 支援 `^8.57.0 || ^9.0.0 || ^10.0.0`，TypeScript 支援 `>=4.8.4 <6.1.0`。因此 3.2 的 TS 維持 `^6.0.3`，即使 registry 最新穩定為 TS 7，也不能直接升；antfu 內部同樣受這個上限限制。**解除條件**：TypeScript 7.1 正式版發布，且 typescript-eslint 正式版的 peer 涵蓋 7.x；之後重新確認 antfu／parser／vue-tsc 組合、更新本表，再由產品另單驗證（Multica E-48 追蹤）。
 - `^6.0.3` 是已決定的宣告 range，**本身仍允許 6.1+，不等於 `<6.1.0` 的保證**。MUST 在每次產生／更新 lockfile 時檢查實際 TypeScript 解析值仍 `<6.1.0`，CI 使用 frozen lockfile；解析越界就停止更新並回報，不關閉 peer／不支援版本檢查來通過。WHY：保留核准 range 的同時，必須由 lockfile 驗證守住目前支援上限。
-- antfu 的 ESLint peer 支援 `^9.10.0 || ^10.0.0`；Vue plugin／parser 與 format plugin 都支援 ESLint 10；vue-tsc 的 peer 要求 TS `>=5.0.0`。ESLint 10 的 Node 要求 `^20.19.0 || ^22.13.0 || >=24`，涵蓋 3.1 的 Node 24.18。
-- Peer／engine 範圍相容只是遷移前提，**不是產品驗收**。ESLint 10 改變 config 查找方式與 recommended 規則；antfu 的規則集也不同，必須在產品 PR 核對 lint 範圍、規則、formatter 的副檔名覆蓋及 CI。
+- antfu 的 ESLint peer 支援 `^9.10.0 || ^10.0.0`；Vue plugin／parser 與 format plugin 都支援 ESLint 10；vue-tsc 的 peer 要求 TS `>=5.0.0`。ESLint 10 的 Node 要求 `^20.19.0 || ^22.13.0 || >=24`，涵蓋 3.1 的 Node 24.22.2。
+- Peer／engine 範圍相容只是遷移前提，**不是產品驗收**（規則 12）。ESLint 10 改變 config 查找方式與 recommended 規則；antfu 的規則集也不同，必須在產品 PR 核對 lint 範圍、規則、formatter 的副檔名覆蓋及 CI。
 
-**repo 過渡例外（只保留現況，不要求降版或在本單遷移）**
+ELF.Studio、ELF.BasicApp 的過渡例外與收斂條件登記在 `references/exceptions.md`。
 
-| repo | 例外與理由 | 收斂條件 |
-|------|------------|----------|
-| ELF.Studio | 目前 ESLint 9＋手動 recommended＋Prettier；TS `^5.6.3`、vue-tsc `^2.1.10`。既有 CI 與 repo 專屬規則需整組遷移，不能只升 ESLint 或只換 formatter | 另單遷到完整 antfu 與本表工具鏈；保留 schema UI 中立守門、SFC 樣式限制、browser／node globals 的語意與工作區 ignores；根目錄納入 lint 且 0 錯誤 0 警告，typecheck／測試／build／E2E 通過；全庫排版獨立 commit |
-| ELF.BasicApp `frontend` | antfu `^9.5.1`、ESLint `^10.12.0`；`formatters` 啟用 CSS／HTML，但獨立 Prettier CLI 仍處理 JSON／CSS／HTML／MD，尚未完整收斂；Node 型別為 `^26.6.4`。另外固定 vue-tsc `3.3.11` 避開模板誤報，override TS ESLint plugin `8.71.0` 避開 `.mjs` no-unused-vars 誤報；lint 入口先跑 oxlint 再跑 ESLint；lockfile 被忽略，解析值只是本機快照 | 另單對齊 antfu 與 ESLint，保留 oxlint 先行守門並確認規則分工；提交 lockfile 並驗證 frozen install；盤點各副檔名由單一入口處理，確認 Node runtime／型別一致；重現並驗證兩項誤報已由穩定版修復、typecheck／lint／測試／build 通過，才解除固定版與 override；不因 latest 存在就移除例外 |
+完整盤點（含 range、lockfile、registry、逐項建議與代價）、上游連結及重現指令見 [查證紀錄](references/lint-toolchain-audit.md)。產品跟進：ELF.Studio 為 [Linear E-427](https://linear.app/elf-express/issue/E-427)（ELF.Studio 遷移到完整 antfu），ELF.BasicApp 為 [Linear E-428](https://linear.app/elf-express/issue/E-428)（ELF.BasicApp 遷移到完整 antfu）；vue-i18n 已由 Multica E-21 依安全性修補（GHSA-83rm-6c8r-g728、GHSA-8rc2-428q-7ww3）決議升為 `^11.4.16`，Multica E-22 補登於 3.2；Vite／Pinia／vue-router 等執行期已由 Multica E-45（elf-stack 版本政策修正）依 Eddie 裁定更新為 3.2 的 v2 值；大版本寫法遷移由各領域 skill 另單處理。
 
-完整盤點（含 range、lockfile、registry、逐項建議與代價）、上游連結及重現指令見 [查證紀錄](references/lint-toolchain-audit.md)。產品跟進：ELF.Studio 為 [E-427](https://linear.app/elf-express/issue/E-427)，ELF.BasicApp 為 [E-428](https://linear.app/elf-express/issue/E-428)；vue-i18n 已由 E-21 依安全性修補（GHSA-83rm-6c8r-g728、GHSA-8rc2-428q-7ww3）決議升為 `^11.4.16`，E-22 補登於 3.2；Vite／Pinia／vue-router 等執行期仍由 [E-429](https://linear.app/elf-express/issue/E-429) 決策，3.2 的這些列維持原值。
+### 3.7 批次：一起升，不單獨升
 
-**生效與交接**：本次只送 PR 到 `dev`。合併後 E-426 維持「驗證中」，留待 E-391 群組完成，由該批獨立發版審計員核對候選 SHA／CI、快轉 `release`／`main`，並在停於 `release` 的 source 執行 pull／sync、確認各 AI 工具讀到新版後留下證據，才具備結案條件。E-426 實作者不執行發版或實際同步；本 worktree 的隔離 config、`targets: {}` 與 dry-run 只驗證內容，不代表規範已派發。
+| 批次 | 成員 |
+|------|------|
+| Node | node、@types/node、`actions/setup-node` |
+| Vite | vite、@vitejs/plugin-vue |
+| TS | typescript、vue-tsc（Lint 批次必須支援該 TS 線） |
+| Router | pinia、vue-router |
+| Tauri | @tauri-apps/cli、@tauri-apps/api、tauri、tauri-build；重跑桌面三平台矩陣 |
+| ASP.NET | Microsoft.AspNetCore.*、Microsoft.AspNetCore.Mvc.Testing |
+| .NET 測試 | xunit.runner.visualstudio、Microsoft.NET.Test.Sdk、coverlet.msbuild |
+| Lint | 3.6 的全部套件 |
+| docker actions | `docker/build-push-action`、`docker/login-action`、`docker/setup-buildx-action` |
+
+批次規範的是專案的升級單。本表自己的 patch 更新（例如 Node 24.18→24.22.2）不要求同批的 action 一起動；`actions/setup-node` 的 major 依 3.5 另開單。
 
 ## 4. 標準範本
 
