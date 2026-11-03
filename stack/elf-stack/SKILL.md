@@ -1,11 +1,12 @@
 ---
 name: elf-stack
 description: |
-  Elf Express 技術堆疊版本的唯一真實來源（single source of truth），規定每個工具的版本與在 repo 中的釘選方式。
+  Elf Express 技術堆疊版本的唯一真實來源（single source of truth），規定每個工具的版本、在 repo 中的釘選方式，以及既有專案要升級還是登記例外；不涵蓋大版本的寫法遷移（歸各領域 skill）。
   當任務涉及建立新專案、新增或升級套件 / SDK / runtime、撰寫 global.json、.nvmrc、package.json 的 engines 或
-  packageManager、Directory.Packages.props、docker image tag、CI 的 setup-* 版本，或需要回答「團隊用哪一版」時觸發。
+  packageManager、Directory.Packages.props、docker image tag、CI 的 setup-* 或任何 `uses:` 行、審查 Dependabot PR、
+  審查 PR 時比對既有專案與團隊版本的差距、使用者要求「用最新版」、例外登記，或需要回答「團隊用哪一版」時觸發。
 metadata:
-  version: 1.1.0
+  version: 2.0.0
   owner: Elf Express
 ---
 
@@ -14,29 +15,46 @@ metadata:
 本 skill 是版本號的**唯一來源**。其他 skill（elf-dotnet、elf-sqlsugar、elf-postgresql、elf-vue、
 elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有的東西，AI **不得自行決定版本**。
 
-版本依據：參考專案 `TypingTrainer`（2026-09 實際檔案）＋團隊已決議事項；lint／format／TS 工具鏈依 E-426（2026-10-25）查證更新。
+版本依據：v1 依參考專案 `TypingTrainer`（2026-09）；v2 依 Linear E-426（2026-10-25 lint／TS 盤點，見 `references/lint-toolchain-audit.md`）與 Eddie 對 2026-10-29 盤點的裁定（Multica E-45 定案）。表中並列 v1 值，讓既有專案看得到自己在哪。
 參考專案與團隊標準不一致的地方，在表中以「參考專案現況」註明。
+
+單號寫法：單號前面寫來源（Linear E-426、Multica E-45），後面加幾個字說明它是什麼；新增單號時照做，只寫數字，下一個代理讀不懂。
+
+## 0. 適用範圍：新 repo 用 v2，既有 repo 依自己的步調收斂
+
+**新建立的 repository 照 v2 欄寫。** 遷移成本在第一天是零，之後只會增加，所以新 repo 開在 v1 值是缺陷，不是選項。新 repo 永遠不登記例外；v2 對某個新 repo 行不通時，那是 v2 的錯，要在本 skill 提出。
+
+**既有 repository 預期收斂到 v2，但不強迫。** 有些升級風險是真的（Vite 6→8、Pinia 2→4、vue-router 4→5、.NET 測試工具鏈的 major）。既有 repo 在排好升級單之前維持現值，期間登記在 `references/exceptions.md`：專案、偏離項目、一行理由、收斂單（或明寫「none yet」）。沒列在例外清單的項目照 v2。
+
+動 manifest 之前，先判斷是哪一種情況：
+
+1. repo 登記在 `references/exceptions.md` → 只對列出的項目照例外走。
+2. repo 還沒有任何 release → 全部用 v2。
+3. 其他情況是沒登記的既有 repo → 新加的東西用 v2；已經釘在 v1 值的東西不動，回報差距（規則 1），並告訴 Eddie 這個專案需要開升級單或登記例外；不得默默升級。
 
 ## 1. 何時使用
 
 - 建立新 repo / 新專案骨架，需要寫版本釘選檔。
 - 新增套件、升級套件、升級 SDK / runtime / docker image。
-- 撰寫 CI（`actions/setup-node`、`actions/setup-dotnet`、`dtolnay/rust-toolchain`）的版本參數。
+- 撰寫 CI（`actions/setup-node`、`actions/setup-dotnet`、`dtolnay/rust-toolchain`、任何 `uses:`）的版本參數。
 - 使用者或其他 skill 問「團隊用哪一版 X」。
+- 審查 Dependabot PR。
+- 比對既有專案與本表的差距（例如審查 PR 時順便看版本）。
 
 ## 2. 固定規則
 
-1. **MUST** 以本表為準。其他文件、README、舊專案與本表衝突時，以本表為準，並回報衝突。
+1. **MUST** 以本表為準。其他文件、README、舊專案與本表衝突時，以本表為準，並回報衝突。其中，既有專案的版本低於本表是「差距」，不是違規：**MUST** 回報差距（項目、專案現值、本表值、是否跨 major、是否已登記在 `references/exceptions.md`）；**MUST NOT** 在與升級無關的變更裡順手修正；**MUST NOT** 以差距為由阻擋該變更合併。WHY：本表一次跨好幾個 major（Vite 6→8、Pinia 2→4、vue-router 4→5）時，照字面執行會讓每個舊專案瞬間全面違規，代理就會要求整批升級；列成差距，落後仍看得到，升級照 §0 與第 6 節另開單。
 2. **MUST** 每個版本都用表中「釘選方式」寫進 repo，不可只寫在 README 或口頭約定。
-3. **MUST NOT** 在沒有使用者明確要求的情況下升級任何版本（包含「順手」升級 patch）。
+3. **MUST NOT** 在沒有使用者明確要求的情況下升級任何版本（包含「順手」升級 patch）。建立新專案時寫入本表值不算升級。使用者說「用最新」時，「最新」指本表值，不是 registry latest；registry 有比本表新的版本時，列出來並建議先依第 6 節開 PR 改本表。WHY：registry latest 可能越過相容上限（例如 TS 7 對 typescript-eslint `<6.1.0`），本表值才是查證過的組合。
 4. **MUST NOT** 使用表中標為「待確認」的值作為最終決定；遇到時照「暫定值」寫，並在 PR / 回覆中列出。
 5. **MUST** .NET 套件版本集中在 `Directory.Packages.props`；`.csproj` 內的 `<PackageReference>` **不得**帶 `Version=`。
-6. **MUST** Node 專案 commit lockfile；CI 以 frozen lockfile 安裝（`pnpm install --frozen-lockfile`）。
+6. **MUST** 提交 lockfile（Node 專案 `pnpm-lock.yaml`、Rust／Tauri 專案 `Cargo.lock`），CI 以鎖定模式安裝（`pnpm install --frozen-lockfile`、`cargo build --locked`）。WHY：lockfile 被 git 忽略時，每個「解析版本」都只是本機快照，不是 repo 的事實。.NET 的 `packages.lock.json` 見第 8 節待確認。
 7. **MUST NOT** 使用 `latest`、`*`、浮動 docker tag（如 `postgres:latest`）。
 8. 升級流程見第 6 節：**先改本表，再改專案**。
-9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
+9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（Linear E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
 10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。WHY：同規則 9。
 11. **MUST** 下游 repo 啟用 Dependabot 的 `package-ecosystem: github-actions` 更新。WHY：釘 SHA 後 action 的安全修補不會自動進來，沒有更新機制等於把舊版凍結。Dependabot 對 SHA 釘選發 PR 並同步更新同一行的版本註解（GitHub 官方文件已確認，連結見 `references/simplification-evidence.md`）。下游 `dependabot.yml` 的 `github-actions` 區塊 **MUST** 忽略主版本升級：`ignore: - dependency-name: "*"` 加 `update-types: ["version-update:semver-major"]`（寫法同 `mcp/elf-mcp-gateway` 的 `semver-major` ignore）。WHY：規則 3 禁止未經明確要求就升級，主版本升級要先改 3.5 對照表（見 6）再動專案，Dependabot 不該自行跨主版本。主版本升級不是永遠不做：要開單、規劃後再升，否則舊的主版本總有一天會停止提供安全修補。下游 repo 收到 Dependabot PR 就是通知：先更新 3.5 節，3.5 與該 PR 的 SHA／版本一致後才可合併；團隊不採用該版本就關閉 PR。
+12. **MUST** 把 peer 範圍相容和產品驗收分開說。「A 的 peer 範圍包含 B 的版本」只表示這個組合被允許，不代表 repo 的 lint、typecheck、測試、build、E2E 會過；回報時寫明實際跑了哪幾項。WHY：peer 相容常被當成「已驗證」，結果升級到產品才壞。
 
 ## 3. 版本表
 
