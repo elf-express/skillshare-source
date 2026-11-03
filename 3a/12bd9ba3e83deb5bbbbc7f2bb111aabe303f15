@@ -1,0 +1,20 @@
+AGENTS.md
+  s_8e81ffb851b356::t_f9984f3359a1a1 149-150
+  s_8e81ffb851b356::t_b91d852f0c762d 161-162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3a12bd9ba3e83deb5bbbbc7f2bb111aabe303f15",
+  "prompts": {},
+  "sessions": {
+    "s_8e81ffb851b356": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c2d6ff6-617b-4a04-acb6-f68c65176492",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
