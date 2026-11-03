@@ -1,0 +1,55 @@
+.metadata.json
+  s_af9410021b17f0::t_3b24da47562314 13,16-18,20,22,32,43,56,62,65,78,88,92,100,203,206-208,210,212-213,216,218,220,223,225-227,231-235
+frontend/design/ui-ux-pro-max/SKILL.md
+  s_af9410021b17f0::t_07637bf9a33893 63-64,156
+frontend/design/ui-ux-pro-max/data/catalog-summary.json
+  s_af9410021b17f0::t_5bdf60d56ecf64 3,23
+frontend/design/ui-ux-pro-max/data/products.csv
+  s_af9410021b17f0::t_f8708ecd6be8a3 1-193
+frontend/design/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+  s_af9410021b17f0::t_ae8b2915a4500e 2-84
+frontend/design/ui-ux-pro-max/data/styles.csv
+  s_af9410021b17f0::t_04757ccb810df5 1-89
+frontend/design/ui-ux-pro-max/scripts/core.py
+  s_af9410021b17f0::t_b4812f2f517e32 18-26,31,51,168,425-431,454-456,772-804,807,841-846,869-873,919
+frontend/design/ui-ux-pro-max/scripts/search.py
+  s_af9410021b17f0::t_d7f498f842b824 30,33-39,107-110,134-138,182-186,194-197
+frontend/design/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json
+  s_af9410021b17f0::t_48632864acff1a 5
+frontend/design/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py
+  s_af9410021b17f0::t_be3de58489ea32 27,119-132
+skillshare/SKILL.md
+  s_af9410021b17f0::t_e31464b7ef383e 7,12,28-35,92,94-106,143-158,174-179,211
+skillshare/references/audit.md
+  s_af9410021b17f0::t_b291e50c932988 114-115,123
+skillshare/references/hooks.md
+  s_af9410021b17f0::t_c355b22b2b0991 7-9
+skillshare/references/install.md
+  s_af9410021b17f0::t_eb988c1debb806 10-15,68-110,122-123,164,169,208,215-217,219-222,224
+skillshare/references/mcp.md
+  s_af9410021b17f0::t_158a8176acbf5c 27-28,68,87-91,126,132-133,145-146,190-191,195,235
+skillshare/references/plugins.md
+  s_af9410021b17f0::t_aad5f92e802fb3 5,10-48,81-82,118-119,123-126,132-133,183-189,215-217,229,259-261,268-307
+skillshare/references/sync.md
+  s_af9410021b17f0::t_d69eff80b581ad 39-56
+skillshare/references/targets.md
+  s_af9410021b17f0::t_8f0b3f135f8f07 8-15,25,27-28,89-91,129,132-173,255-261
+skillshare/references/trash.md
+  s_af9410021b17f0::t_e21d074ab101b0 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4ca11e5d15e8877843d1d14adc79005d19601c73",
+  "prompts": {},
+  "sessions": {
+    "s_af9410021b17f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51ab5c4a-18f0-4c57-a390-fa7df2d59560",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
