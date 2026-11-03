@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: registered-exception-studio
+expected_outcome: |
+  認出 Studio 已登記在 `exceptions.md`，逐項引用登記的收斂單（lint 列引 Linear E-427（ELF.Studio 遷移到完整 antfu）、執行期列寫「none yet」）；不要求重新登記、不擋這個 PR、不改 `package.json`；沒有登記的項目（`@playwright/test ^1.50.0`）才當新差距回報（v2 `^1.64.1`）。
+context:
+  scaffold_script: place-files.sh

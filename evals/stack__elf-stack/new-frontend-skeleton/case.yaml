@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: new-frontend-skeleton
+expected_outcome: |
+  `.nvmrc` `24.22.2`、`engines.node` `>=24.22.2`、`packageManager` `pnpm@12.16.1`、`pnpm-workspace.yaml` 有 `engineStrict: true`、`vite ^8.3.5`、`@vitejs/plugin-vue ^6.0.10`、`pinia ^4.1.0`、`vue-router ^5.4.0`、`vue ^3.5.44`、`vitest ^5.0.5`；`typescript` 仍是 `^6.0.3`，而且不把它說成要登記的例外。
+  （range 寫在 `apps/package.json` 或 `pnpm-workspace.yaml` 的 catalog 都算合法。）

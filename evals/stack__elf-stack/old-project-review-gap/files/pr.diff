@@ -1,0 +1,26 @@
+diff --git a/src/views/Settings.vue b/src/views/Settings.vue
+new file mode 100644
+index 0000000..3b18e51
+--- /dev/null
++++ b/src/views/Settings.vue
+@@ -0,0 +1,11 @@
++<script setup lang="ts">
++import { ref } from 'vue'
++
++const notify = ref(true)
++</script>
++
++<template>
++  <section class="settings">
++    <label><input v-model="notify" type="checkbox"> 接收通知</label>
++  </section>
++</template>
+diff --git a/src/router/index.ts b/src/router/index.ts
+index 8c1d2aa..f0e4b17 100644
+--- a/src/router/index.ts
++++ b/src/router/index.ts
+@@ -8,6 +8,7 @@ const routes = [
+   { path: '/', component: () => import('@/views/Home.vue') },
+   { path: '/about', component: () => import('@/views/About.vue') },
++  { path: '/settings', component: () => import('@/views/Settings.vue') },
+ ]

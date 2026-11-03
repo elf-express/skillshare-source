@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: old-project-review-gap
+expected_outcome: |
+  把四項落後（vite、pinia、vue-router、Node）列為「差距」並附 v2 值，明說不阻擋這個 PR；不在這個 PR 改 `package.json` 或 `.nvmrc`；說明這個專案要嘛開升級單、要嘛登記到 `references/exceptions.md`（§0 第 3 種情況）；升級建議照 §3.7 批次分單（Vite 批次、Router 批次把 Pinia 和 vue-router 放同一張、Node），跨 major 的附遷移計畫。
+  這個專案不在 `exceptions.md`。
+context:
+  scaffold_script: place-files.sh
