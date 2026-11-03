@@ -92,6 +92,8 @@ function comment(id, body, minute, authorId = guard.APPROVER_ID) {
 
 // Multica Gatekeeper agent id（APPROVER_IDS 第二個）。
 const GATEKEEPER_ID = '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82';
+// Eddie 的 Multica 帳號 id（APPROVER_IDS 第三個，E-56）。
+const EDDIE_MULTICA_ID = 'a02b935e-1138-4e81-861f-377086a05478';
 
 // 組一則 Multica CLI 形狀的留言（multica issue comment list --output json 的欄位名）。
 function multicaComment(id, content, minute, authorId = GATEKEEPER_ID) {
@@ -514,6 +516,17 @@ const cases = [
     assert.strictEqual(r2.ok, true, r2.reason);
     assert.strictEqual(guard.readCredential(linearDir, 'E-399').approver_id, GATEKEEPER_ID);
   }],
+  ['6.14 Eddie 以 Multica 帳號核准 -> 建立憑證，approver_id 為該帳號，Guard 放行', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
+    const target = write(repo, 'scripts', 'x.cjs');
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    const comments = [{ ...multicaComment('m1', APPROVE_V1, 1, EDDIE_MULTICA_ID), author_type: 'member' }];
+    const input = { plan: 'E-4', spec: 'E-2', description: PLAN_DESC, comments };
+    const r = approval.createCredential(input, { plan: 'E-4', approvalsDir });
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(guard.readCredential(approvalsDir, 'E-4').approver_id, EDDIE_MULTICA_ID);
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
   ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
     const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
     const target = write(repo, 'scripts', 'x.cjs');
@@ -700,8 +713,8 @@ const cases = [
       assert.strictEqual(typeof guard[name], 'function', name);
     }
   }],
-  ['介面 APPROVER_IDS 含 Linear 與 Multica 兩個 id，APPROVER_ID 仍指向 Linear', () => {
-    assert.deepStrictEqual(guard.APPROVER_IDS, ['f7c5792e-6252-49dd-8210-b15b30c5229d', GATEKEEPER_ID]);
+  ['介面 APPROVER_IDS 含 Linear、Multica Gatekeeper 與 Eddie 的 Multica 帳號，APPROVER_ID 仍指向 Linear', () => {
+    assert.deepStrictEqual(guard.APPROVER_IDS, ['f7c5792e-6252-49dd-8210-b15b30c5229d', GATEKEEPER_ID, EDDIE_MULTICA_ID]);
     assert.strictEqual(guard.APPROVER_ID, 'f7c5792e-6252-49dd-8210-b15b30c5229d');
   }],
 ];

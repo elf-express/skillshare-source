@@ -71,7 +71,7 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 - 在對應的 Plan 上（Linear 的 Plan issue，或 Multica 的 Plan issue）。
 - 作者 id 在核准者名單 `APPROVER_IDS` 內（不比對顯示名稱）：
   - Linear：user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`（Eddie），留言欄位 `author.id`。
-  - Multica：Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
+  - Multica：Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，或 Eddie 的 Multica 帳號 `a02b935e-1138-4e81-861f-377086a05478`；留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
 - 文字開頭符合「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」。
 - 留言依 `createdAt`（Multica 為 `created_at`）由舊到新判斷：「計畫已修改 vN」之後要有版號 ≥ N 的「計畫已核准 vN」才算；「核准撤回」之後要有新的核准留言才算。這兩種留言不限作者。
 
