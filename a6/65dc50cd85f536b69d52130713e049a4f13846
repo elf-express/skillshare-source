@@ -1,0 +1,19 @@
+.metadata.json
+  s_5718f66720a075::t_6c29ea0363e1cc 13,16-18,20,22,32,43,56,62,65,78,88,92,100,203,206-208,210,212-213,216,218,220,223,225-227,231-235
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a665dc50cd85f536b69d52130713e049a4f13846",
+  "prompts": {},
+  "sessions": {
+    "s_5718f66720a075": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "622ac177-cb48-4348-bad3-cf3d961931f9",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
