@@ -549,6 +549,17 @@ const cases = [
     assert.strictEqual(r.ok, true, r.reason);
     assert.strictEqual(r.version, 2);
   }],
+  ['6.18 簡寫核准可帶一行「執行方式：…」；不帶版號時核准目前最新版', () => {
+    const withMode = '計畫已核准\n執行方式：多代理執行（Subagent-driven）';
+    assert.strictEqual(approval.findApproval([multicaComment('m1', withMode, 1, EDDIE_MULTICA_ID)]).ok, true);
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准\n執行方式：x\n再一行', 1, EDDIE_MULTICA_ID)]).ok, false);
+    const mod = multicaComment('m2', '計畫已修改 v2（併入前端）', 2, OTHER_ID);
+    const r = approval.findApproval([mod, multicaComment('m3', withMode, 3, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 2);
+    // 寫了舊版號的簡寫仍然不算。
+    assert.strictEqual(approval.findApproval([mod, multicaComment('m3', '計畫已核准 v1', 3, EDDIE_MULTICA_ID)]).ok, false);
+  }],
   ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
     const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
     const target = write(repo, 'scripts', 'x.cjs');
