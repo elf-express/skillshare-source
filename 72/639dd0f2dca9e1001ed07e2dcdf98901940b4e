@@ -1,0 +1,109 @@
+evals/stack__elf-stack/new-backend-skeleton/case.yaml
+  s_66d229fb454bb6::t_cfdc94be1e1af5 1-5
+evals/stack__elf-stack/new-backend-skeleton/evidence/red.md
+  s_66d229fb454bb6::t_a4d2e4812e805e 1-128
+evals/stack__elf-stack/new-backend-skeleton/graders/01-global-json.md
+  s_66d229fb454bb6::t_6989c7670be99a 1-7
+evals/stack__elf-stack/new-backend-skeleton/graders/02-aspnetcore-10-0-14.md
+  s_66d229fb454bb6::t_466b2590e3a494 1-7
+evals/stack__elf-stack/new-backend-skeleton/graders/03-test-toolchain-exact.md
+  s_66d229fb454bb6::t_66d7560739f066 1-7
+evals/stack__elf-stack/new-backend-skeleton/graders/04-no-npgsql-packageversion.md
+  s_66d229fb454bb6::t_83d2d9871f1a14 1-7
+evals/stack__elf-stack/new-backend-skeleton/graders/05-postgres-18-6.md
+  s_66d229fb454bb6::t_ed9306f96784d3 1-7
+evals/stack__elf-stack/new-backend-skeleton/prompt.md
+  s_66d229fb454bb6::t_05358fecfebc6e 1-8
+evals/stack__elf-stack/new-frontend-skeleton/case.yaml
+  s_66d229fb454bb6::t_036ab3aab368b4 1-5
+evals/stack__elf-stack/new-frontend-skeleton/evidence/red.md
+  s_66d229fb454bb6::t_36a712cf35b5f9 1-156
+evals/stack__elf-stack/new-frontend-skeleton/graders/01-nvmrc-24-22-2.md
+  s_66d229fb454bb6::t_972a9755451447 1-7
+evals/stack__elf-stack/new-frontend-skeleton/graders/02-engines-and-package-manager.md
+  s_66d229fb454bb6::t_b9f90950fee6b2 1-7
+evals/stack__elf-stack/new-frontend-skeleton/graders/03-engine-strict.md
+  s_66d229fb454bb6::t_ca7dcb60ecb1d9 1-7
+evals/stack__elf-stack/new-frontend-skeleton/graders/04-runtime-ranges.md
+  s_66d229fb454bb6::t_c44063d80ed36c 1-7
+evals/stack__elf-stack/new-frontend-skeleton/graders/05-typescript-6-not-exception.md
+  s_66d229fb454bb6::t_60aea1cc23e6e1 1-7
+evals/stack__elf-stack/new-frontend-skeleton/graders/06-no-downstream-template-versions.md
+  s_66d229fb454bb6::t_a2b130f9b06fcc 1-7
+evals/stack__elf-stack/new-frontend-skeleton/prompt.md
+  s_66d229fb454bb6::t_8b4ea51b7e681f 1-8
+evals/stack__elf-stack/old-project-review-gap/case.yaml
+  s_66d229fb454bb6::t_5a697a826dc239 1-7
+evals/stack__elf-stack/old-project-review-gap/evidence/red.md
+  s_66d229fb454bb6::t_c4e3cb09c1d532 1-73
+evals/stack__elf-stack/old-project-review-gap/files/.nvmrc
+  s_66d229fb454bb6::t_fac610a32d76c1 1
+evals/stack__elf-stack/old-project-review-gap/files/package.json
+  s_66d229fb454bb6::t_3c43cf97258533 1-17
+evals/stack__elf-stack/old-project-review-gap/files/pr.diff
+  s_66d229fb454bb6::t_89343de125fec6 1-26
+evals/stack__elf-stack/old-project-review-gap/graders/01-lists-four-gaps.md
+  s_66d229fb454bb6::t_e600f92dcd6169 1-7
+evals/stack__elf-stack/old-project-review-gap/graders/02-gap-does-not-block.md
+  s_66d229fb454bb6::t_e10d068c5fc43a 1-7
+evals/stack__elf-stack/old-project-review-gap/graders/03-no-manifest-change.md
+  s_66d229fb454bb6::t_e1ac5dc464fbc9 1-7
+evals/stack__elf-stack/old-project-review-gap/graders/04-ticket-or-exception.md
+  s_66d229fb454bb6::t_1a7c1abb641ab8 1-7
+evals/stack__elf-stack/old-project-review-gap/graders/05-batched-upgrade.md
+  s_66d229fb454bb6::t_363fa79df15183 1-7
+evals/stack__elf-stack/old-project-review-gap/place-files.sh
+  s_66d229fb454bb6::t_a53e83c31253c7 1-3
+evals/stack__elf-stack/old-project-review-gap/prompt.md
+  s_66d229fb454bb6::t_67e8979aacab33 1-9
+evals/stack__elf-stack/registered-exception-studio/case.yaml
+  s_66d229fb454bb6::t_3d51ac8275af2c 1-6
+evals/stack__elf-stack/registered-exception-studio/evidence/red.md
+  s_66d229fb454bb6::t_ea5e8f0a2301d3 1-64
+evals/stack__elf-stack/registered-exception-studio/files/package.json
+  s_66d229fb454bb6::t_1eec07c0802a37 1-24
+evals/stack__elf-stack/registered-exception-studio/files/pr.diff
+  s_66d229fb454bb6::t_2b4f1225bed4d7 1-18
+evals/stack__elf-stack/registered-exception-studio/graders/01-recognises-registration.md
+  s_66d229fb454bb6::t_b13b496c0bc1f5 1-7
+evals/stack__elf-stack/registered-exception-studio/graders/02-cites-closing-tickets.md
+  s_66d229fb454bb6::t_9cea8d96db156d 1-7
+evals/stack__elf-stack/registered-exception-studio/graders/03-no-reregistration-no-block.md
+  s_66d229fb454bb6::t_e249e13501036c 1-7
+evals/stack__elf-stack/registered-exception-studio/graders/04-no-manifest-change.md
+  s_66d229fb454bb6::t_4bd00d096ea922 1-7
+evals/stack__elf-stack/registered-exception-studio/graders/05-unregistered-playwright-gap.md
+  s_66d229fb454bb6::t_13762a1814c255 1-7
+evals/stack__elf-stack/registered-exception-studio/place-files.sh
+  s_66d229fb454bb6::t_82305f28b93236 1-3
+evals/stack__elf-stack/registered-exception-studio/prompt.md
+  s_66d229fb454bb6::t_5097c604feebd7 1-9
+evals/stack__elf-stack/user-says-latest/case.yaml
+  s_66d229fb454bb6::t_14529df870c5d4 1-5
+evals/stack__elf-stack/user-says-latest/evidence/red.md
+  s_66d229fb454bb6::t_f435dd3ed812ac 1-56
+evals/stack__elf-stack/user-says-latest/graders/01-same-as-skeleton.md
+  s_66d229fb454bb6::t_b51ceb0550f13a 1-7
+evals/stack__elf-stack/user-says-latest/graders/02-latest-means-table.md
+  s_66d229fb454bb6::t_bac78ebee376d0 1-7
+evals/stack__elf-stack/user-says-latest/graders/03-typescript-6-with-reason.md
+  s_66d229fb454bb6::t_10c65a7b38f30a 1-7
+evals/stack__elf-stack/user-says-latest/prompt.md
+  s_66d229fb454bb6::t_2acccc37f35254 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "72639dd0f2dca9e1001ed07e2dcdf98901940b4e",
+  "prompts": {},
+  "sessions": {
+    "s_66d229fb454bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e305e619-4d02-4c28-8129-e6ddb1cc3b73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
