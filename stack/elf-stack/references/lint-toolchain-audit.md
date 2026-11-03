@@ -1,8 +1,25 @@
-# E-426：lint／format／TypeScript 查證紀錄
+# lint／format／TypeScript 工具鏈查證紀錄（2026-10-25）
 
-查證日期：2026-10-25。決策正本：[E-426](https://linear.app/elf-express/issue/E-426)。
+查證日期：2026-10-25。決策正本：[Linear E-426](https://linear.app/elf-express/issue/E-426)（lint／format／TS 盤點單）。
 Eddie 定案：單一純文字工作單；TypeScript `^6.0.3`；格式化目標完整 antfu；產品與執行期升級另單。
 此檔是有日期的盤點證據；後續版本決策以 SKILL.md 的表為準，不從快照自動升級。
+
+這是有日期的證據紀錄，不是政策；版本以 `SKILL.md` §3 為準。registry 有比這裡更新的版本，仍是要走 `SKILL.md` 治理流程的升級。要知道 `SKILL.md` §3.6 的 lint 列**為什麼**是這些值、兩個既有產品**哪裡**偏離、偏離要**證明什麼**才能解除時，讀這份紀錄。
+
+## 本檔用到的單號與名詞
+
+單號保留以便追溯，每個都展開說明，不開 Linear 也讀得懂。
+
+| 單號／名詞 | 是什麼 |
+|------------|--------|
+| **Linear E-426** | 產出本紀錄的單：統一 ELF 產品的 lint／format／TypeScript 工具鏈。Eddie 在這張單的定案：單一純文字工作單；TypeScript `^6.0.3`；格式化目標是完整 `@antfu/eslint-config`；產品與執行期升級（Vite、Pinia、router、i18n）另單。**註記**：Eddie 在 Linear E-426 裁定 TypeScript `^6.0.3`。2026-10-29 盤點的方向是 TS 7（`^7.0.2`），但 typescript-eslint 的上限未解除前維持 `^6.0.3`，由 Multica E-48（TypeScript 7 解除條件追蹤）追蹤。 |
+| **Linear E-428** | 後續單：把 ELF.BasicApp frontend 遷到完整 antfu preset，承接下方「例外來源與遷移驗收」的每一項 BasicApp 項目。 |
+| **Linear E-391 群組** | 一批一起發版的相關單。群組完成時，由一位獨立的發版審計員核對所有 SHA 與 CI、快轉 `release`、對 release source 執行 pull／sync，並取得各 AI 工具讀到新設定的證據。Linear E-426 屬於這個群組，不單獨發版。 |
+| **Linear E-194** | 與本紀錄無關的功能工作（以 QuestPDF 產生 PDF）。盤點時 BasicApp 剛好 checkout 在它的分支 `feat/e-194-pdf-questpdf`，列出只為了找得到下方的 HEAD。 |
+| **「舊 elf-stack」** | `SKILL.md` §3 v2 表之前的 v1 版本表（elf-stack 1.1.0）。 |
+| **舊 skill 的「規則 6」** | lockfile 要提交進 git，讓安裝可重現；`SKILL.md` 仍保留為規則 6。 |
+| **舊 skill 的「§6.2」** | 先在獨立 PR 改版本表，之後產品 manifest 才照表改；`SKILL.md` 仍保留為 §6.2。 |
+| **ELF.Studio／ELF.BasicApp** | 盤點時兩個已上線的前端產品。相對於 v2 都是既有專案，都登記在 `exceptions.md`。 |
 
 ## 證據範圍與重現
 
@@ -54,7 +71,7 @@ Invoke-RestMethod 'https://registry.npmjs.org/@types%2fnode/24.19.2' -TimeoutSec
 
 | 套件 | 舊 elf-stack | ELF.Studio | ELF.BasicApp frontend | registry latest | 決策與代價 |
 |------|-------------|------------|-----------------------|-----------------|------------|
-| TypeScript | `^5.6.3` → 5.9.3 | `^5.6.3` → 5.9.3 | `^6.0.3` → 6.0.3 | 7.0.2 | 統一 `^6.0.3`；保留 TS lint，暫不採 TS 7；Studio 另單驗證 TS 主版差異 |
+| TypeScript | `^5.6.3` → 5.9.3 | `^5.6.3` → 5.9.3 | `^6.0.3` → 6.0.3 | 7.0.2 | 統一 `^6.0.3`；保留 TS lint，暫不採 TS 7；Studio 另單驗證 TS 主版差異。方向是 TS 7，解除條件見 `SKILL.md` §3.6 與 Multica E-48 |
 | vue-tsc | `^2.1.10` | `^2.1.10` → 2.2.12 | **固定** 3.3.11 → 3.3.11 | 3.3.13 | 目標 `^3.3.13`；BasicApp 保留誤報例外，修復重現與產品 typecheck 通過才解除；peer 相容不能證明已修復 |
 | eslint | 無 | `^9.17.0` → 9.39.5 | `^10.12.0` → 10.12.0 | 10.13.0 | 統一目標 `^10.13.0`；Studio 9→10 要驗證查找方式與 recommended 規則 |
 | @eslint/js | 無 | `^9.17.0` → 9.39.5 | 無直接宣告 | **10.0.1** | 表列手動設定備用；完整 antfu 不額外疊加；不是跟 ESLint 同為 10.13.0 |
@@ -89,14 +106,16 @@ Invoke-RestMethod 'https://registry.npmjs.org/@types%2fnode/24.19.2' -TimeoutSec
 - BasicApp `pnpm-workspace.yaml` 註明 vue-tsc 3.3.12 對模板中匯入物件成員誤補 `.value`；[上游 #6237](https://github.com/vuejs/language-tools/issues/6237) 有同類重現。latest 3.3.13 不足以證明本專案已修復，維持 3.3.11 直到穩定版重現測試通過。
 - 同檔 override 的註解記錄 TS ESLint 8.71.1 對 `.mjs` 的 `no-unused-vars` 誤報。這是 repo 記錄的理由；本單未獨立重現，不能宣稱 8.72.0 已修復，也不移除 override。
 - BasicApp 的 `format` script 仍用 Prettier 格式化 `**/*.{json,css,html,md}`，antfu formatters 開 CSS／HTML；同一檔案存在兩入口，`.prettierrc.mjs` 也註明要避免兩邊互相重排。產品遷移應列出 JSON／CSS／HTML／MD／YAML 等實際覆蓋矩陣、統一入口，再調整 scripts／CI／編輯器。
-- BasicApp 的 `lint`／`lint:fix` 先執行 oxlint 再執行 ESLint；catalog `oxlint ^1.86.0`、lockfile 1.87.0。這是既有 repo 守門例外，本單沒有決定 oxlint 的新目標版本，E-428 保留入口並確認與 antfu 的規則分工，不因「完整 antfu」而刪除。
-- BasicApp 忽略 lockfile 與本 skill 規則 6 不一致；E-428 須依 repo 流程提交 lockfile、驗證乾淨環境 frozen install 與 CI。此例外未解決前，不能把本機解析值當成下游可重現的鎖定組合。
+- BasicApp 的 `lint`／`lint:fix` 先執行 oxlint 再執行 ESLint；catalog `oxlint ^1.86.0`、lockfile 1.87.0。這是既有 repo 守門例外，本單沒有決定 oxlint 的新目標版本，Linear E-428 保留入口並確認與 antfu 的規則分工，不因「完整 antfu」而刪除。
+- BasicApp 忽略 lockfile 與本 skill 規則 6 不一致；Linear E-428 須依 repo 流程提交 lockfile、驗證乾淨環境 frozen install 與 CI。此例外未解決前，不能把本機解析值當成下游可重現的鎖定組合。
 - Studio 必須保留 schema 的 `no-restricted-imports`、SFC 樣式限制、browser／node globals 語意與 `.superpowers`／`.ocrca`／`.openchamber`／`uio-design-feedback` ignores。根目錄 lint 保持涵蓋，0 錯誤 0 警告；原有 typecheck／測試／build／E2E 都要過。全庫排版獨立 commit 以利審查。
 - [ESLint 10 官方遷移指南](https://eslint.org/docs/latest/use/migrate-to-10.0.0)：Node 支援範圍、由每個 linted file 出發查找 config、recommended 規則及已移除 API 等都有變動；不能只以 peer 相容作結論。
 - [typescript-eslint 官方支援範圍](https://typescript-eslint.io/users/dependency-versions/) 與 [antfu 官方設定說明](https://github.com/antfu/eslint-config#readme) 是後續組合重查入口；版本升級仍須先改本表。
 
 ## 執行期另單與發版界線
 
-Vite `^6.4.3`／`^8.3.2`、Pinia `^2.2.6`／`^4.0.3`、vue-i18n `^10.0.5`／`^11.4.13`（Studio／BasicApp）屬產品相依差異；BasicApp 另用 vue-router `^5.3.1`，舊表為 `^4.4.5`。本單不改這些表值或產品，另單確認最新穩定組合、breaking changes 與驗收，再依 §6.2 先改表後改產品。
+Vite `^6.4.3`／`^8.3.2`、Pinia `^2.2.6`／`^4.0.3`、vue-i18n `^10.0.5`／`^11.4.13`（Studio／BasicApp）屬產品相依差異；BasicApp 另用 vue-router `^5.3.1`，舊表為 `^4.4.5`。本單不改這些表值或產品，另單確認最新穩定組合、breaking changes 與驗收，再依 §6.2 先改表後改產品。這些表值已由 Multica E-45（elf-stack 版本政策修正）依 Eddie 裁定更新；大版本寫法遷移由各領域 skill 另單處理。
 
-E-426 只開 `dev` PR；合併後維持「驗證中」。E-391 群組完成後由該批獨立發版審計員一併核對 SHA／CI 與 release 快轉，執行 release source 的 pull／sync 並取得各 AI 工具生效證據。本單沒有執行實際同步；隔離 config（`targets: {}`）的 validate／dry-run 不算發版驗收。
+Linear E-426 只開 `dev` PR；合併後維持「驗證中」。Linear E-391 群組完成後由該批獨立發版審計員一併核對 SHA／CI 與 release 快轉，執行 release source 的 pull／sync 並取得各 AI 工具生效證據。本單沒有執行實際同步；隔離 config（`targets: {}`）的 validate／dry-run 不算發版驗收。
+
+**生效與交接**：本次只送 PR 到 `dev`。合併後 E-426 維持「驗證中」，留待 E-391 群組完成，由該批獨立發版審計員核對候選 SHA／CI、快轉 `release`／`main`，並在停於 `release` 的 source 執行 pull／sync、確認各 AI 工具讀到新版後留下證據，才具備結案條件。E-426 實作者不執行發版或實際同步；本 worktree 的隔離 config、`targets: {}` 與 dry-run 只驗證內容，不代表規範已派發。
