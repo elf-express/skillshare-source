@@ -1,0 +1,55 @@
+.metadata.json
+  s_0a6c1e98ce5cab::t_cd540852154e5e 13,16-18,20,22,32,43,56,62,65,78,88,92,100,203,206-208,210,212-213,216,218,220,223,225-227,231-235
+frontend/design/ui-ux-pro-max/SKILL.md
+  s_0a6c1e98ce5cab::t_70e9a571d35e6f 63-64,156
+frontend/design/ui-ux-pro-max/data/catalog-summary.json
+  s_0a6c1e98ce5cab::t_96326b7bf9e587 3,23
+frontend/design/ui-ux-pro-max/data/products.csv
+  s_0a6c1e98ce5cab::t_692f529194e44b 1-193
+frontend/design/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+  s_0a6c1e98ce5cab::t_031747f5e310e4 2-84
+frontend/design/ui-ux-pro-max/data/styles.csv
+  s_0a6c1e98ce5cab::t_2d406b73677c7f 1-89
+frontend/design/ui-ux-pro-max/scripts/core.py
+  s_0a6c1e98ce5cab::t_a3abd9a81220f4 18-26,31,51,168,425-431,454-456,772-804,807,841-846,869-873,919
+frontend/design/ui-ux-pro-max/scripts/search.py
+  s_0a6c1e98ce5cab::t_53d3a8a6441f92 30,33-39,107-110,134-138,182-186,194-197
+frontend/design/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json
+  s_0a6c1e98ce5cab::t_a1add8126f966c 5
+frontend/design/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py
+  s_0a6c1e98ce5cab::t_5933335d818a28 27,119-132
+skillshare/SKILL.md
+  s_0a6c1e98ce5cab::t_e2f2b30f584252 7,12,28-35,92,94-106,143-158,174-179,211
+skillshare/references/audit.md
+  s_0a6c1e98ce5cab::t_4049b5c82b5ec8 114-115,123
+skillshare/references/hooks.md
+  s_0a6c1e98ce5cab::t_e0588ed1b5cd0e 7-9
+skillshare/references/install.md
+  s_0a6c1e98ce5cab::t_049518531b5c84 10-15,68-110,122-123,164,169,208,215-217,219-222,224
+skillshare/references/mcp.md
+  s_0a6c1e98ce5cab::t_0cc51f1ce1190d 27-28,68,87-91,126,132-133,145-146,190-191,195,235
+skillshare/references/plugins.md
+  s_0a6c1e98ce5cab::t_4df18a2d669334 5,10-48,81-82,118-119,123-126,132-133,183-189,215-217,229,259-261,268-307
+skillshare/references/sync.md
+  s_0a6c1e98ce5cab::t_36e8f7e9aba9b8 39-56
+skillshare/references/targets.md
+  s_0a6c1e98ce5cab::t_07e60d99ea7534 8-15,25,27-28,89-91,129,132-173,255-261
+skillshare/references/trash.md
+  s_0a6c1e98ce5cab::t_1dad717a306d1e 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "89eb80c8b9164a49c369ec08f171887b1e8ef0db",
+  "prompts": {},
+  "sessions": {
+    "s_0a6c1e98ce5cab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e18db6e-268b-470b-8ee2-214f4203c02f",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
