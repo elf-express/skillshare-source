@@ -423,7 +423,8 @@ const cases = [
     assert.strictEqual(approval.findApproval([comment('c1', APPROVE_V1, 1, OTHER_ID)]).ok, false);
   }],
   ['5.3 文字不符 -> 不通過', () => {
-    for (const body of ['計畫已核准', '計畫核准（2026-10-25，審計員：Codex）', '計畫已核准（2026/10/25，審計員：Codex）']) {
+    // 只寫「計畫已核准」的簡寫由 6.15–6.17 處理（只有 Eddie 本人可以）。
+    for (const body of ['計畫核准（2026-10-25，審計員：Codex）', '計畫已核准（2026/10/25，審計員：Codex）']) {
       assert.strictEqual(approval.findApproval([comment('c1', body, 1)]).ok, false, body);
     }
   }],
@@ -526,6 +527,27 @@ const cases = [
     assert.strictEqual(r.ok, true, r.reason);
     assert.strictEqual(guard.readCredential(approvalsDir, 'E-4').approver_id, EDDIE_MULTICA_ID);
     assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
+  ['6.15 Eddie 只寫「計畫已核准」-> 日期取留言台北時間、審計員記 Eddie', () => {
+    const comments = [{ ...multicaComment('m1', '計畫已核准', 1, EDDIE_MULTICA_ID), created_at: '2026-11-03T17:30:00Z' }];
+    const r = approval.findApproval(comments);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.approvedAt, '2026-11-04');
+    assert.strictEqual(r.auditor, 'Eddie');
+    assert.strictEqual(r.version, 1);
+  }],
+  ['6.16 簡寫核准只認 Eddie；Gatekeeper 簡寫不算；帶附註也不算', () => {
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准', 1, GATEKEEPER_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准，但先別動', 1, EDDIE_MULTICA_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([comment('c1', '計畫已核准。', 1)]).ok, true);
+  }],
+  ['6.17 計畫已修改 v2 之後，舊的簡寫核准失效，「計畫已核准 v2」才算', () => {
+    const old = multicaComment('m1', '計畫已核准', 1, EDDIE_MULTICA_ID);
+    const mod = multicaComment('m2', '計畫已修改 v2（併入前端）', 2, OTHER_ID);
+    assert.strictEqual(approval.findApproval([old, mod]).ok, false);
+    const r = approval.findApproval([old, mod, multicaComment('m3', '計畫已核准 v2', 3, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 2);
   }],
   ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
     const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
