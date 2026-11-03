@@ -1,0 +1,59 @@
+.metadata.json
+  s_64b68b5aba931b::t_4f3ba5a141e161 13,16-18,20,22,32,43,56,62,65,78,88,92,100,203,206-208,210,212-213,216,218,220,223,225-227,231-235
+frontend/design/ui-ux-pro-max/SKILL.md
+  s_64b68b5aba931b::t_7225e3340f10c7 63-64,156
+frontend/design/ui-ux-pro-max/data/catalog-summary.json
+  s_64b68b5aba931b::t_e891d7a4c42600 3,23
+frontend/design/ui-ux-pro-max/data/products.csv
+  s_64b68b5aba931b::t_d5f728b428572b 1-193
+frontend/design/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+  s_64b68b5aba931b::t_2c1dc05743b52a 2-84
+frontend/design/ui-ux-pro-max/data/styles.csv
+  s_64b68b5aba931b::t_0b9bf615937889 1-89
+frontend/design/ui-ux-pro-max/scripts/core.py
+  s_64b68b5aba931b::t_b95d33de6b6344 18-26,31,51,168,425-431,454-456,772-804,807,841-846,869-873,919
+frontend/design/ui-ux-pro-max/scripts/search.py
+  s_64b68b5aba931b::t_14abbe0e8b5fdb 30,33-39,107-110,134-138,182-186,194-197
+frontend/design/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json
+  s_64b68b5aba931b::t_303ffdad2e4c6b 5
+frontend/design/ui-ux-pro-max/scripts/tests/test_rtl_support.py
+  s_64b68b5aba931b::t_327967650d5a4a 1-165
+frontend/design/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py
+  s_64b68b5aba931b::t_7bbb1c69ade129 27,119-132
+skillshare/SKILL.md
+  s_64b68b5aba931b::t_f49875d05c97a0 7,12,28-35,92,94-106,143-158,174-179,211
+skillshare/references/audit-review.md
+  s_64b68b5aba931b::t_3cdf9526331520 1-39
+skillshare/references/audit.md
+  s_64b68b5aba931b::t_cb436c12527f76 114-115,123
+skillshare/references/hooks.md
+  s_64b68b5aba931b::t_5b841073dc451e 7-9
+skillshare/references/install.md
+  s_64b68b5aba931b::t_5a8b05bf679d02 10-15,68-110,122-123,164,169,208,215-217,219-222,224
+skillshare/references/mcp.md
+  s_64b68b5aba931b::t_101b7af43747eb 27-28,68,87-91,126,132-133,145-146,190-191,195,235
+skillshare/references/plugins.md
+  s_64b68b5aba931b::t_4436d9dd825576 5,10-48,81-82,118-119,123-126,132-133,183-189,215-217,229,259-261,268-307
+skillshare/references/sync.md
+  s_64b68b5aba931b::t_55e2e452652090 39-56
+skillshare/references/targets.md
+  s_64b68b5aba931b::t_b53c76f9e6bf44 8-15,25,27-28,89-91,129,132-173,255-261
+skillshare/references/trash.md
+  s_64b68b5aba931b::t_d25356fb3f85eb 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c91676c897e88690b0f62272c57b183fa54ee301",
+  "prompts": {},
+  "sessions": {
+    "s_64b68b5aba931b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9b9b5143-9e8e-4307-9f57-8e16cd819e41",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
