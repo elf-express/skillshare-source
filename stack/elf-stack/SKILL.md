@@ -200,7 +200,7 @@ ELF.Studio、ELF.BasicApp 的過渡例外與收斂條件登記在 `references/ex
 
 `.nvmrc`
 ```
-24.18
+24.22.2
 ```
 
 `pnpm-workspace.yaml`（片段）
@@ -216,22 +216,28 @@ engineStrict: true
 {
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@<PNPM_VERSION>",
+  "packageManager": "pnpm@12.16.1",
   "engines": {
-    "node": ">=24.18"
+    "node": ">=24.22.2"
   }
 }
 ```
-> `<PNPM_VERSION>` 替換為完整版號（例如撰寫時本機的 `11.26.0`）；團隊確切版號「待確認」。
 
 `global.json`（放 repo 根目錄，讓 `server/`（含 `server/tests/`）、CI 全部解析到同一個 SDK）
 ```json
 {
   "sdk": {
-    "version": "10.0.100",
+    "version": "10.0.403",
     "rollForward": "latestFeature"
   }
 }
+```
+
+`rust-toolchain.toml`（Tauri repo）
+```toml
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
 ```
 
 ### 4.2 `server/Directory.Build.props`
@@ -256,16 +262,16 @@ engineStrict: true
   </PropertyGroup>
   <ItemGroup>
     <!-- Web -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <!-- Data -->
     <PackageVersion Include="SqlSugarCore" Version="5.1.4.221" />
     <!-- Tests -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
-    <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="coverlet.msbuild" Version="10.1.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
   </ItemGroup>
 </Project>
 ```
@@ -280,7 +286,7 @@ csproj 中只寫：
 ```yaml
 services:
   postgres:
-    image: postgres:18
+    image: postgres:18.6
 ```
 本機開發 compose 見 elf-postgresql（`docker/docker-compose.dev.yml`）；部署 compose 見 elf-cicd-docker（`docker/docker-compose.yml`）。兩者服務名都是 `postgres`，帳密都來自 `docker/.env`。
 
@@ -302,57 +308,65 @@ services:
 
 ## 5. 檢查清單
 
-- [ ] repo 根目錄有 `.nvmrc`（`24.18`）、`global.json`；`pnpm-workspace.yaml` 有 `engineStrict: true`；`.npmrc` 只有 registry / auth
-- [ ] 根 `package.json` 有 `engines.node` 與 `packageManager`（完整版號）
-- [ ] lockfile（`pnpm-lock.yaml` / `Cargo.lock`）已 commit
+- [ ] repo 根目錄有 `.nvmrc`（`24.22.2`）、`global.json`（`10.0.403`）；`pnpm-workspace.yaml` 有 `engineStrict: true`；`.npmrc` 只有 registry / auth
+- [ ] 根 `package.json` 有 `engines.node` 與 `packageManager`（完整版號 `pnpm@12.16.1`）
+- [ ] `pnpm-lock.yaml`／`Cargo.lock` 已 commit，CI 以鎖定模式安裝
 - [ ] `server/Directory.Packages.props` 存在且 `ManagePackageVersionsCentrally=true`
 - [ ] 所有 `.csproj` 的 `<PackageReference>` 都沒有 `Version=`
 - [ ] 所有 `.csproj` 沒有自己寫 `<TargetFramework>`（統一由 `Directory.Build.props` 提供）
-- [ ] docker image tag 為 `postgres:18`，不是 `latest`
+- [ ] docker image tag 為 `postgres:18.6`，不是 `latest`
 - [ ] CI 的 Node / .NET 版本來自 `.nvmrc` / `global.json`，不是寫死在 yml；`uses:` 皆為 3.5 對照表的 SHA＋版本註解
 - [ ] 測試專案用 `coverlet.msbuild`，沒有 `coverlet.collector`
 - [ ] 沒有任何 `corepack enable`
+- [ ] Tauri repo 有 `rust-toolchain.toml`
 - [ ] 新增的套件版本已先加到本表（或已在 PR 註明「待加入 elf-stack」）
-- [ ] lint／format 採 3.6 的完整 antfu 組合，或列明 repo 過渡例外、理由與收斂驗證；TS 未超過 typescript-eslint 支援上限
+- [ ] lint／format 採 3.6 的完整 antfu，或專案已登記在 `references/exceptions.md` 並寫明收斂條件；實際解析的 TypeScript 在 typescript-eslint 上限內
+- [ ] 既有專案：已登記在 `references/exceptions.md`，或回報已列出差距並建議開升級單或登記（§0、規則 1）
 
 ## 6. 升級政策
 
-1. **決策者**：「待確認」（建議：後端 / 前端 Tech Lead 各自負責其領域，跨領域如 Node / .NET 大版本由團隊會議決定）。
-2. **順序**：先開 PR 修改本 skill 的版本表（附升級理由、breaking changes 摘要、影響的 repo）→ 合併後各 repo 再各自開 PR 升級。
-3. **範圍**：
-   - patch：可由任一成員提出，更新本表後直接套用。
-   - minor：需 Tech Lead 核准。
-   - major（例如 .NET 10→11、PostgreSQL 18→19、Vite 6→7）：需團隊決議並安排遷移計畫。
+1. **決策者**：patch 可由任一成員提出，更新本表後直接套用；minor 由 Tech Lead（Eddie）核准；major（例如 .NET 10→11、Node 24→26、PostgreSQL 18→19、Vite 6→8、.NET 測試工具鏈）需團隊決議並附遷移計畫。各領域的決策者名單見第 8 節。
+2. **順序**：先開 PR 修改本 skill 的版本表（附升級理由、breaking changes 摘要、影響的 repo）→ 合併後各 repo 再各自開 PR 升級。不為了追上已經先升的 repo 去改本表。
+3. **批次**：3.7 的同批成員在同一張單一起升，不單獨升其中一個。
 4. **AI 行為**：AI 代理**只能在使用者明確要求時**升級；升級時必須同時更新本表（或提醒使用者更新本表）。
 5. **安全性修補**：有 CVE 時可先升級專案再補本表，但須在同一週內補齊。
+6. **Dependabot**（規則 11）：patch／minor PR 在本表改成同一 SHA／版本後才合併；major 關閉 PR 並轉成單；`dtolnay/rust-toolchain` 的日期與 SHA 人工核對。
 
 ## 7. 常見錯誤
 
 | 錯誤 | 正確 |
 |------|------|
 | csproj 寫 `<PackageReference Include="SqlSugarCore" Version="5.1.4.221" />` | 版本放 `Directory.Packages.props`，csproj 不帶 `Version` |
-| `packageManager: "pnpm@11"` | 寫完整版號 `pnpm@<PNPM_VERSION>`（如 `pnpm@11.26.0`），`pnpm/action-setup` 與 Docker 安裝都靠它 |
-| CI / Dockerfile 寫 `corepack enable` | CI 用 `pnpm/action-setup`；Docker 用 `npm install -g pnpm@${PNPM_VERSION}` |
+| `packageManager: "pnpm@12"` | 寫完整版號 `pnpm@12.16.1`，`pnpm/action-setup` 與 Docker 安裝都靠它 |
+| CI / Dockerfile 寫 `corepack enable` | CI 用 `pnpm/action-setup`；Docker 用 `npm install -g pnpm@${PNPM_VERSION}`（值為 `12.16.1`） |
 | 測試專案引用 `coverlet.collector`、用 `--collect:"XPlat Code Coverage"` | `coverlet.msbuild` ＋ `-p:CollectCoverage=true -p:Threshold=55 ...` |
 | CI 寫 `dotnet-version: '10.0.x'` 而 repo 沒有 `global.json` | 加 `global.json`，CI 用 `global-json-file` |
-| `image: postgres` 或 `postgres:latest` | `postgres:18` |
+| `image: postgres`、`postgres:latest` 或 `postgres:18` | `postgres:18.6` |
 | 只有 `engines`，沒有 `engineStrict: true` | 沒有 engine-strict 時 engines 只是警告（參考專案的 `.npmrc` 已註明此坑）；新專案寫在 `pnpm-workspace.yaml` |
+| 只升 Vite 沒升 plugin-vue、只升 Pinia 沒升 vue-router、.NET 測試套件只升一個 | 整批一起升（3.7） |
 | AI 看到新版就順手升級 | 只在使用者要求時升級，且先更新本表 |
+| 把「peer 範圍允許」回報成「已驗證」 | 寫明 lint／typecheck／測試／build／E2E 實際跑了哪幾項（規則 12） |
+| 新 repo 先開在 v1 值，「之後再升」 | 新 repo 用 v2（§0）；例外只給既有專案 |
+| 把舊專案落後本表當成違規，要求在這個 PR 整批升級 | 列成差距回報，不擋合併；升級另開單或登記例外（規則 1、§0） |
 
 ## 8. 待確認
 
-- pnpm 主版本：11.x 或 12；確切版號（`packageManager` 需要完整版號）。
-- .NET SDK feature band（`global.json` 的 `version` 最低值，目前暫定 `10.0.100` + `latestFeature`）。
+- 各領域（前端／後端／基礎設施）minor 的決策者名單。
+- PostgreSQL docker 的 OS 變體（`-bookworm` / `-alpine`）。
+- 3.5 各 action 的 major：各自開單，2026-10-29 沒有裁定。
+- TypeScript `^7.0.2`：由 Multica E-48（TypeScript 7 解除條件追蹤）追蹤，解除條件同 3.6。
+- Npgsql 10.0.3 顯式引用：由 Multica E-47（Npgsql 10.0.3 `timestamptz` 驗證）驗過才改表。
 - SqlSugarCore 確切 minor（參考專案 5.1.4.221）。
-- 是否顯式引用較新版 Npgsql（取代 SqlSugarCore 間接帶入的 5.0.18）。
-- PostgreSQL docker tag 是否釘到 minor（例如 `postgres:18.x`）或 OS 變體（`-bookworm` / `-alpine`）。
-- Rust 是否加 `rust-toolchain.toml` 釘選特定 stable 版本。
-- 版本升級的決策者名單。
-- ELF.Studio／ELF.BasicApp 的 3.6 過渡例外，須由各 repo 後續 PR 驗證才能解除；本表的 peer 查證不代替實跑。
+- `pnpm/action-setup` v4.4.0 能否讀 pnpm 12 的 `packageManager`、`engineStrict`，以及 Linear E-353（pnpm 安裝核准修正單）的 `allowBuilds`，都還沒實測。
+- 大版本的寫法遷移（Vite 8 config、Pinia 4、vue-router 5、xunit.runner 4、Test.Sdk 18、coverlet 10 與 3.3 的覆蓋率指令）還沒在團隊專案實跑，歸各領域 skill。
+- .NET 的 `packages.lock.json`（`RestorePackagesWithLockFile`、`dotnet restore --locked-mode`）還沒在團隊專案實跑，實跑後另開單。
+- ELF.Studio／ELF.BasicApp 的例外（`references/exceptions.md`）只能由各自產品的 PR 驗證後解除；本表的 peer 查證不代替實跑。
 
 ## 9. 禁止簡化
 
 - 不得把「最新穩定版」簡化成無條件跟 registry latest：TS 上限與 Node 型別必須一起核對相容性。
 - 不得把完整 antfu 目標簡化成只裝 format plugin，或省略非 JS 副檔名、repo 專屬規則與 CI 的遷移驗證。
 - 不得因表已更新而抹掉產品過渡例外；解除條件未驗證前保留理由與追蹤。
-- 不得把 `dev` 合併或 dry-run 成功當成已發版、已同步或 E-426 可結案的證據。
+- 不得把 `dev` 合併或 dry-run 成功當成已發版、已同步或任何單（含 Linear E-426）可結案的證據。
+- 不得把「新專案用 v2」簡化成「新專案先開在 v1 比較省事」，也不得簡化成「舊專案也要立刻對齊」。
+- 不得把「舊專案可緩步」簡化成「舊專案永遠不升」：每筆例外都寫明收斂條件或明寫 none yet。
