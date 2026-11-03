@@ -32,6 +32,7 @@ scripts/sync-agents.sh             install agents into Claude Code
 scripts/release-ff.{sh,ps1}        release: fast-forward dev → release → main (release auditor)
 scripts/release-cleanup.{sh,ps1}   post-release cleanup by issue number, run by the cleanup implementer
 scripts/elf-guard.*, elf-approval.cjs, make-hooks-yaml.cjs   superpowers phase Guard hooks and approval-credential builder (see docs/superpowers/guard.md)
+scripts/git-guard/                 git hook that blocks pushes to release / main / dev (see its README.md)
 docs/                              screenshots and docs/superpowers/ (Guard doc, state files) — not a skill
 ```
 
@@ -143,7 +144,25 @@ run there. CI has no `_superpowers/` checkout and reports 47 folders; that is ex
 That 47 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
 caveats below never apply there.
 
-It does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
+### Script tests (not run by CI)
+
+The hook and release scripts under `scripts/` have their own test suites. `validate.sh` and CI run none
+of them, so run the matching one yourself after touching a script:
+
+| Changed | Run |
+|---|---|
+| `elf-guard.cjs`, `elf-sessionstart.cjs`, `elf-approval.cjs` | `node scripts/elf-guard.test.cjs` |
+| `elf-search-guard.cjs` | `node scripts/elf-search-guard.test.cjs` |
+| `release-cleanup.{sh,ps1}` | `bash scripts/release-cleanup.test.sh` (`IMPL=sh` / `IMPL=ps1`, or case IDs such as `C01`, to narrow) |
+| `scripts/git-guard/` | `sh scripts/git-guard/tests/run.sh` |
+
+`elf-guard.hooks.yaml` and `elf-search-guard.hooks.yaml` embed the `.cjs` sources verbatim and are
+generated — never hand-edit them. After changing any embedded `.cjs`, run `node scripts/make-hooks-yaml.cjs`
+and commit both YAML files; `node scripts/make-hooks-yaml.cjs --check` exits 1 when they are out of sync.
+
+### What validation does not cover
+
+`validate.sh` does **not** check the 繁中 body sections, `metadata.version` / `owner`, the ≲400-line limit, the
 no-guessing rule, or anything under `agents/`. Those are on the author and on PR review. There is no
 per-skill runner: to check one skill, read it against the section list above, then run
 `skillshare sync --dry-run` to confirm its flattened name.
