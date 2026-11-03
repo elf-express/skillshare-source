@@ -1,0 +1,54 @@
+.metadata.json
+  h_77f3bffb3ce32a 13,16-18,20,22,32,43,56,62,65,78,88,92,100,203,206-208,210,212-213,216,218,220,223,225-227,231-235
+frontend/design/ui-ux-pro-max/SKILL.md
+  h_77f3bffb3ce32a 63-64,156
+frontend/design/ui-ux-pro-max/data/catalog-summary.json
+  h_77f3bffb3ce32a 3,23
+frontend/design/ui-ux-pro-max/data/products.csv
+  h_77f3bffb3ce32a 1-193
+frontend/design/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+  h_77f3bffb3ce32a 2-84
+frontend/design/ui-ux-pro-max/data/styles.csv
+  h_77f3bffb3ce32a 1-89
+frontend/design/ui-ux-pro-max/scripts/core.py
+  h_77f3bffb3ce32a 18-26,31,51,168,425-431,454-456,772-804,807,841-846,869-873,919
+frontend/design/ui-ux-pro-max/scripts/search.py
+  h_77f3bffb3ce32a 30,33-39,107-110,134-138,182-186,194-197
+frontend/design/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json
+  h_77f3bffb3ce32a 5
+frontend/design/ui-ux-pro-max/scripts/tests/test_rtl_support.py
+  h_77f3bffb3ce32a 1-165
+frontend/design/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py
+  h_77f3bffb3ce32a 27,119-132
+skillshare/SKILL.md
+  h_77f3bffb3ce32a 7,12,28-35,92,94-106,143-158,174-179,211
+skillshare/references/audit-review.md
+  h_77f3bffb3ce32a 1-39
+skillshare/references/audit.md
+  h_77f3bffb3ce32a 114-115,123
+skillshare/references/hooks.md
+  h_77f3bffb3ce32a 7-9
+skillshare/references/install.md
+  h_77f3bffb3ce32a 10-15,68-110,122-123,164,169,208,215-217,219-222,224
+skillshare/references/mcp.md
+  h_77f3bffb3ce32a 27-28,68,87-91,126,132-133,145-146,190-191,195,235
+skillshare/references/plugins.md
+  h_77f3bffb3ce32a 5,10-48,81-82,118-119,123-126,132-133,183-189,215-217,229,259-261,268-307
+skillshare/references/sync.md
+  h_77f3bffb3ce32a 39-56
+skillshare/references/targets.md
+  h_77f3bffb3ce32a 8-15,25,27-28,89-91,129,132-173,255-261
+skillshare/references/trash.md
+  h_77f3bffb3ce32a 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19df0191b7ffeec505933fc8ee7bb7b230a008c6",
+  "prompts": {},
+  "humans": {
+    "h_77f3bffb3ce32a": {
+      "author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
