@@ -74,6 +74,7 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
   - Multica：Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，或 Eddie 的 Multica 帳號 `a02b935e-1138-4e81-861f-377086a05478`；留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
 - 文字開頭符合「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」。
 - Eddie 本人（Linear 或 Multica 帳號）可以只寫「計畫已核准」或「計畫已核准 vN」（可帶句號），下一行可以接「執行方式：…」，除此之外不能有其他文字：核准日取留言的台北日期，審計員記 `Eddie`；沒寫版號時核准的是留言當下的最新版。Gatekeeper 等代理仍要寫完整格式。
+- Eddie 本人的留言中，若有一整行剛好是「決議：核准執行」（multica 輸入框的「決議」下拉送出的），也算核准，核准的是留言當下的最新版；「決議：再議討論」不算核准。
 - 留言依 `createdAt`（Multica 為 `created_at`）由舊到新判斷：「計畫已修改 vN」之後要有版號 ≥ N 的「計畫已核准 vN」才算；「核准撤回」之後要有新的核准留言才算。這兩種留言不限作者。
 
 Linear／Multica 讀不到、找不到有效留言或欄位不完整時，一律不建立憑證、不開工。

@@ -25,6 +25,8 @@ const REVOKED_RE = /^核准撤回/;
 const APPROVED_RE = /^計畫已核准(?: v(\d+))?（(\d{4}-\d{2}-\d{2})，審計員：([^）\n]+)）/;
 // Eddie 本人的簡寫核准：整則只有「計畫已核准」或「計畫已核准 vN」，可帶句號，可再接一行「執行方式：…」。
 const BARE_APPROVED_RE = /^計畫已核准(?: v(\d+))?[。.]?[ \t]*(?:\n執行方式：[^\n]+)?\s*$/;
+// multica 輸入框「決議」下拉送出的那一行，整行只能是這幾個字；核准的是留言當下的最新版。
+const DECISION_APPROVED_RE = /^決議：核准執行[ \t]*$/m;
 
 // 留言時間換成台北日期（UTC+8），當簡寫核准的核准日。
 function taipeiDate(createdAt) {
@@ -92,8 +94,13 @@ function findApproval(comments) {
       current = { ok: true, comment: c, auditor: approved[3].trim(), approvedAt: approved[2], version };
       continue;
     }
+    if (!HUMAN_APPROVER_IDS.includes(c.author.id)) continue;
+    if (DECISION_APPROVED_RE.test(body)) {
+      current = { ok: true, comment: c, auditor: 'Eddie', approvedAt: taipeiDate(c.createdAt), version: required };
+      continue;
+    }
     const bare = BARE_APPROVED_RE.exec(body);
-    if (!bare || !HUMAN_APPROVER_IDS.includes(c.author.id)) continue;
+    if (!bare) continue;
     // 沒寫版號的簡寫核准的是留言當下的最新版。
     const version = bare[1] ? Number(bare[1]) : required;
     if (version < required) continue;

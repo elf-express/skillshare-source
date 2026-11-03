@@ -560,6 +560,17 @@ const cases = [
     // 寫了舊版號的簡寫仍然不算。
     assert.strictEqual(approval.findApproval([mod, multicaComment('m3', '計畫已核准 v1', 3, EDDIE_MULTICA_ID)]).ok, false);
   }],
+  ['6.19 Eddie 的留言含一行「決議：核准執行」-> 核准當下最新版；只有 Eddie 算；「決議：再議討論」不算', () => {
+    const body = '看過了，照這版做。\n\n決議：核准執行\n執行：多代理執行';
+    const mod = multicaComment('m1', '計畫已修改 v3（加決議下拉）', 1, OTHER_ID);
+    const r = approval.findApproval([mod, multicaComment('m2', body, 2, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 3);
+    assert.strictEqual(r.auditor, 'Eddie');
+    assert.strictEqual(approval.findApproval([multicaComment('m2', body, 2, GATEKEEPER_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m2', '決議：再議討論', 2, EDDIE_MULTICA_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m2', '我還沒決議：核准執行', 2, EDDIE_MULTICA_ID)]).ok, false);
+  }],
   ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
     const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
     const target = write(repo, 'scripts', 'x.cjs');
