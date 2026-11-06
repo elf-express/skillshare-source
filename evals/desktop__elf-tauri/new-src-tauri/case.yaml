@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: new-src-tauri
+skills:
+  - desktop/elf-tauri
+  - stack/elf-stack
+expected_outcome: |
+  維持案例（RED 於 `E45_SHA` 全部 grader 通過）。
+  `tauri` `"2.12.5"`、`tauri-build` `"2.7.4"`、`@tauri-apps/cli` `"^2.12.4"`、`engines.node` `>=24.22.2`，並產出 `rust-toolchain.toml`，內容是三行：`[toolchain]`、`channel = "stable"`、`components = ["rustfmt", "clippy"]`（和 E-45 已核准的 elf-stack v2 §3.1／§4.1 一致：channel 依 N4-A，components 依套件）。

@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: new-app-package-json
+skills:
+  - frontend/elf-vue
+  - stack/elf-stack
+expected_outcome: |
+  `.nvmrc` `24.22.2`、`engines.node` `>=24.22.2`、`packageManager` `pnpm@12.16.1`、`vite ^8.3.5`、`@vitejs/plugin-vue ^6.0.10`、`pinia ^4.1.0`、`vue-router ^5.4.0`、`vue ^3.5.44`、`vitest` 與 `@vitest/coverage-v8` 都是精確 `5.0.5`（沿用 elf-vue 兩者同版、不加 `^` 的規定）、`typescript ^6.0.3`、`vue-tsc ^3.3.13`、`typescript-eslint ^8.72.0`。

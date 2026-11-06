@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: desktop-root-package-json
+skills:
+  - desktop/elf-tauri
+  - cicd/elf-cicd-desktop
+  - stack/elf-stack
+expected_outcome: |
+  維持案例（RED 於 `E45_SHA` 全部 grader 通過）。
+  `engines.node` 是 `>=24.22.2`；`@tauri-apps/cli` 是 `^2.12.4`；產出裡沒有 `24.18`、`"^2"`。
