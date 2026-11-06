@@ -80,7 +80,8 @@ fi
 # that is how ui-ux-pro-max became 1,925 files of oh-my-claudecode. Only the
 # entries listed here are meant to track a whole repo.
 WHOLE_REPO_ALLOWED=("_superpowers" "_openspec" "tools/code-review-skill")
-# Tracked checkouts with their own .git. tools/code-review-skill is committed, so it is not listed.
+# Tracked checkouts with their own .git; add a new one to both lists. tools/code-review-skill is committed,
+# so it is only in the list above.
 GITIGNORED_REPOS=("_superpowers" "_openspec")
 # Any shape it cannot read fails the check — a guard that passes on a parse
 # error is no guard.

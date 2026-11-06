@@ -114,7 +114,7 @@ skillshare-source/
 │   └── elf-linear-superpowers/    ★ Linear [Spec]/[Plan]/[維運] 單 × superpowers 生命週期（正本在 Linear）
 ├── tools/
 │   ├── elf-file-search/           ★ 找檔案：es、專案內 Glob／Grep／rg、禁止掃整顆磁碟
-│   └── agent-browser/  find-skills/  project-planner/  audit-website/  code-review-skill/   第三方工具
+│   └── agent-browser/  find-skills/  project-planner/  audit-website/   第三方工具；code-review-skill/ 是追蹤內容，不要手動改
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
@@ -206,6 +206,7 @@ skillshare-source/
 | `bash scripts/sync-agents.sh` | 把 `agents/` 複製到 Claude Code（改完 agent 後執行；`--dry-run` 預覽） |
 | `skillshare pull` | 從 GitHub 拉最新規範並同步 skills（agents 另跑 `sync-agents.sh`） |
 | `skillshare update _superpowers` | 更新 superpowers（首次安裝見上方第 2-1 步） |
+| `skillshare update tools/code-review-skill` | 更新 code-review-skill（Windows 要關 `core.autocrlf`，見 AGENTS.md 的 Gotchas） |
 | `skillshare update _openspec` | 更新 OpenSpec skill（首次安裝見上方第 2-2 步；被 audit 擋下時先讀 finding，確認是誤報才加 `--force`） |
 | `skillshare upgrade --cli` | 只升級 skillshare CLI。內建 skill（`skillshare/`）由團隊在開發分支用 PR 升級；不要在 source 目錄跑 `skillshare upgrade` 或 `--skill`，會改到團隊檔案 |
 | `skillshare audit` | 安全稽核（prompt injection、外洩） |

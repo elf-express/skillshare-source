@@ -117,8 +117,12 @@ with 1,925 files and 43 unrelated skills (E-249).
 the two `_` checkouts it is committed here, and all 50 of its files sync to every target, including the unrelated
 `.hive/`, `index*.html` and `README.md`. Do not delete them: the next update restores them. Its audit reports 2
 HIGH and 2 MEDIUM, none blocking (E-99): a sample password in a security guide and three statistical `tier-*`
-findings. Review through `requesting-code-review`; this skill is only a per-language reference
-(`workflow/elf-linear-superpowers`).
+findings. Review through the existing steps; this skill is only a per-language reference, read directly from
+`reference/<language>.md` without loading the skill (`workflow/elf-linear-superpowers`). Two things in the folder
+are not ours to follow. Its `allowed-tools` declares `Bash` and `WebFetch`, which skip permission prompts once the
+skill is loaded. `.hive/` is the agent protocol of upstream's own Hive workbench and tells agents not to use their
+own subagents. `.hive/memory.md` also reports misclassification bugs in `scripts/pr-analyzer.py`, so do not treat
+its output as evidence.
 
 `.metadata.json` can also hold `audit_accepted` — hashes of `skillshare audit` findings already reviewed
 and accepted. It currently holds `frontend/vue/shadcn-vue` and `_openspec`, so a finding in any other path is
@@ -331,7 +335,8 @@ A clone made before the rename still has a local `master`: `git branch -m master
 - On Windows, Git for Windows defaults to `core.autocrlf=true`. A committed install then records `file_hashes` for
   CRLF files, which no longer match the LF content that gets committed: 49 of 50 files in `tools/code-review-skill`
   (tested 2026-11-07, E-99). Prefix the install with
-  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=false`.
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=false`. Use the same prefix for
+  `skillshare update` on a committed entry (it clones the same way; not tested).
 - VS Code's C# Dev Kit would otherwise build a solution from `cicd/elf-cicd-backend/templates/*.csproj`
   and restore it: the restore fails (the template has no `TargetFramework` on purpose) and leaves an
   `obj/` that fails `validate.sh`. `.vscode/settings.json` turns that off; keep it.
