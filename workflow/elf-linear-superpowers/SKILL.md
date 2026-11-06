@@ -8,7 +8,7 @@ metadata:
 
 # Linear × superpowers 生命週期
 
-> **正本在 Linear。** 本 skill 是 Linear 團隊文件的執行摘要，兩邊衝突時以 Linear 文件為準，並提醒使用者更新本 skill。
+> **正本在 Linear。** 本 skill 是 Linear 團隊文件的執行摘要，兩邊衝突時以 Linear 文件為準，並提醒使用者更新本 skill。E-94 僅將「允許發版」授權留言移至多卡；工作單狀態、交接、取消、發版與清理證據仍依本流程記錄在 Linear。
 >
 > | 文件 | 內容 |
 > |---|---|
