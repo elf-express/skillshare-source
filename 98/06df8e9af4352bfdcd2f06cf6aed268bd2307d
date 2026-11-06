@@ -1,0 +1,27 @@
+AGENTS.md
+  s_7c35fba595e1ac::t_a8688410ff8fee 59,78-79,192,273,311-314
+README.md
+  s_7c35fba595e1ac::t_7c26ce518e4fd3 35,209
+workflow/elf-linear-superpowers/SKILL.md
+  s_7c35fba595e1ac::t_f9a0d47de335c5 315-316
+workflow/elf-linear-superpowers/references/openspec-coexistence.md
+  s_7c35fba595e1ac::t_c9cacd099ee5d7 31-34
+workflow/elf-team-rule/SKILL.md
+  s_7c35fba595e1ac::t_25262753308a27 267,269-270
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9806df8e9af4352bfdcd2f06cf6aed268bd2307d",
+  "prompts": {},
+  "sessions": {
+    "s_7c35fba595e1ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "31788858-88c4-41b4-a970-7212c9bd2bb2",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
