@@ -56,7 +56,7 @@ update and make `skillshare status` report drift.
 | Path | Upstream | Update with |
 |---|---|---|
 | `_superpowers/` | `obra/superpowers` | `skillshare update _superpowers` |
-| `_openspec/` | `Fission-AI/OpenSpec` | `skillshare update _openspec --force` |
+| `_openspec/` | `Fission-AI/OpenSpec` | `skillshare update _openspec` |
 | `frontend/design/ui-ux-pro-max/` | `nextlevelbuilder/ui-ux-pro-max-skill`, subdir `.claude/skills/ui-ux-pro-max` | `skillshare update frontend/design/ui-ux-pro-max` |
 | `frontend/vue/shadcn-vue/` | `noartem/skills`, subdir `skills/shadcn-vue` | `skillshare update frontend/vue/shadcn-vue` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
@@ -75,7 +75,8 @@ Installing it is blocked without `--force`: the install-time audit scans the who
 CRITICAL findings, none under `skills/`. All 51 were read and are false positives (`root:` / `override:`
 fields, lockfile `ignore:` lines, strings in upstream's injection and version-check tests). `--force` also
 records 46 finding hashes under `audit_accepted._openspec`, so the same findings stop blocking and new ones
-still block. Read any new CRITICAL finding before passing `--force` to an update.
+still block. When `skillshare update _openspec` is blocked, read the new finding first and add `--force` only
+if it is another false positive; `update --force` also discards local changes in `_openspec/`.
 
 This replaces the per-repo `openspec init` install in Linear E-373. Rules for using these skills next to
 superpowers: `workflow/elf-linear-superpowers/references/openspec-coexistence.md`.
@@ -188,7 +189,7 @@ Three caveats before you treat a red result as your own doing:
 - Its `find` excludes only `.git/`, `node_modules/` and `_openspec/bin`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
   `_superpowers/` and `_openspec/` checked out it reports 78 folders. That is validate's count (both included,
-with the 4 `_openspec/.agents/skills/` folders that never sync),
+  with the 4 `_openspec/.agents/skills/` folders that never sync),
   not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
   (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 72 actually sync.
   CI does not read `.skillignore.local`, so its count is unaffected.
@@ -269,7 +270,7 @@ A clone made before the rename still has a local `master`: `git branch -m master
 | Sync skills | `skillshare sync` |
 | Install agents into Claude Code | `bash scripts/sync-agents.sh` |
 | Update superpowers | `skillshare update _superpowers` |
-| Update OpenSpec skills | `skillshare update _openspec --force` |
+| Update OpenSpec skills | `skillshare update _openspec` |
 | Update ui-ux-pro-max | `skillshare update frontend/design/ui-ux-pro-max` |
 | Security audit | `skillshare audit` |
 | Pull + resync | `skillshare pull` |
@@ -307,6 +308,10 @@ A clone made before the rename still has a local `master`: `git branch -m master
   ```
   Check out `_superpowers/` and `_openspec/` in that worktree first (they are gitignored, so a fresh worktree
   lacks them): without them skillshare silently drops their entries from `.metadata.json`.
+- A new machine's `skillshare install ... --name _openspec --force` rewrites `audit_accepted._openspec` in
+  `.metadata.json` whenever upstream's findings differ from the committed list, leaving the `release` clone dirty.
+  `skillshare pull` then refuses and suggests `skillshare push`; do not push from the source clone. Run
+  `git restore .metadata.json` instead: pull, sync and update all still work (tested 2026-11-07, E-94).
 - After updating anything tracked, read `git diff --stat` before committing. A jump in file count means
   the entry pulled more than its skill — stop. `validate.sh` also fails on an entry without a `subdir`.
 - Uninstall a tracked path with `skillshare uninstall <path>`, not `--group <path>`: `--group` removes

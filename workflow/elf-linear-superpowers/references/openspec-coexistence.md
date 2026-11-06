@@ -28,3 +28,7 @@
 ## 使用者要求違反上面的規則時
 
 說明違反哪一條，改走規則指定的做法，並請使用者決定要不要在工作單上另開單改規則。對話裡的催促不算改規則。
+
+## 待確認
+
+1. `openspec-propose`、`openspec-new-change` 等會寫 `openspec/changes/` 的 skill，何時可以用。E-373 決定 2 要求 Plan 核准後才落地，本文件還沒寫。目前沒有 repo 導入 `openspec/`，規則 5 已擋住；第一個 repo 導入前要補。

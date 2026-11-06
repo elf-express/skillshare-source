@@ -32,6 +32,7 @@ skillshare install https://github.com/obra/superpowers.git --track --branch main
 #      一定要加 --name _openspec。--force 是因為安裝時的 audit 掃整個 repo 會誤報，說明見 AGENTS.md
 skillshare install https://github.com/Fission-AI/OpenSpec.git --track --branch main --name _openspec --force
 npm install -g @fission-ai/openspec@latest   # 這些 skill 要呼叫 openspec CLI
+git restore .metadata.json   # 上游 finding 有變動時，上面的安裝會改到這個檔；不還原，skillshare pull 會拒絕。不要照提示跑 skillshare push
 
 # 3. 加入你有在用的 AI 工具（例：codex、qwen、grok、trae）
 skillshare init --discover --select "codex,qwen"
@@ -205,7 +206,7 @@ skillshare-source/
 | `bash scripts/sync-agents.sh` | 把 `agents/` 複製到 Claude Code（改完 agent 後執行；`--dry-run` 預覽） |
 | `skillshare pull` | 從 GitHub 拉最新規範並同步 skills（agents 另跑 `sync-agents.sh`） |
 | `skillshare update _superpowers` | 更新 superpowers（首次安裝見上方第 2-1 步） |
-| `skillshare update _openspec --force` | 更新 OpenSpec skill（首次安裝見上方第 2-2 步；有新的 CRITICAL finding 要先看過） |
+| `skillshare update _openspec` | 更新 OpenSpec skill（首次安裝見上方第 2-2 步；被 audit 擋下時先讀 finding，確認是誤報才加 `--force`） |
 | `skillshare upgrade --cli` | 只升級 skillshare CLI。內建 skill（`skillshare/`）由團隊在開發分支用 PR 升級；不要在 source 目錄跑 `skillshare upgrade` 或 `--skill`，會改到團隊檔案 |
 | `skillshare audit` | 安全稽核（prompt injection、外洩） |
 | `skillshare ui` | 開網頁儀表板 `http://127.0.0.1:19420` |
