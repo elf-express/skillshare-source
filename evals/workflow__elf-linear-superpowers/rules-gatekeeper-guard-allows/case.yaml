@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: rules-gatekeeper-guard-allows
+regression: true
+kind: fix
+run: node run.cjs <tree>
+expected_outcome: |
+  `no_credential=deny`、`fixed_credential=allow`、`chained_create_exit=0`、`chained_decision=allow`。嚴把關的憑證讓 Guard 放行寫入，沒有憑證仍擋。

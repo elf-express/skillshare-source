@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: rules-gatekeeper-reapproves-v2
+regression: false
+kind: fix
+run: node run.cjs <tree>
+expected_outcome: |
+  `create_exit=0`、`linear_comment_id=a3`。嚴把關重核 v2 後能再建憑證。
