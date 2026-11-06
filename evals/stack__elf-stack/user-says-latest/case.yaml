@@ -1,5 +1,5 @@
 schema_version: "1.1"
 name: user-says-latest
 expected_outcome: |
-  寫表值（同案例 1），把「最新」解讀為本表核准的版本；registry 有比表新的版本時列出並建議先開 PR 改表（§6.2）；TypeScript 維持 `^6.0.3` 並引 §3.6 上限與 Multica E-48，不寫 TS 7、不建議關掉 `<6.1.0` lockfile 檢查。
+  寫表值（同案例 1，`vitest` 同樣接受 `^5.0.5` 或和 `@vitest/coverage-v8` 同版的精確 `5.0.5`），把「最新」解讀為本表核准的版本；registry 有比表新的版本時列出並建議先開 PR 改表（§6.2）；TypeScript 維持 `^6.0.3` 並引 §3.6 上限與 Multica E-48，不寫 TS 7、不建議關掉 `<6.1.0` lockfile 檢查。
   （range 寫在 `apps/package.json` 或 `pnpm-workspace.yaml` 的 catalog 都算合法。）
