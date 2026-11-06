@@ -1,0 +1,23 @@
+scripts/elf-guard.hooks.yaml
+  s_1274de72301322::t_4363e317af521d 29,32,34
+scripts/elf-guard.test.cjs
+  s_1274de72301322::t_f2ceb5e7982984 93-94,97-98,101,106,108,475,489,492-500,516,525,527,529,550-551,581,585-618,638,805-806
+scripts/elf-guard.cjs
+  s_1274de72301322::t_3f521e56fb6300 23,26,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dd4af9981d5078d77f073b127cace86413db3b79",
+  "prompts": {},
+  "sessions": {
+    "s_1274de72301322": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aab3eba71a75f3295",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
