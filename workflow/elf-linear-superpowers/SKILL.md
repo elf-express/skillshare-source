@@ -311,7 +311,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 
 1. 實作者：開 PR（base 為 `dev`），在 Plan 留收尾留言：選項、PR 連結、本單的 worktree 路徑、分支與最後一個提交（含 Orca 自動建立、沒用到的 `.ocrca/…` 目錄）。「Rulings I made」總表（步驟 5-1）也要已在 Plan 上，清理實作者執行前會確認（規則 36）。實作者只清理自己的暫存檔（不含 `.superpowers/sdd/`，它隨 worktree 由 `release-cleanup` 移除），不刪 worktree 與分支（規則 36）。
 2. 最終審計：全新 session、與本 Plan 群組的**每一位**實作者（含控制者與 subagent，規則 39）不同模型，審整個分支、PR、CI 與驗證證據；可與發版審計員是同一個 session 接續（規則 39）。步驟 5-1 的「最終審查」是實作者自己的 session 派出的 subagent，不算這裡的最終審計。為什麼：它與實作者同源，審不出實作者共有的盲點。
-3. Eddie 把 PR 合進 `dev`，並在 Linear 留下「允許發版」；沒有這則留言不發版（規則 39）。
+3. Eddie 把 PR 合進 `dev`，並在多卡留下「允許發版」；沒有這則留言不發版（規則 39）。
 4. 發版審計員（規則 39）：重讀 Linear 與 git 後核對並發版（快轉與派發由誰執行依規則 39；首次導入的過渡照規則 39「過渡：」），在 Plan 留發版證據，把群組內每一張 Plan 改為已完成（見上表「發版完成」列）。
 5. 清理實作者（規則 19）：全新 session、與發版審計員不同模型、在主 worktree 執行。先確認 Plan 群組每一張與 Spec 都已完成（只完成一部分就不開始）、目標已在 `origin/release`，重讀 Linear 與 git 的發版證據，跑 `release-cleanup --dry-run`（單號帶群組每一張 Plan；Spec 若有分支或 worktree 也帶；hotfix 或單一工作單帶該單，見規則 19），確認目標與理由都正確、相關的 Orca 工作區與終端都已關閉，再自己輸入 `yes` 正式執行：MUST NOT 預先管線輸入（例：`echo yes |`），要看過實跑清單與 dry-run 一致才輸入（這個提示的用途就是讓實跑清單能與 dry-run 比對，預先管線輸入會跳過這個比對）。Eddie 不需貼上或執行任何 shell 指令。在 Plan 留完整輸出與清理摘要（已刪、跳過、失敗各項）。不改 Plan 與 Spec 的狀態；失敗或被跳過的目標只保留並回報，不用 force、不手工刪除。
 
@@ -349,7 +349,7 @@ Plan 群組：收尾留言與清理清單列出全組每張 Plan 的 worktree �
 完整規則見《分支規範》。
 
 - 不在 `main`、`release` 上提交，不 force push；部署一律用 `release`。
-- 所有改動經開發分支進 `dev`，不直接在 `dev` 上開發；任何 AI 角色都不推 `dev`，只有兩個例外：發版審計員在「允許發版」後做規則 26 的 hotfix 合回，以及第 1、2 種只含上游提交、沒有衝突的規則 18 上游同步。「允許發版」只認 Eddie 自己在 Linear 的留言，AI 不代留（規則 39）。
+- 所有改動經開發分支進 `dev`，不直接在 `dev` 上開發；任何 AI 角色都不推 `dev`，只有兩個例外：發版審計員在「允許發版」後做規則 26 的 hotfix 合回，以及第 1、2 種只含上游提交、沒有衝突的規則 18 上游同步。「允許發版」只認 Eddie 自己在多卡工作單上的留言，AI 不代留（規則 39）。
 - 快轉 `release` 前，要發佈的提交上每個 check run 都必須通過；沒有 CI 時需 Eddie 明確同意例外。
 - 不繞過 git-guard（`--no-verify`、改 `core.hooksPath`、改 hook）；未經 Eddie 同意不使用 `ELF_ALLOW`。
 - 遇到衝突一律先回報使用者，不自行解決。

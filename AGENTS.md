@@ -245,7 +245,7 @@ git switch main    && git merge --ff-only origin/release && git push origin main
 `scripts/release-ff.sh` (Git Bash) and `scripts/release-ff.ps1` (Windows PowerShell 5.1 / PowerShell 7) run the
 same steps with the rule 24 and 28 checks (commit list, check runs on `origin/dev`) and ask for the first 8 characters
 of the SHA before each push; `--dry-run` / `-DryRun` only checks. The release auditor runs them, and only after
-Eddie leaves 「允許發版」 in Linear himself (an AI MUST NOT post it on his behalf). Transition, for the E-392/E-425 group only:
+Eddie leaves 「允許發版」 on the Multica ticket himself (an AI MUST NOT post it on his behalf). Transition, for the E-392/E-425 group only:
 in the release that ships these rules, Eddie runs the fast-forward and `skillshare sync`, and the auditor only checks and
 records evidence (elf-team-rule rule 39 transition clause). From the next release the release auditor runs the fast-forward
 and `skillshare sync`.
