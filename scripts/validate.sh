@@ -79,7 +79,7 @@ fi
 # A tracked entry without a subdir pulls its whole upstream repo on update —
 # that is how ui-ux-pro-max became 1,925 files of oh-my-claudecode. Only the
 # entries listed here are meant to track a whole repo.
-WHOLE_REPO_ALLOWED=("_superpowers")
+WHOLE_REPO_ALLOWED=("_superpowers" "_openspec")
 # Any shape it cannot read fails the check — a guard that passes on a parse
 # error is no guard.
 whole_repo=$("$PY" - "${WHOLE_REPO_ALLOWED[@]}" <<'EOF' 2>&1
@@ -104,17 +104,20 @@ else
 fi
 
 section ".gitignore enforcement"
-if git ls-files _superpowers/ 2>/dev/null | grep -q .; then
-  err "_superpowers/ has tracked files — must stay gitignored (it's a separate repo)"
-else
-  pass "_superpowers/ is properly gitignored"
-fi
+for tracked_repo in "${WHOLE_REPO_ALLOWED[@]}"; do
+  if git ls-files "$tracked_repo/" 2>/dev/null | grep -q .; then
+    err "$tracked_repo/ has tracked files — must stay gitignored (it's a separate repo)"
+  else
+    pass "$tracked_repo/ is properly gitignored"
+  fi
+done
 
 section "build output"
 # skillshare sync copies every file in a skill folder to every target, gitignored
 # or not, so a dotnet restore inside templates/ lands obj/ in each AI's skills.
+# _openspec/bin is the upstream CLI entry point, outside any skill folder, so it is never synced.
 mapfile -t build_dirs < <(
-  find . \( -path ./.git -o -path ./node_modules \) -prune -o \
+  find . \( -path ./.git -o -path ./node_modules -o -path ./_openspec/bin \) -prune -o \
     -type d \( -name bin -o -name obj \) -print | sort
 )
 if [ "${#build_dirs[@]}" -gt 0 ]; then

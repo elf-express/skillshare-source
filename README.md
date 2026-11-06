@@ -28,6 +28,12 @@ skillshare pull                    # 之後更新也是這一行，只會拿到 
 #      一定要加 --name _superpowers：不加會裝成 _obra-superpowers，skill 名稱和規範不符，還會改到團隊的 .gitignore／.metadata.json
 skillshare install https://github.com/obra/superpowers.git --track --branch main --name _superpowers
 
+# 2-2. 安裝 OpenSpec（規格 skill；一樣由 .gitignore 排除，每台電腦要自己裝）
+#      安裝時先讓 audit 正常執行；只有確認 finding 都是 AGENTS.md 已審查的誤報時才加 --force
+skillshare install https://github.com/Fission-AI/OpenSpec.git --track --branch main --name _openspec
+npm install -g @fission-ai/openspec@latest   # 這些 skill 要呼叫 openspec CLI
+git restore .metadata.json   # 上游 finding 有變動時，上面的安裝會改到這個檔；不還原，skillshare pull 會拒絕。不要照提示跑 skillshare push
+
 # 3. 加入你有在用的 AI 工具（例：codex、qwen、grok、trae）
 skillshare init --discover --select "codex,qwen"
 
@@ -112,6 +118,7 @@ skillshare-source/
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）
+├── _openspec/                       追蹤 repo：Fission-AI/OpenSpec（規格 skill）
 ├── scripts/elf-search-guard.*       擋從根目錄或整顆磁碟遞迴搜尋的 hook（說明見 docs/search-guard.md）
 ├── scripts/validate.sh              提交前檢查
 ├── scripts/elf-guard.*、elf-approval.cjs、make-hooks-yaml.cjs   superpowers 階段 Guard hooks 與核准憑證建立器（說明見 docs/superpowers/guard.md）
@@ -199,6 +206,7 @@ skillshare-source/
 | `bash scripts/sync-agents.sh` | 把 `agents/` 複製到 Claude Code（改完 agent 後執行；`--dry-run` 預覽） |
 | `skillshare pull` | 從 GitHub 拉最新規範並同步 skills（agents 另跑 `sync-agents.sh`） |
 | `skillshare update _superpowers` | 更新 superpowers（首次安裝見上方第 2-1 步） |
+| `skillshare update _openspec` | 更新 OpenSpec skill（首次安裝見上方第 2-2 步；被 audit 擋下時先讀 finding，確認是誤報才加 `--force`） |
 | `skillshare upgrade --cli` | 只升級 skillshare CLI。內建 skill（`skillshare/`）由團隊在開發分支用 PR 升級；不要在 source 目錄跑 `skillshare upgrade` 或 `--skill`，會改到團隊檔案 |
 | `skillshare audit` | 安全稽核（prompt injection、外洩） |
 | `skillshare ui` | 開網頁儀表板 `http://127.0.0.1:19420` |

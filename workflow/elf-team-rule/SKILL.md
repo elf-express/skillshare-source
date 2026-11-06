@@ -9,7 +9,7 @@ description: |
   建立／拆分一個 Task 很多的 Plan、發版後清理（刪分支、清理 worktree、release-cleanup）、
   或擔任／指派發版審計員時觸發。
 metadata:
-  version: 1.8.0
+  version: 1.9.0
   owner: Elf Express
 ---
 
@@ -184,7 +184,7 @@ metadata:
     - 從 `origin/release` 開出 `hotfix/e-<編號>-<英文短名>`（`git switch -c hotfix/e-<編號>-<短名> origin/release`），在上面修改、測試、推送。
     - 推送後 CI MUST 在該提交上執行：依 `elf-cicd-*`，CI 在 push `hotfix/**` 時就會觸發；repo 的 CI 還沒加 `hotfix/**` 觸發時，才對 `release` 開一個 **draft PR**（`gh pr create --draft --base release --head hotfix/e-<編號>-<短名>`，標題註明「僅觸發 CI，不要合併」），讓 `pull_request` 觸發的 CI 在該提交上執行。`release` 快轉後 GitHub 會自動把這個 PR 標成已合併；放棄發佈時關閉它。repo 沒有任何 workflow 時不用開。開了 draft PR 仍沒有任何 check run（例如 workflow 的 `pull_request` 只篩 `main`、`dev`）→ 視為 CI 不合規（規則 29）：回報並建議用 `chore/` 修正觸發條件；這次要發佈，比照「專案沒有 CI」需要使用者明確同意例外（規則 28）。
       為什麼：`release` 只能快轉到 CI 通過的提交（規則 28）；舊版 `elf-cicd-*` 的 CI 只在 push `dev`／`release` 與 `pull_request` 時觸發，hotfix 分支單純推送不會有任何 check run，draft PR 是給還沒更新 CI 的 repo 用的。
-    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後，才由規則 39 決定的執行者 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
+    - 發佈前 MUST 停下，給使用者看 `git log --oneline origin/release..origin/hotfix/<名>` 與該提交的 check runs（依規則 28 判斷），使用者同意（及 Eddie 在多卡的「允許發版」，規則 39）後，才由規則 39 決定的執行者 `git fetch origin && git switch release && git merge --ff-only origin/release && git merge --ff-only origin/hotfix/<名> && git push origin release`（先把本機 `release` 更新到最新，`release` 被別人動過時第二個快轉才會在本機失敗，而不是到 push 才被拒）。
     - 快轉失敗（開出 hotfix 後 `release` 又被更新）→ 依規則 13 停下回報；使用者同意後在 hotfix 分支上 `git merge --no-edit origin/release`、測試、`git push`，讓 CI 在新提交上執行，再依規則 28 重新判斷後發佈。
     為什麼：從 `dev` 發佈會連同未測完的內容一起出去；從 `origin/release` 開出，修正的基礎就是使用者正在用的版本，`release` 仍然只快轉。
 26. hotfix 發佈後 MUST 立刻把 `release` 合回 `dev`：先 `git fetch origin && git switch dev && git merge --ff-only origin/dev` 把本機 `dev` 更新到最新，並確認 `git log --oneline origin/dev..dev` 是空的（快轉失敗或有輸出，代表本機 `dev` 有沒推的提交，依規則 13 停下；使用者要保留那些提交時，改用 `git switch --detach origin/dev && git merge --no-edit origin/release && git push origin HEAD:dev`），再 `git merge --no-edit origin/release`，沒有衝突時由發版審計員在 Eddie「允許發版」後直接 `git push origin dev`（規則 9 的例外；AI 角色推 `dev` 只有這一種與規則 18 的上游同步，規則 39；repo 的 AGENTS.md 規定 AI 不推 `dev` 時，這一步由 Eddie 推送，見規則 39）；有衝突先 `git merge --abort`，依規則 13 停下回報，使用者同意後從 `origin/dev` 開出 `merge/conflict-<YYYYMMDD>` 處理、經 PR 合回 `dev`（依規則 18 用 merge commit）。第 3 種在 `release` 快轉後就可以把 `main` 從 `release` 快轉，不必等合回完成；第 1 種發佈後提醒使用者下游第 2 種可同步，修正也可依 `pr/` 流程送原作者；第 2 種只在自己的 repo 修，不回饋。hotfix 分支不由實作者刪除：該單已完成、發版證據齊全後，由清理實作者依規則 19 清理。
@@ -192,11 +192,11 @@ metadata:
     為什麼（由發版審計員推 `dev`）：合回是發版的一部分，授權來自同一則「允許發版」；其他 AI 角色推 `dev` 會繞過 PR 審查，所以規則 39 把這一步與規則 18 的上游同步以外的 `dev` 推送都禁止（E-391，Eddie 2026-10-25 決定；規則 18 的例外 2026-10-28 追加）。
 27. MUST NOT 在 `release`、`main` 上直接修改或提交，即使是緊急修正。使用者要求「直接改 release」時，依規則 13 說明違反規則 8、27，並引導改走規則 25。
 28. 快轉 `release`（來源是 `origin/dev` 或 `origin/hotfix/*`）前，MUST 查要發佈那個提交的 check runs，**每個 check 只看最新一次結果**（`check-runs?filter=latest&per_page=100`；規則 22 的 `filter=all` 只用在排查），步驟見 `references/04-release-ci-check.md` 第 0 節：
-    - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意（及 Eddie 在 Linear 的「允許發版」，規則 39）後快轉。
+    - **全部通過**：每個 check run 的 status 為 `completed`，conclusion 為 `success`、`neutral` 或 `skipped` → 列出提交與結果，使用者同意（及 Eddie 在多卡的「允許發版」，規則 39）後快轉。
     - **有失敗或執行中**：任何 conclusion 為 `failure`、`cancelled`、`timed_out`、`action_required`、`stale`，或 status 不是 `completed` → MUST NOT 發佈；失敗原因依規則 23 讀原文。`stale` 沒有可讀的 log，告訴使用者後重跑該 check（`gh run rerun`），再重新判斷。
     - **完全沒有 check runs**，先分兩種情況：
       - repo 有 `.github/workflows/`，但這個提交沒有觸發（例如 CI 沒有 `hotfix/**` 觸發、也沒開規則 25 的 draft PR）→ 先補上觸發方式、等 CI 跑完再判斷，MUST NOT 回報成「專案沒有 CI」；補了仍不觸發，依規則 25 當成 CI 不合規處理。
-      - repo 沒有任何 workflow（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**（及 Eddie 在 Linear 的「允許發版」，規則 39）才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
+      - repo 沒有任何 workflow（專案沒有 CI）→ MUST 停下，回報「發佈內容未經自動測試」，使用者**明確同意這次例外**（及 Eddie 在多卡的「允許發版」，規則 39）才快轉，並建議開 Linear 工作單依 `elf-cicd-*` 補上 CI。
 29. 發現 CI 不合規（以 `elf-cicd-*` 目前的規定為準，例如 push 觸發缺 `dev`、`release`、`hotfix/**`，或沒有彙總 job `ci`）時，MUST 回報並建議用 `chore/` 分支修正；MUST NOT 自行修改 CI 設定，也 MUST NOT 因此跳過規則 28 的檢查。
 
 **本機防護（git-guard）**
@@ -260,13 +260,14 @@ metadata:
 
 39. 本規則只適用於有 `release` 分支（已導入 dev／release，第 1–3 種）的 repo；沒有 `release` 分支（還沒導入 dev／release）的 repo 維持規則 10 的「merge → 已完成」，合進主線就等於發版。
     發版是獨立的一步，包括快轉 `release`（第 3 種接著把 `main` 快轉到 `release`），以及有派發步驟的 repo 跑派發（例：`skillshare sync`）。每次發版 MUST 由**發版審計員**負責；依規則 24 列出提交給使用者看時，一併確認發版審計員是誰。
-    - **發版審計員**：全新 session（不是任何實作者的 session；可由最終審計員的 session 接續，見下）、與本次任何實作者不同模型。「本次任何實作者」指為這個 Plan 群組寫過程式、commit，或控制、派工過的每個 session 與 subagent，含 subagent-driven 的控制者。Eddie 在 Linear 留下明確的「允許發版」之前 MUST NOT 發版。清理實作者的要求不變：與發版審計員不同模型。
+    - **發版審計員**：全新 session（不是任何實作者的 session；可由最終審計員的 session 接續，見下）、與本次任何實作者不同模型。「本次任何實作者」指為這個 Plan 群組寫過程式、commit，或控制、派工過的每個 session 與 subagent，含 subagent-driven 的控制者。Eddie 在多卡留下明確的「允許發版」之前 MUST NOT 發版。清理實作者的要求不變：與發版審計員不同模型。
     - **發版審計員的職責範圍**：推送只限快轉 `release`／`main` 與規則 26 的 hotfix 合回 `dev`；另外執行 `skillshare sync`（規則 40）（誰執行依下方 repo 規定與過渡）。任何 AI 角色 MUST NOT 推 `dev`，只有兩個例外：① 發版審計員在「允許發版」後執行規則 26 的 hotfix 合回（`git push origin dev`）；② 規則 18 的上游同步合併（第 1、2 種，只含上游提交、沒有衝突，任何 AI 角色都可以推）。清理實作者只跑 `release-cleanup`。為什麼：`dev` 只經 PR 進，AI 直接推會繞過審查；這兩個例外一個與發版同一則授權、一個只搬已審過的上游提交。
     - **發版前**：MUST 重讀 PR、候選 SHA、所有 required check（規則 28）、`release` 快轉條件與部署／sync 證據；MUST NOT 在發版階段修改程式或補實作。
     - **發版後**：MUST 依規則 10 的三個條件把 Plan 改為已完成並在 Plan 留證據。這一步適用於該次發版帶出去的每一張 Plan。Plan 群組（規則 17）要群組內每一張（例：E-391 的 E-392 與 E-425）都改為已完成，清理實作者才可開始清理（規則 19）。Spec 沒有自動關閉時，由發版審計員手動設定並留言（規則 17 的「狀態回寫」）。
-    - **與最終審計員的關係**：最終審計員與發版審計員是同一個審計角色，可以是同一個 session 接續：合併前審 PR；Eddie 合進 `dev` 並留下「允許發版」後，MUST 重新讀 Linear 與 git 核對發版條件，不沿用合併前的判斷。換 session 時，新 session 一樣 MUST 與實作者不同模型。
-    - **Eddie 保留三項決策**：Spec 定案、PR 合進 `dev`、Linear「允許發版」。AI MUST NOT 取代這三項授權。
-    - **「允許發版」只認 Linear 留言**：只有 Eddie 在 Linear 留下的「允許發版」留言算數；對話裡的口頭同意或催促（例：「應該沒問題，先推」）都不能取代，AI 也不能自行判斷「應該可以」。任何 AI 角色 MUST NOT 自己留下「允許發版」，使用者要求代為留言也一樣：只有 Eddie 自己寫的留言算數。為什麼：Linear 的作者欄分不出 Eddie 與用 Eddie 帳號留言的 AI（`docs/superpowers/guard.md` 的核准留言說明），讓 AI 代留就等於自己放行自己。這道關卡不適用規則 13 的「請使用者確認是否例外」：沒有該留言就停下，請 Eddie 到 Linear 留言。
+    - **與最終審計員的關係**：最終審計員與發版審計員是同一個審計角色，可以是同一個 session 接續：合併前審 PR；Eddie 合進 `dev` 並留下「允許發版」後，MUST 重新讀工作單與 git 核對發版條件，不沿用合併前的判斷。換 session 時，新 session 一樣 MUST 與實作者不同模型。
+    - **Eddie 保留三項決策**：Spec 定案、PR 合進 `dev`、多卡「允許發版」。AI MUST NOT 取代這三項授權。
+    - **「允許發版」只認多卡留言**：只有這次發版的多卡工作單上（Plan 群組為群組內任一張 Plan 或其 Spec），Eddie 本人帳號（`author_type` 為 `member`、`author_id` 為 `a02b935e-1138-4e81-861f-377086a05478`）留下的「允許發版」留言算數，用 `multica issue comment list <單號> --output json` 核對這兩個欄位；Gatekeeper 或其他 agent 的留言不算，Linear 上的留言也不算（2026-11-06 起團隊不再使用 Linear，E-94）。對話裡的口頭同意或催促（例：「應該沒問題，先推」）都不能取代，AI 也不能自行判斷「應該可以」。任何 AI 角色 MUST NOT 自己留下「允許發版」，使用者要求代為留言也一樣：只有 Eddie 自己寫的留言算數。為什麼：多卡 CLI 以登入者的帳號留言，作者欄分不出 Eddie 與用 Eddie 帳號留言的 AI，讓 AI 代留就等於自己放行自己；Gatekeeper 可以核准計畫，但上線是 Eddie 保留的決策，所以不算。這道關卡不適用規則 13 的「請使用者確認是否例外」：沒有該留言就停下，請 Eddie 到多卡留言。
+    - **工作單在多卡時**：本規範其他寫 Linear 的發版與清理步驟（重讀工作單、改狀態、留發版證據）都在多卡的工作單上做。
     - **發版角色不能以例外放行**：發版審計員不是實作者、與實作者不同模型、是全新 session 或最終審計員的 session，這些要求同樣不適用規則 13 的「請使用者確認是否例外」。使用者要求實作者（或與實作者同模型、同 session 的審計員）發版時，一律 MUST NOT 照做：停下，引用規則 39，指向發版審計員。
 
     快轉與實際派發由誰執行，依 repo 的規定：
@@ -395,7 +396,7 @@ origin/release ──開出──▶ hotfix/e-xx-name ──快轉──▶ rele
 - [ ] `release` 要快轉的提交 check runs 全部通過（或沒有 CI 而使用者已明確同意例外，規則 28）
 - [ ] `release` 指向的提交在 GitHub 上的 check runs 全綠（`references/04`）
 - [ ] hotfix 發佈後已把 `release` 合回 `dev`（規則 26）
-- [ ] 發版前 Eddie 已在 Linear 留下「允許發版」；發版審計員是全新 session（不是實作者的 session，可由最終審計員的 session 接續）、與實作者不同模型；發版審計員以外的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）；repo 的 AGENTS.md 規定 AI 不推時，快轉與派發由 Eddie 執行（規則 39）
+- [ ] 發版前 Eddie 已在多卡留下「允許發版」；發版審計員是全新 session（不是實作者的 session，可由最終審計員的 session 接續）、與實作者不同模型；發版審計員以外的 session 沒有為發版快轉 `release`（第 3 種含接著快轉 `main`）、沒有跑派發（規則 39 的測試例外不算派發）；repo 的 AGENTS.md 規定 AI 不推時，快轉與派發由 Eddie 執行（規則 39）
 - [ ] 沒有任何 AI 角色推 `dev`（規則 18 的上游同步、規則 26 由發版審計員執行的 hotfix 合回除外）；沒有 AI 代 Eddie 留「允許發版」（規則 39）
 - [ ] 發版後，發版審計員已把 Plan 群組內每一張都依規則 10 改為已完成並留證據，清理實作者才開始清理（規則 39、19）
 - [ ] 範圍寫「不發版」的單，已寫明由哪張單或誰負責發版（規則 39）
