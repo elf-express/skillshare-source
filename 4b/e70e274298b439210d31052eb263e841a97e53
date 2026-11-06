@@ -1,0 +1,129 @@
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/case.yaml
+  s_771dd5db09ac75::t_59c7a2cd8516dd 1-9
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/graders/01-global-json.md
+  s_771dd5db09ac75::t_c02ad20ae9d33e 1-7
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/graders/02-testcontainers-image.md
+  s_771dd5db09ac75::t_72c74904ae4543 1-7
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/graders/03-no-old-values.md
+  s_771dd5db09ac75::t_fc0a1c4d5ea90e 1-7
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/prompt.md
+  s_771dd5db09ac75::t_41809cee12627b 1-8
+evals/cicd__elf-cicd-docker/web-image-and-compose/case.yaml
+  s_771dd5db09ac75::t_d80417f1ae7349 1-10
+evals/cicd__elf-cicd-docker/web-image-and-compose/files/package.json
+  s_771dd5db09ac75::t_18a978697da6a9 1
+evals/cicd__elf-cicd-docker/web-image-and-compose/graders/01-node-image.md
+  s_771dd5db09ac75::t_38c1d3ca90e960 1-7
+evals/cicd__elf-cicd-docker/web-image-and-compose/graders/02-pnpm-version.md
+  s_771dd5db09ac75::t_6cd7e18fd010fb 1-7
+evals/cicd__elf-cicd-docker/web-image-and-compose/graders/03-postgres-image.md
+  s_771dd5db09ac75::t_6fc66a84d5fcc5 1-7
+evals/cicd__elf-cicd-docker/web-image-and-compose/graders/04-no-old-values.md
+  s_771dd5db09ac75::t_9dccd8452ff9f6 1-7
+evals/cicd__elf-cicd-docker/web-image-and-compose/place-files.sh
+  s_771dd5db09ac75::t_a62c059553870f 1-3
+evals/cicd__elf-cicd-docker/web-image-and-compose/prompt.md
+  s_771dd5db09ac75::t_8fbac6f5af49f2 1-9
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/case.yaml
+  s_771dd5db09ac75::t_2c1eb0adc13c49 1-11
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/files/.github/workflows/ci.yml
+  s_771dd5db09ac75::t_fa9d15471065fa 1-19
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/files/.nvmrc
+  s_771dd5db09ac75::t_74b164f0f9d4d5 1
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/files/package.json
+  s_771dd5db09ac75::t_73770568b6357a 1-12
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/graders/01-e2e-job.md
+  s_771dd5db09ac75::t_d6b398e530f8e9 1-7
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/graders/02-gap-list.md
+  s_771dd5db09ac75::t_d723183e75e2bb 1-7
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/graders/03-ticket-or-exception.md
+  s_771dd5db09ac75::t_faf9aad221cb24 1-7
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/graders/04-does-not-block.md
+  s_771dd5db09ac75::t_466c24fb2da030 1-7
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/graders/05-no-version-change.md
+  s_771dd5db09ac75::t_a996221858f345 1-31
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/place-files.sh
+  s_771dd5db09ac75::t_7601cec34dcbeb 1-3
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/prompt.md
+  s_771dd5db09ac75::t_57e7aaba2e4831 1-9
+evals/desktop__elf-tauri/new-src-tauri/case.yaml
+  s_771dd5db09ac75::t_27e8bbcc6e9480 1-8
+evals/desktop__elf-tauri/new-src-tauri/graders/01-cargo-versions.md
+  s_771dd5db09ac75::t_832654c8be8d6f 1-7
+evals/desktop__elf-tauri/new-src-tauri/graders/02-package-json.md
+  s_771dd5db09ac75::t_8b147e53f62216 1-7
+evals/desktop__elf-tauri/new-src-tauri/graders/03-toolchain-parses.md
+  s_771dd5db09ac75::t_3d07e9df7a23c8 1-11
+evals/desktop__elf-tauri/new-src-tauri/graders/04-rustup-active-toolchain.md
+  s_771dd5db09ac75::t_dc178d4209c4cb 1-11
+evals/desktop__elf-tauri/new-src-tauri/graders/05-no-old-values.md
+  s_771dd5db09ac75::t_9e2384c927abee 1-7
+evals/desktop__elf-tauri/new-src-tauri/prompt.md
+  s_771dd5db09ac75::t_3c7a62a6e236ad 1-8
+evals/frontend__elf-vue/new-app-package-json/case.yaml
+  s_771dd5db09ac75::t_19c58791fe8f0b 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/01-nvmrc.md
+  s_771dd5db09ac75::t_5fefdcb83ae3e8 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/02-engines-package-manager.md
+  s_771dd5db09ac75::t_0a6a0be57c7855 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/03-runtime-deps.md
+  s_771dd5db09ac75::t_bbe373f01d9bd1 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/04-vitest-exact.md
+  s_771dd5db09ac75::t_25bdcb8ab67541 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/05-typescript-toolchain.md
+  s_771dd5db09ac75::t_b88e56d4c8c283 1-7
+evals/frontend__elf-vue/new-app-package-json/graders/06-no-old-values.md
+  s_771dd5db09ac75::t_7365fb000ed1a6 1-7
+evals/frontend__elf-vue/new-app-package-json/prompt.md
+  s_771dd5db09ac75::t_4c5777e256b61a 1-8
+evals/cicd__elf-cicd-backend/global-json-and-testcontainers/evidence/red.md
+  s_771dd5db09ac75::t_d954d840a85a99 1-348
+evals/cicd__elf-cicd-docker/web-image-and-compose/evidence/red.md
+  s_771dd5db09ac75::t_86480de110dd8d 1-192
+evals/cicd__elf-cicd-frontend/existing-repo-no-bump/evidence/red.md
+  s_771dd5db09ac75::t_c447256294e6e5 1-321
+evals/cicd__elf-cicd-frontend/new-repo-root-files/case.yaml
+  s_771dd5db09ac75::t_d1eaad12a677a9 1-8
+evals/cicd__elf-cicd-frontend/new-repo-root-files/evidence/red.md
+  s_771dd5db09ac75::t_bbc301a4d73036 1-97
+evals/cicd__elf-cicd-frontend/new-repo-root-files/graders/01-nvmrc.md
+  s_771dd5db09ac75::t_88526bf2581ee0 1-7
+evals/cicd__elf-cicd-frontend/new-repo-root-files/graders/02-engines.md
+  s_771dd5db09ac75::t_8ce0085b925632 1-7
+evals/cicd__elf-cicd-frontend/new-repo-root-files/graders/03-no-old-node.md
+  s_771dd5db09ac75::t_7adef898b45c5f 1-7
+evals/cicd__elf-cicd-frontend/new-repo-root-files/prompt.md
+  s_771dd5db09ac75::t_4145882b62a914 1-8
+evals/desktop__elf-tauri/desktop-root-package-json/case.yaml
+  s_771dd5db09ac75::t_3206da6bed6f15 1-9
+evals/desktop__elf-tauri/desktop-root-package-json/evidence/red.md
+  s_771dd5db09ac75::t_93feeaf42c9830 1-95
+evals/desktop__elf-tauri/desktop-root-package-json/graders/01-engines.md
+  s_771dd5db09ac75::t_f5374a96404a54 1-7
+evals/desktop__elf-tauri/desktop-root-package-json/graders/02-tauri-cli.md
+  s_771dd5db09ac75::t_3c25045616fd33 1-7
+evals/desktop__elf-tauri/desktop-root-package-json/graders/03-no-old-values.md
+  s_771dd5db09ac75::t_0503730700d1c2 1-7
+evals/desktop__elf-tauri/desktop-root-package-json/prompt.md
+  s_771dd5db09ac75::t_507fb437398b71 1-8
+evals/desktop__elf-tauri/new-src-tauri/evidence/red.md
+  s_771dd5db09ac75::t_0559070e421ffb 1-162
+evals/frontend__elf-vue/new-app-package-json/evidence/red.md
+  s_771dd5db09ac75::t_1fac05d30333fc 1-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4be70e274298b439210d31052eb263e841a97e53",
+  "prompts": {},
+  "sessions": {
+    "s_771dd5db09ac75": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a67327ca31b8b2936",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
