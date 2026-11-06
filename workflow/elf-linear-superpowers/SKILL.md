@@ -2,7 +2,7 @@
 name: elf-linear-superpowers
 description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用；也用於發版後清理（刪分支、清理 worktree、release-cleanup）與擔任發版審計員。
 metadata:
-  version: 2.5.0
+  version: 2.6.0
   owner: Elf Express
 ---
 
@@ -47,6 +47,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | subagent-driven-development 收尾段在最終審查後用 `rm -rf <工作區>` 刪除工作區 | 不刪：`.superpowers/sdd/E-<Plan 編號>-plan/` 保留，隨 worktree 由清理實作者的 `release-cleanup` 移除（規則 36）；最終審查後只在 Plan 留言「Rulings I made」總表 | 發版前還可能回頭修正（步驟 6、PR 審查後），ledger 要留著；session 自己刪除沒有第二個角色核對（E-425，Eddie 2026-10-28 決定） |
 | 裁決（Ruling）記在 ledger，收尾時在對話回報 | 每個 Task 完成時把該 Task 的裁決原文留言到 Plan；最終審查後再留一則「Rulings I made」總表 | ledger 不進版控、會隨 worktree 由 `release-cleanup` 移除；session 中斷時 Linear 仍有紀錄 |
 | OpenSpec 的 `openspec-explore`、`openspec-apply-change` 寫著可用來釐清需求與實作 | 探索一律 brainstorming，執行一律 superpowers；這兩份 MUST NOT 取代它們，只用來讀既有規格與下一個 Task；repo 根目錄沒有 `openspec/` 就不走 OpenSpec。完整硬規則見 `references/openspec-coexistence.md` | `_openspec` 同步到每個工具，誤用不會報錯，只會跳過關卡與 TDD（E-373 決定 6、E-94） |
+| `code-review-skill` 寫著可用於 PR review、code review | 審查（4-2、5-1、步驟 7）一律照既有步驟：全新審查者、指定模型、結果留言；`tools__code-review-skill` MUST NOT 取代它們，用它自己審也不算審過。它只當審查者查各語言重點的參考：直接讀 `reference/<語言>.md`，MUST NOT 載入這個 skill。它和團隊規範衝突時以團隊規範為準；資料夾裡的 `.hive/` 是上游工具的 agent 協定，不是本團隊流程，一律不照做 | 描述範圍很廣，誤觸時會少掉全新審查者與留言，而且不會報錯；`allowed-tools` 宣告 `Bash`、`WebFetch`，載入後這兩個工具免確認；`.hive/PROTOCOL.md` 叫 agent 不要用自己的 subagent，與派全新審查者衝突（E-99） |
 
 另有幾項是團隊另加的限制，上游沒有規定、也不衝突：單一 Plan 的 Task 建議 3–5 個、超過 10 個必拆（elf-team-rule 規則 16）；工作量大時在同一個 Spec 底下增加 Plan（規則 17）；超出 Spec 的需求不裁決（見步驟 4）；並行的問題調查同時最多兩條線；計畫可以交給計畫撰寫隊友寫（見隊友表）；階段 Guard（E-377，Claude Code 的 hook）在核准失效（「計畫已修改 vN」或「核准撤回」使憑證被 `revoke`）或本機還沒有憑證時，擋檔案工具寫 repo 裡 `docs/superpowers/` 以外的檔案，靠步驟 2 的狀態檔與步驟 3 第 9 項的核准憑證運作（憑證由留下核准的審計員依 Linear 核准留言用建立器建立，實作者只 `verify`；Linear 留言是唯一正本、憑證只是快取），說明見 skillshare-source 的 `docs/superpowers/guard.md`。
 
