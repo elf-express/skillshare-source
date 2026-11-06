@@ -26,6 +26,7 @@ agents/*.md                        team agents (copied to ~/.claude/agents by sc
 skillshare/                        skillshare's built-in skill — tracked (see below)
 frontend/design/ui-ux-pro-max/     tracked third-party skill, installed from an upstream subdir
 _superpowers/                      tracked repo obra/superpowers (own .git, gitignored)
+_openspec/                         tracked repo Fission-AI/OpenSpec (own .git, gitignored)
 scripts/elf-search-guard.*         Claude Code hook: block recursive searches of / or a whole drive (see docs/search-guard.md)
 scripts/validate.sh                run before every commit
 scripts/sync-agents.sh             install agents into Claude Code
@@ -48,13 +49,14 @@ Agent `skills:` lists use the flattened name.
 
 ## Tracked content — do not hand-edit
 
-Four paths are **not ours**: skillshare pulls them from upstream and records their commit plus
+Five paths are **not ours**: skillshare pulls them from upstream and records their commit plus
 per-file hashes in `.metadata.json` (`entries`). Local edits there are silently undone on the next
 update and make `skillshare status` report drift.
 
 | Path | Upstream | Update with |
 |---|---|---|
 | `_superpowers/` | `obra/superpowers` | `skillshare update _superpowers` |
+| `_openspec/` | `Fission-AI/OpenSpec` | `skillshare update _openspec --force` |
 | `frontend/design/ui-ux-pro-max/` | `nextlevelbuilder/ui-ux-pro-max-skill`, subdir `.claude/skills/ui-ux-pro-max` | `skillshare update frontend/design/ui-ux-pro-max` |
 | `frontend/vue/shadcn-vue/` | `noartem/skills`, subdir `skills/shadcn-vue` | `skillshare update frontend/vue/shadcn-vue` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
@@ -64,7 +66,19 @@ models, and skills and models move together, so we do not pin a tag (E-369, deci
 `skillshare install --branch <tag>` exists but is not used). Whenever `_superpowers` is updated,
 read upstream `RELEASE-NOTES.md`; if a behavior changed, open a Linear ticket to bring
 `workflow/elf-linear-superpowers` and the Linear templates in line.
-OpenSpec, once adopted, follows the same rule (E-373).
+
+`_openspec` follows the same rule and also tracks `main` (E-94, decided 2026-11-06). Read upstream
+`CHANGELOG.md` before updating it. Only `skills/` reaches the targets: 12 `_openspec__skills__openspec-*`
+skills. skillshare does not discover upstream's own `.agents/skills/`.
+
+Installing it is blocked without `--force`: the install-time audit scans the whole repo and reports 51
+CRITICAL findings, none under `skills/`. All 51 were read and are false positives (`root:` / `override:`
+fields, lockfile `ignore:` lines, strings in upstream's injection and version-check tests). `--force` also
+records 46 finding hashes under `audit_accepted._openspec`, so the same findings stop blocking and new ones
+still block. Read any new CRITICAL finding before passing `--force` to an update.
+
+This replaces the per-repo `openspec init` install in Linear E-373. Rules for using these skills next to
+superpowers: `workflow/elf-linear-superpowers/references/openspec-coexistence.md`.
 
 `frontend/vue/shadcn-vue/` was a hand copy of `noartem/skills@249519a` from 2026-05 until E-253 reinstalled
 it as a tracked subdir. Other third-party folders may still be hand copies — check `.metadata.json`
@@ -91,15 +105,15 @@ the skills describe — reference it by name, put the evidence in `references/`,
 (`.skillignore` does not apply to it). A copy left on disk here keeps `validate.sh` red — keep the
 working clone outside this repo.
 
-Only `_superpowers` tracks a whole repo. Everything else is installed from the skill's own subdirectory
+Only `_superpowers` and `_openspec` track a whole repo. Everything else is installed from the skill's own subdirectory
 (`entries.<path>.subdir`), so an update can never pull more than that one folder. `validate.sh` fails
 on an entry with no `subdir` that is not in its `WHOLE_REPO_ALLOWED` list. `ui-ux-pro-max` was recorded
 as the whole `Yeachan-Heo/oh-my-claudecode` repo from the start; the 2026-10-01 update then replaced it
 with 1,925 files and 43 unrelated skills (E-249).
 
 `.metadata.json` can also hold `audit_accepted` — hashes of `skillshare audit` findings already reviewed
-and accepted. It is currently absent (its only entries belonged to the removed oh-my-claudecode bundle), so
-any finding is genuinely new.
+and accepted. It currently holds `frontend/vue/shadcn-vue` and `_openspec`, so a finding in any other path is
+genuinely new.
 
 ## Writing or editing a team skill
 
@@ -129,8 +143,9 @@ included:
 - no folder name contains `__`
 - `.metadata.json` parses as JSON
 - every `.metadata.json` entry has a `subdir` or is in `WHOLE_REPO_ALLOWED`
-- `_superpowers/` has no tracked files (a gitignored repo must never get committed)
-- no `bin/` or `obj/` directory exists anywhere in the tree. `.gitignore` keeps them out of commits,
+- `_superpowers/` and `_openspec/` have no tracked files (a gitignored repo must never get committed)
+- no `bin/` or `obj/` directory exists anywhere in the tree, except `_openspec/bin` (upstream's CLI entry
+  point, outside any skill folder). `.gitignore` keeps them out of commits,
   but `skillshare sync` copies a skill folder whole, so a `dotnet restore` run inside a `templates/`
   folder would ship `obj/` to every target
 - `skillshare sync --dry-run` and `skillshare audit --yes --no-tui --quiet` both succeed
@@ -140,7 +155,7 @@ CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev
 `hotfix/**` and on every PR, so the commit a release fast-forwards to has a check run (elf-team-rule
 rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
 read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
-run there. CI has no `_superpowers/` checkout and reports 47 folders; that is expected.
+run there. CI has no `_superpowers/` or `_openspec/` checkout and reports 47 folders; that is expected.
 That 47 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
 caveats below never apply there.
 
@@ -170,11 +185,12 @@ per-skill runner: to check one skill, read it against the section list above, th
 
 Three caveats before you treat a red result as your own doing:
 
-- Its `find` excludes only `.git/` and `node_modules/`, so any extra copy of the tree that lands in the
+- Its `find` excludes only `.git/`, `node_modules/` and `_openspec/bin`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
-  `_superpowers/` checked out it reports 62 folders. That is validate's count (`_superpowers/` included),
+  `_superpowers/` and `_openspec/` checked out it reports 78 folders. That is validate's count (both included,
+with the 4 `_openspec/.agents/skills/` folders that never sync),
   not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
-  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 60 actually sync.
+  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 72 actually sync.
   CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,
@@ -253,6 +269,7 @@ A clone made before the rename still has a local `master`: `git branch -m master
 | Sync skills | `skillshare sync` |
 | Install agents into Claude Code | `bash scripts/sync-agents.sh` |
 | Update superpowers | `skillshare update _superpowers` |
+| Update OpenSpec skills | `skillshare update _openspec --force` |
 | Update ui-ux-pro-max | `skillshare update frontend/design/ui-ux-pro-max` |
 | Security audit | `skillshare audit` |
 | Pull + resync | `skillshare pull` |
@@ -288,8 +305,8 @@ A clone made before the rename still has a local `master`: `git branch -m master
   printf 'sources:\n  skills: %s\nmode: merge\ntargets: {}\n' "$PWD" > $WT_CFG/skillshare/config.yaml
   XDG_CONFIG_HOME=$WT_CFG skillshare uninstall <path> --dry-run
   ```
-  Check out `_superpowers/` in that worktree first (it is gitignored, so a fresh worktree lacks it):
-  without it skillshare silently drops the `_superpowers` entry from `.metadata.json`.
+  Check out `_superpowers/` and `_openspec/` in that worktree first (they are gitignored, so a fresh worktree
+  lacks them): without them skillshare silently drops their entries from `.metadata.json`.
 - After updating anything tracked, read `git diff --stat` before committing. A jump in file count means
   the entry pulled more than its skill — stop. `validate.sh` also fails on an entry without a `subdir`.
 - Uninstall a tracked path with `skillshare uninstall <path>`, not `--group <path>`: `--group` removes
