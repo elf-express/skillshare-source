@@ -1,0 +1,19 @@
+.multica/e48-spec-review.md
+  s_49c071b898c5dd::t_58103e047dd47d 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "99e8bb63ee2ba5ef6e80d89e890028b99b59ef49",
+  "prompts": {},
+  "sessions": {
+    "s_49c071b898c5dd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1af81-1b14-70a1-8ac2-1c3d3c74911f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
