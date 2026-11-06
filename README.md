@@ -114,7 +114,7 @@ skillshare-source/
 │   └── elf-linear-superpowers/    ★ Linear [Spec]/[Plan]/[維運] 單 × superpowers 生命週期（正本在 Linear）
 ├── tools/
 │   ├── elf-file-search/           ★ 找檔案：es、專案內 Glob／Grep／rg、禁止掃整顆磁碟
-│   └── agent-browser/  find-skills/  project-planner/  audit-website/   第三方工具
+│   └── agent-browser/  find-skills/  project-planner/  audit-website/  code-review-skill/   第三方工具
 ├── agents/                        ★ 團隊 AI 助手（見下方與 agents/README.md）
 ├── skillshare/                      skillshare 內建 skill（由 `skillshare upgrade --skill` 更新）
 ├── _superpowers/                    追蹤 repo：obra/superpowers（開發流程 skill）

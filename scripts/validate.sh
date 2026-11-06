@@ -79,7 +79,9 @@ fi
 # A tracked entry without a subdir pulls its whole upstream repo on update —
 # that is how ui-ux-pro-max became 1,925 files of oh-my-claudecode. Only the
 # entries listed here are meant to track a whole repo.
-WHOLE_REPO_ALLOWED=("_superpowers" "_openspec")
+WHOLE_REPO_ALLOWED=("_superpowers" "_openspec" "tools/code-review-skill")
+# Tracked checkouts with their own .git. tools/code-review-skill is committed, so it is not listed.
+GITIGNORED_REPOS=("_superpowers" "_openspec")
 # Any shape it cannot read fails the check — a guard that passes on a parse
 # error is no guard.
 whole_repo=$("$PY" - "${WHOLE_REPO_ALLOWED[@]}" <<'EOF' 2>&1
@@ -104,7 +106,7 @@ else
 fi
 
 section ".gitignore enforcement"
-for tracked_repo in "${WHOLE_REPO_ALLOWED[@]}"; do
+for tracked_repo in "${GITIGNORED_REPOS[@]}"; do
   if git ls-files "$tracked_repo/" 2>/dev/null | grep -q .; then
     err "$tracked_repo/ has tracked files — must stay gitignored (it's a separate repo)"
   else

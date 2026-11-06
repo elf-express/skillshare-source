@@ -49,7 +49,7 @@ Agent `skills:` lists use the flattened name.
 
 ## Tracked content — do not hand-edit
 
-Five paths are **not ours**: skillshare pulls them from upstream and records their commit plus
+Six paths are **not ours**: skillshare pulls them from upstream and records their commit plus
 per-file hashes in `.metadata.json` (`entries`). Local edits there are silently undone on the next
 update and make `skillshare status` report drift.
 
@@ -57,6 +57,7 @@ update and make `skillshare status` report drift.
 |---|---|---|
 | `_superpowers/` | `obra/superpowers` | `skillshare update _superpowers` |
 | `_openspec/` | `Fission-AI/OpenSpec` | `skillshare update _openspec` |
+| `tools/code-review-skill/` | `awesome-skills/code-review-skill` (repo root) | `skillshare update tools/code-review-skill` |
 | `frontend/design/ui-ux-pro-max/` | `nextlevelbuilder/ui-ux-pro-max-skill`, subdir `.claude/skills/ui-ux-pro-max` | `skillshare update frontend/design/ui-ux-pro-max` |
 | `frontend/vue/shadcn-vue/` | `noartem/skills`, subdir `skills/shadcn-vue` | `skillshare update frontend/vue/shadcn-vue` |
 | `skillshare/` | `runkids/skillshare`, subdir `skills/skillshare` | `skillshare upgrade --skill` |
@@ -106,11 +107,18 @@ the skills describe — reference it by name, put the evidence in `references/`,
 (`.skillignore` does not apply to it). A copy left on disk here keeps `validate.sh` red — keep the
 working clone outside this repo.
 
-Only `_superpowers` and `_openspec` track a whole repo. Everything else is installed from the skill's own subdirectory
+Only `_superpowers`, `_openspec` and `tools/code-review-skill` track a whole repo. Everything else is installed from the skill's own subdirectory
 (`entries.<path>.subdir`), so an update can never pull more than that one folder. `validate.sh` fails
 on an entry with no `subdir` that is not in its `WHOLE_REPO_ALLOWED` list. `ui-ux-pro-max` was recorded
 as the whole `Yeachan-Heo/oh-my-claudecode` repo from the start; the 2026-10-01 update then replaced it
 with 1,925 files and 43 unrelated skills (E-249).
+
+`tools/code-review-skill` has no subdirectory to install from, because upstream's repo root is the skill. Unlike
+the two `_` checkouts it is committed here, and all 50 of its files sync to every target, including the unrelated
+`.hive/`, `index*.html` and `README.md`. Do not delete them: the next update restores them. Its audit reports 2
+HIGH and 2 MEDIUM, none blocking (E-99): a sample password in a security guide and three statistical `tier-*`
+findings. Review through `requesting-code-review`; this skill is only a per-language reference
+(`workflow/elf-linear-superpowers`).
 
 `.metadata.json` can also hold `audit_accepted` — hashes of `skillshare audit` findings already reviewed
 and accepted. It currently holds `frontend/vue/shadcn-vue` and `_openspec`, so a finding in any other path is
@@ -156,8 +164,8 @@ CI (`.github/workflows/validate.yml`) runs the same script on every push to `dev
 `hotfix/**` and on every PR, so the commit a release fast-forwards to has a check run (elf-team-rule
 rule 28). It installs skillshare at `SKILLSHARE_VERSION` (keep it at the team's version; the checksum is
 read from that release's `checksums.txt`) and points it at the checkout, so the sync/audit checks really
-run there. CI has no `_superpowers/` or `_openspec/` checkout and reports 47 folders; that is expected.
-That 47 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
+run there. CI has no `_superpowers/` or `_openspec/` checkout and reports 48 folders; that is expected.
+That 48 is validate's count as well. CI has no `.skillignore.local`, so the per-machine exclusions in the
 caveats below never apply there.
 
 ### Script tests (not run by CI)
@@ -188,10 +196,10 @@ Three caveats before you treat a red result as your own doing:
 
 - Its `find` excludes only `.git/`, `node_modules/` and `_openspec/bin`, so any extra copy of the tree that lands in the
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
-  `_superpowers/` and `_openspec/` checked out it reports 78 folders. That is validate's count (both included,
+  `_superpowers/` and `_openspec/` checked out it reports 79 folders. That is validate's count (both included,
   with the 4 `_openspec/.agents/skills/` folders that never sync),
   not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
-  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 72 actually sync.
+  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 73 actually sync.
   CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,
@@ -271,6 +279,7 @@ A clone made before the rename still has a local `master`: `git branch -m master
 | Install agents into Claude Code | `bash scripts/sync-agents.sh` |
 | Update superpowers | `skillshare update _superpowers` |
 | Update OpenSpec skills | `skillshare update _openspec` |
+| Update code-review-skill | `skillshare update tools/code-review-skill` |
 | Update ui-ux-pro-max | `skillshare update frontend/design/ui-ux-pro-max` |
 | Security audit | `skillshare audit` |
 | Pull + resync | `skillshare pull` |
@@ -319,6 +328,10 @@ A clone made before the rename still has a local `master`: `git branch -m master
 - Line endings: LF everywhere (`.gitattributes` has `* text=auto eol=lf`, E-354). A clone checked out
   before that still has CRLF files on disk (`git ls-files --eol | grep w/crlf`); with a clean tree,
   delete them and `git checkout --` them again to get LF.
+- On Windows, Git for Windows defaults to `core.autocrlf=true`. A committed install then records `file_hashes` for
+  CRLF files, which no longer match the LF content that gets committed: 49 of 50 files in `tools/code-review-skill`
+  (tested 2026-11-07, E-99). Prefix the install with
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=false`.
 - VS Code's C# Dev Kit would otherwise build a solution from `cicd/elf-cicd-backend/templates/*.csproj`
   and restore it: the restore fails (the template has no `TargetFramework` on purpose) and leaves an
   `obj/` that fails `validate.sh`. `.vscode/settings.json` turns that off; keep it.
