@@ -1,0 +1,27 @@
+evals/stack__elf-stack/new-backend-skeleton/evidence/green.md
+  s_1bb2a3470218a1::t_ed1b43dcf1f63b 1-104
+evals/stack__elf-stack/new-frontend-skeleton/evidence/green.md
+  s_1bb2a3470218a1::t_20d75ef1c42f2b 1-159
+evals/stack__elf-stack/old-project-review-gap/evidence/green.md
+  s_1bb2a3470218a1::t_9cfdc2f89e742c 1-80
+evals/stack__elf-stack/registered-exception-studio/evidence/green.md
+  s_1bb2a3470218a1::t_37829da5d8ca5b 1-70
+evals/stack__elf-stack/user-says-latest/evidence/green.md
+  s_1bb2a3470218a1::t_6368872f9240a7 1-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dc8fff9b8ada13f0aed4d4395f9436c859fcb342",
+  "prompts": {},
+  "sessions": {
+    "s_1bb2a3470218a1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f000b9d5-701a-40ae-8ddf-6b2f94e52b45",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
