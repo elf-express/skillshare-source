@@ -1,0 +1,25 @@
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/evidence/green.md
+  s_c7e9a1f437db55::t_921057a4ca8d49 1-16
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/evidence/green.md
+  s_c7e9a1f437db55::t_7ec131906c0382 1-22
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/evidence/green.md
+  s_c7e9a1f437db55::t_a751588f672abf 1-17
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/evidence/green.md
+  s_c7e9a1f437db55::t_62ea303dda01f3 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "297b37402383fc5e2b31bafdc8314d64d496a747",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9a1f437db55": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d258654-74df-4bd5-88d7-061c394d3381",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
