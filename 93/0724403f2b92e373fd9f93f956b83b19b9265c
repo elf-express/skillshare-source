@@ -1,0 +1,57 @@
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/case.yaml
+  s_36abca1c24411a::t_a58fd46646e7aa 1-7
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/evidence/red.md
+  s_36abca1c24411a::t_59b02cb5394e5e 1-17
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/fixture.json
+  s_36abca1c24411a::t_52f7eda074b700 1-14
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/prompt.md
+  s_36abca1c24411a::t_28414032d37981 1
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/run.cjs
+  s_36abca1c24411a::t_3f4a47b391789b 1-52
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/case.yaml
+  s_36abca1c24411a::t_fc53606b608762 1-7
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/evidence/red.md
+  s_36abca1c24411a::t_ef77318376fd43 1-18
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/fixture.json
+  s_36abca1c24411a::t_ebadc6e68a7b69 1-14
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/prompt.md
+  s_36abca1c24411a::t_e819d74e8a738f 1
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-approves/run.cjs
+  s_36abca1c24411a::t_43ee94beb94ff8 1-49
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/case.yaml
+  s_36abca1c24411a::t_a06016744d2118 1-7
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/credential.yaml
+  s_36abca1c24411a::t_a4d9e974863969 1-9
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/evidence/red.md
+  s_36abca1c24411a::t_9cd7b15b057809 1-18
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/prompt.md
+  s_36abca1c24411a::t_967a2e2ffcb4d4 1
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-guard-allows/run.cjs
+  s_36abca1c24411a::t_d5e9b2da958d67 1-65
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/case.yaml
+  s_36abca1c24411a::t_64d6b22d12b1c8 1-7
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/evidence/red.md
+  s_36abca1c24411a::t_b03cc489c43d62 1-17
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/fixture.json
+  s_36abca1c24411a::t_966d788f399724 1-28
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/prompt.md
+  s_36abca1c24411a::t_2b961cf95361bd 1
+evals/workflow__elf-linear-superpowers/rules-gatekeeper-reapproves-v2/run.cjs
+  s_36abca1c24411a::t_c7acfa0d12fd92 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "930724403f2b92e373fd9f93f956b83b19b9265c",
+  "prompts": {},
+  "sessions": {
+    "s_36abca1c24411a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a108616c69f47c857",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
