@@ -29,8 +29,8 @@ skillshare pull                    # 之後更新也是這一行，只會拿到 
 skillshare install https://github.com/obra/superpowers.git --track --branch main --name _superpowers
 
 # 2-2. 安裝 OpenSpec（規格 skill；一樣由 .gitignore 排除，每台電腦要自己裝）
-#      一定要加 --name _openspec。--force 是因為安裝時的 audit 掃整個 repo 會誤報，說明見 AGENTS.md
-skillshare install https://github.com/Fission-AI/OpenSpec.git --track --branch main --name _openspec --force
+#      安裝時先讓 audit 正常執行；只有確認 finding 都是 AGENTS.md 已審查的誤報時才加 --force
+skillshare install https://github.com/Fission-AI/OpenSpec.git --track --branch main --name _openspec
 npm install -g @fission-ai/openspec@latest   # 這些 skill 要呼叫 openspec CLI
 git restore .metadata.json   # 上游 finding 有變動時，上面的安裝會改到這個檔；不還原，skillshare pull 會拒絕。不要照提示跑 skillshare push
 
