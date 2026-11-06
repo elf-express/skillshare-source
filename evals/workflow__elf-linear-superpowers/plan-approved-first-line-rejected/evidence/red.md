@@ -15,3 +15,7 @@ create_exit=1
 reason=找不到有效的核准留言
 credential_files=0
 ```
+
+## run.cjs 收緊紀錄
+
+run.cjs 已收緊為同時斷言 `reason` 等於「找不到有效的核准留言」（避免腳本當掉也通過）。對同一舊樹（BASE_SHA bfad903a）重跑，輸出與 run exit 0 與上方完全相同。

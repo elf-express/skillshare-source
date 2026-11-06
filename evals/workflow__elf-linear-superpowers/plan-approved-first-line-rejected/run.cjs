@@ -48,5 +48,5 @@ try {
   files = 0;
 }
 show('credential_files', files);
-// 防退化案例：改前改後都要 create_exit=1 且沒有寫出任何憑證。
-process.exit(get('create_exit') === 1 && files === 0 ? 0 : 1);
+// 防退化案例：改前改後都要 create_exit=1、沒有寫出任何憑證，且拒絕原因必須是找不到有效核准留言（排除腳本當掉等其他失敗）。
+process.exit(get('create_exit') === 1 && files === 0 && get('reason') === '找不到有效的核准留言' ? 0 : 1);

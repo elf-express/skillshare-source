@@ -4,4 +4,4 @@ regression: true
 kind: guard
 run: node run.cjs <tree>
 expected_outcome: |
-  `create_exit=1`、`credential_files=0`（改前改後相同）。首行只有 PLAN-APPROVED 仍不算核准，證明沒有放寬 APPROVED_RE。
+  `create_exit=1`、`reason=找不到有效的核准留言`、`credential_files=0`（改前改後相同）。首行只有 PLAN-APPROVED 仍不算核准，證明沒有放寬 APPROVED_RE。
