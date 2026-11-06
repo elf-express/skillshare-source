@@ -1,0 +1,23 @@
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/case.yaml
+  s_36abca1c24411a::t_61dd7873294ccb 7
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/run.cjs
+  s_36abca1c24411a::t_5bd1010f72f068 51-52
+evals/workflow__elf-linear-superpowers/plan-approved-first-line-rejected/evidence/red.md
+  s_36abca1c24411a::t_dea7bf3b853647 18-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1395311ff400501201425df9cd0a9ba254631f54",
+  "prompts": {},
+  "sessions": {
+    "s_36abca1c24411a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a108616c69f47c857",
+        "model": "unknown"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
