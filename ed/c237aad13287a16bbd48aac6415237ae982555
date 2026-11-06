@@ -1,0 +1,25 @@
+evals/stack__elf-stack/new-frontend-skeleton/case.yaml
+  s_66d229fb454bb6::t_f7c3ee5edf56dc 4
+evals/stack__elf-stack/new-frontend-skeleton/graders/04-runtime-ranges.md
+  s_66d229fb454bb6::t_8b943154c1cf41 7
+evals/stack__elf-stack/user-says-latest/case.yaml
+  s_66d229fb454bb6::t_3f101dc55467a1 4
+evals/stack__elf-stack/user-says-latest/graders/01-same-as-skeleton.md
+  s_66d229fb454bb6::t_13855044d86c92 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "edc237aad13287a16bbd48aac6415237ae982555",
+  "prompts": {},
+  "sessions": {
+    "s_66d229fb454bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e305e619-4d02-4c28-8129-e6ddb1cc3b73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Eddie <tw199501@elf.tw>"
+    }
+  }
+}
