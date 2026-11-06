@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { APPROVER_IDS, CREDENTIAL_FIELDS, readCredential } = require('./elf-guard.cjs');
+const { APPROVER_IDS, HUMAN_APPROVER_IDS, CREDENTIAL_FIELDS, readCredential } = require('./elf-guard.cjs');
 
 const TICKET_RE = /^E-\d+$/;
 // 憑證欄位值不得含換行、# 與引號：單層 YAML 的行級解析會把它們讀成別的意思。
@@ -23,6 +23,15 @@ const ISSUE_TAG_RE = /<issue\b[^>]*?\bid="([^"]*)"[^>]*>/g;
 const MODIFIED_RE = /^計畫已修改 v(\d+)/;
 const REVOKED_RE = /^核准撤回/;
 const APPROVED_RE = /^計畫已核准(?: v(\d+))?（(\d{4}-\d{2}-\d{2})，審計員：([^）\n]+)）/;
+// Eddie 本人的簡寫核准：整則只有「計畫已核准」或「計畫已核准 vN」，可帶句號，可再接一行「執行方式：…」。
+const BARE_APPROVED_RE = /^計畫已核准(?: v(\d+))?[。.]?[ \t]*(?:\n執行方式：[^\n]+)?\s*$/;
+// multica 輸入框「決議」下拉送出的那一行，整行只能是這幾個字；核准的是留言當下的最新版。
+const DECISION_APPROVED_RE = /^決議：核准執行[ \t]*$/m;
+
+// 留言時間換成台北日期（UTC+8），當簡寫核准的核准日。
+function taipeiDate(createdAt) {
+  return new Date(Date.parse(createdAt) + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
 
 // 正規化 Plan 描述（E-397 第 18 點）：換行統一為 LF；圍欄外行首的已勾 checkbox 改回未勾；
 // <issue> 連結標籤只保留 id 屬性；結尾恰好一個 LF。
@@ -79,10 +88,23 @@ function findApproval(comments) {
       continue;
     }
     const approved = APPROVED_RE.exec(body);
-    if (!approved || !APPROVER_IDS.includes(c.author.id)) continue;
-    const version = approved[1] ? Number(approved[1]) : 1;
+    if (approved && APPROVER_IDS.includes(c.author.id)) {
+      const version = approved[1] ? Number(approved[1]) : 1;
+      if (version < required) continue;
+      current = { ok: true, comment: c, auditor: approved[3].trim(), approvedAt: approved[2], version };
+      continue;
+    }
+    if (!HUMAN_APPROVER_IDS.includes(c.author.id)) continue;
+    if (DECISION_APPROVED_RE.test(body)) {
+      current = { ok: true, comment: c, auditor: 'Eddie', approvedAt: taipeiDate(c.createdAt), version: required };
+      continue;
+    }
+    const bare = BARE_APPROVED_RE.exec(body);
+    if (!bare) continue;
+    // 沒寫版號的簡寫核准的是留言當下的最新版。
+    const version = bare[1] ? Number(bare[1]) : required;
     if (version < required) continue;
-    current = { ok: true, comment: c, auditor: approved[3].trim(), approvedAt: approved[2], version };
+    current = { ok: true, comment: c, auditor: 'Eddie', approvedAt: taipeiDate(c.createdAt), version };
   }
   if (current) return current;
   return { ok: false, reason: lastBlock ? `找不到有效的核准留言：${lastBlock}` : '找不到有效的核准留言' };

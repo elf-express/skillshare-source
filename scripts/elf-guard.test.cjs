@@ -92,6 +92,8 @@ function comment(id, body, minute, authorId = guard.APPROVER_ID) {
 
 // Multica Gatekeeper agent id（APPROVER_IDS 第二個）。
 const GATEKEEPER_ID = '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82';
+// Eddie 的 Multica 帳號 id（APPROVER_IDS 第三個，E-56）。
+const EDDIE_MULTICA_ID = 'a02b935e-1138-4e81-861f-377086a05478';
 
 // 組一則 Multica CLI 形狀的留言（multica issue comment list --output json 的欄位名）。
 function multicaComment(id, content, minute, authorId = GATEKEEPER_ID) {
@@ -421,7 +423,8 @@ const cases = [
     assert.strictEqual(approval.findApproval([comment('c1', APPROVE_V1, 1, OTHER_ID)]).ok, false);
   }],
   ['5.3 文字不符 -> 不通過', () => {
-    for (const body of ['計畫已核准', '計畫核准（2026-10-25，審計員：Codex）', '計畫已核准（2026/10/25，審計員：Codex）']) {
+    // 只寫「計畫已核准」的簡寫由 6.15–6.17 處理（只有 Eddie 本人可以）。
+    for (const body of ['計畫核准（2026-10-25，審計員：Codex）', '計畫已核准（2026/10/25，審計員：Codex）']) {
       assert.strictEqual(approval.findApproval([comment('c1', body, 1)]).ok, false, body);
     }
   }],
@@ -513,6 +516,60 @@ const cases = [
     const r2 = approval.createCredential(planInput({ comments: [comment('c1', APPROVE_V1, 1, GATEKEEPER_ID)] }), { plan: 'E-399', approvalsDir: linearDir });
     assert.strictEqual(r2.ok, true, r2.reason);
     assert.strictEqual(guard.readCredential(linearDir, 'E-399').approver_id, GATEKEEPER_ID);
+  }],
+  ['6.14 Eddie 以 Multica 帳號核准 -> 建立憑證，approver_id 為該帳號，Guard 放行', () => {
+    const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
+    const target = write(repo, 'scripts', 'x.cjs');
+    assert.strictEqual(run(target, approvalsDir).decision, 'deny');
+    const comments = [{ ...multicaComment('m1', APPROVE_V1, 1, EDDIE_MULTICA_ID), author_type: 'member' }];
+    const input = { plan: 'E-4', spec: 'E-2', description: PLAN_DESC, comments };
+    const r = approval.createCredential(input, { plan: 'E-4', approvalsDir });
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(guard.readCredential(approvalsDir, 'E-4').approver_id, EDDIE_MULTICA_ID);
+    assert.strictEqual(run(target, approvalsDir).decision, 'allow');
+  }],
+  ['6.15 Eddie 只寫「計畫已核准」-> 日期取留言台北時間、審計員記 Eddie', () => {
+    const comments = [{ ...multicaComment('m1', '計畫已核准', 1, EDDIE_MULTICA_ID), created_at: '2026-11-03T17:30:00Z' }];
+    const r = approval.findApproval(comments);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.approvedAt, '2026-11-04');
+    assert.strictEqual(r.auditor, 'Eddie');
+    assert.strictEqual(r.version, 1);
+  }],
+  ['6.16 簡寫核准只認 Eddie；Gatekeeper 簡寫不算；帶附註也不算', () => {
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准', 1, GATEKEEPER_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准，但先別動', 1, EDDIE_MULTICA_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([comment('c1', '計畫已核准。', 1)]).ok, true);
+  }],
+  ['6.17 計畫已修改 v2 之後，舊的簡寫核准失效，「計畫已核准 v2」才算', () => {
+    const old = multicaComment('m1', '計畫已核准', 1, EDDIE_MULTICA_ID);
+    const mod = multicaComment('m2', '計畫已修改 v2（併入前端）', 2, OTHER_ID);
+    assert.strictEqual(approval.findApproval([old, mod]).ok, false);
+    const r = approval.findApproval([old, mod, multicaComment('m3', '計畫已核准 v2', 3, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 2);
+  }],
+  ['6.18 簡寫核准可帶一行「執行方式：…」；不帶版號時核准目前最新版', () => {
+    const withMode = '計畫已核准\n執行方式：多代理執行（Subagent-driven）';
+    assert.strictEqual(approval.findApproval([multicaComment('m1', withMode, 1, EDDIE_MULTICA_ID)]).ok, true);
+    assert.strictEqual(approval.findApproval([multicaComment('m1', '計畫已核准\n執行方式：x\n再一行', 1, EDDIE_MULTICA_ID)]).ok, false);
+    const mod = multicaComment('m2', '計畫已修改 v2（併入前端）', 2, OTHER_ID);
+    const r = approval.findApproval([mod, multicaComment('m3', withMode, 3, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 2);
+    // 寫了舊版號的簡寫仍然不算。
+    assert.strictEqual(approval.findApproval([mod, multicaComment('m3', '計畫已核准 v1', 3, EDDIE_MULTICA_ID)]).ok, false);
+  }],
+  ['6.19 Eddie 的留言含一行「決議：核准執行」-> 核准當下最新版；只有 Eddie 算；「決議：再議討論」不算', () => {
+    const body = '看過了，照這版做。\n\n決議：核准執行\n執行：多代理執行';
+    const mod = multicaComment('m1', '計畫已修改 v3（加決議下拉）', 1, OTHER_ID);
+    const r = approval.findApproval([mod, multicaComment('m2', body, 2, EDDIE_MULTICA_ID)]);
+    assert.strictEqual(r.ok, true, r.reason);
+    assert.strictEqual(r.version, 3);
+    assert.strictEqual(r.auditor, 'Eddie');
+    assert.strictEqual(approval.findApproval([multicaComment('m2', body, 2, GATEKEEPER_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m2', '決議：再議討論', 2, EDDIE_MULTICA_ID)]).ok, false);
+    assert.strictEqual(approval.findApproval([multicaComment('m2', '我還沒決議：核准執行', 2, EDDIE_MULTICA_ID)]).ok, false);
   }],
   ['6.13 Multica 形狀但 author_id 不在名單 -> 拒絕、不寫檔；憑證 approver_id 為其他 agent -> Guard 擋', () => {
     const { repo, approvalsDir } = mkRepo({ branch: 'feat/e-4-input-components', stateFile: 'E-4.yaml', state: 'ticket: E-2\nphase: plan\nplan: E-4\n' });
@@ -700,8 +757,8 @@ const cases = [
       assert.strictEqual(typeof guard[name], 'function', name);
     }
   }],
-  ['介面 APPROVER_IDS 含 Linear 與 Multica 兩個 id，APPROVER_ID 仍指向 Linear', () => {
-    assert.deepStrictEqual(guard.APPROVER_IDS, ['f7c5792e-6252-49dd-8210-b15b30c5229d', GATEKEEPER_ID]);
+  ['介面 APPROVER_IDS 含 Linear、Multica Gatekeeper 與 Eddie 的 Multica 帳號，APPROVER_ID 仍指向 Linear', () => {
+    assert.deepStrictEqual(guard.APPROVER_IDS, ['f7c5792e-6252-49dd-8210-b15b30c5229d', GATEKEEPER_ID, EDDIE_MULTICA_ID]);
     assert.strictEqual(guard.APPROVER_ID, 'f7c5792e-6252-49dd-8210-b15b30c5229d');
   }],
 ];

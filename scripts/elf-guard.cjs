@@ -20,11 +20,14 @@ const CREDENTIAL_FIELDS = [
   'auditor',
   'plan_hash',
 ];
-// 核准留言認可的核准者 id：Linear user（Eddie）與 Multica 的 Gatekeeper agent。
+// 核准留言認可的核准者 id：Linear user（Eddie）、Multica 的 Gatekeeper agent 與 Eddie 的 Multica 帳號。
 const APPROVER_IDS = [
   'f7c5792e-6252-49dd-8210-b15b30c5229d', // Linear user（Eddie）
   '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82', // Multica Gatekeeper agent
+  'a02b935e-1138-4e81-861f-377086a05478', // Multica member（Eddie）
 ];
+// Eddie 本人的帳號（Linear 與 Multica）：只有他可以只寫「計畫已核准」，不必附日期與審計員。
+const HUMAN_APPROVER_IDS = [APPROVER_IDS[0], APPROVER_IDS[2]];
 // Linear 核准者 id，供既有呼叫端與測試沿用。
 const APPROVER_ID = APPROVER_IDS[0];
 const TICKET_RE = /^E-\d+$/;
@@ -251,6 +254,7 @@ module.exports = {
   branchTicket,
   APPROVER_ID,
   APPROVER_IDS,
+  HUMAN_APPROVER_IDS,
   CREDENTIAL_FIELDS,
 };
 
