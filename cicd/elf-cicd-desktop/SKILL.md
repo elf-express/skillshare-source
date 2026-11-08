@@ -58,7 +58,7 @@ metadata:
 
 ### 工具鏈（團隊標準，覆蓋參考專案的 npm）
 
-9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.22.2`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
+9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.22.2`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
    WHY：`cache: pnpm` 需要 pnpm 已在 PATH，順序反了 setup-node 會報找不到 pnpm。
 10. **MUST NOT** 在 `pnpm/action-setup` 寫 `version:`；版本由根目錄 `package.json` 的 `"packageManager": "pnpm@<PNPM_VERSION>"` 決定。MUST NOT 使用 corepack。
     WHY：兩處都寫且不一致時 action 直接失敗；單一來源也保證 CI 與本機一致。

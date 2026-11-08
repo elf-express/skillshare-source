@@ -28,8 +28,8 @@ metadata:
 
 **版本釘死（為什麼：本機、CI、同事三方版本不一致是「本機明明可以」的頭號原因）**
 
-1. MUST 在 repo 根目錄放 `.nvmrc`，內容**只有一行** `24.22.2`。
-2. MUST 在根 `package.json` 設 `"engines": { "node": ">=24.22.2" }`，並在 `pnpm-workspace.yaml` 設 `engineStrict: true`。
+1. MUST 在 repo 根目錄放 `.nvmrc`，內容**只有一行** `24.22.2`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
+2. MUST 在根 `package.json` 設 `"engines": { "node": ">=24.22.2" }`，並在 `pnpm-workspace.yaml` 設 `engineStrict: true`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
    為什麼：沒有 strict，版本不符只是一行警告，真正的錯誤會在很後面、不相干的地方才冒出來。
 3. MUST 在根 `package.json` 設 `"packageManager": "pnpm@<PNPM_VERSION>"`（pnpm 12，確切版本見 `elf-stack`）。MUST NOT 使用 corepack（CI 用 `pnpm/action-setup`、Docker 用 `npm install -g pnpm@${PNPM_VERSION}`）。
 4. MUST 在 CI 用 `actions/setup-node` 的 `node-version-file: .nvmrc`。MUST NOT 在 workflow 裡寫死 `node-version: 24`。
@@ -153,8 +153,8 @@ export default defineConfig({
 
 宣稱完成前逐項確認：
 
-- [ ] `.nvmrc` 存在且內容為 `24.22.2`
-- [ ] 根 `package.json` 有 `packageManager: "pnpm@..."` 與 `engines.node: ">=24.22.2"`
+- [ ] `.nvmrc` 存在且內容為 `24.22.2`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
+- [ ] 根 `package.json` 有 `packageManager: "pnpm@..."` 與 `engines.node: ">=24.22.2"`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] `pnpm-workspace.yaml` 存在，含 `packages: [apps]` 與 `engineStrict: true`
 - [ ] repo 內沒有 `package-lock.json` / `yarn.lock`；`pnpm-lock.yaml` 已提交
 - [ ] `ci.yml` 裡沒有 `node-version: 24`、沒有 `npm ci`、沒有 `npx`

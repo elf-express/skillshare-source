@@ -66,7 +66,7 @@ metadata:
 
 16. 需要真的資料庫的測試 MUST 用 Testcontainers（`postgres:18.6`，由 elf-integration 的 fixture 啟動）。MUST NOT 在 `ci.yml` 加 `services: postgres`。
     為什麼：同一份 fixture 本機與 CI 行為一致；GitHub `ubuntu-latest` runner 內建 Docker，不需要額外設定。
-17. MUST 釘 `postgres:18.6`，MUST NOT 用 `postgres:latest` / `postgres`。為什麼：新 major 會在沒有 PR 的情況下改變測試行為。
+17. MUST 釘 `postgres:18.6`，MUST NOT 用 `postgres:latest` / `postgres`。為什麼：新 major 會在沒有 PR 的情況下改變測試行為。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 18. 測試用拋棄帳密全團隊統一：user `elf`、password `elf_test_pw`、db `elf_test`；連線字串 MUST 含 `Timezone=UTC`。MUST NOT 放真實密碼或 production 連線字串。
     要改連既有資料庫（例如除錯）時，由 elf-integration 的 `ELF_TEST_PG_CONNECTION` 環境變數切換；CI 範本不設定它。
 19. MUST NOT 在 CI 讓測試連外部共用資料庫。每次 job 都是全新空庫，測試自己建表 / 種資料。

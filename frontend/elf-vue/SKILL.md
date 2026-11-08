@@ -155,7 +155,7 @@ apps/
 
 ### 2.9 工具鏈（MUST）
 
-44. **MUST** Node `>=24.22.2`（`package.json` `engines`；repo 根目錄 `.nvmrc` = `24.22.2`），engine-strict **只**寫在 `pnpm-workspace.yaml`（`engineStrict: true`）；`.npmrc` 只放 registry / auth（見 references/config.md、`elf-stack`）。
+44. **MUST** Node `>=24.22.2`（`package.json` `engines`；repo 根目錄 `.nvmrc` = `24.22.2`），engine-strict **只**寫在 `pnpm-workspace.yaml`（`engineStrict: true`）；`.npmrc` 只放 registry / auth（見 references/config.md、`elf-stack`）。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 45. **MUST** 使用 pnpm，`packageManager` 寫 `pnpm@<PNPM_VERSION>` 完整版號（版號見 `elf-stack`）。**MUST NOT** 使用 corepack。**MUST NOT** 提交 `package-lock.json` / `yarn.lock`；只提交 `pnpm-lock.yaml`。
 46. **MUST** CI 安裝用 `pnpm install --frozen-lockfile`（CI 細節見 `elf-cicd-frontend`）。前端依賴 **MUST** 加在 `apps`（`pnpm --filter ./apps add`），不加在 repo 根目錄。
 

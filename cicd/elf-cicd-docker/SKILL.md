@@ -56,7 +56,7 @@ metadata:
 
 ### web.Dockerfile（pnpm + Vite + nginx）
 
-7. **MUST** 建置階段 `FROM node:24.22.2-alpine`，以 `npm install -g pnpm@${PNPM_VERSION}` 安裝 pnpm，版本與根 `package.json` 的 `packageManager` 一致。
+7. **MUST** 建置階段 `FROM node:24.22.2-alpine`，以 `npm install -g pnpm@${PNPM_VERSION}` 安裝 pnpm，版本與根 `package.json` 的 `packageManager` 一致。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 8. **MUST** 先 COPY `package.json pnpm-lock.yaml pnpm-workspace.yaml` 與各 workspace 的 `package.json` → `pnpm install --frozen-lockfile` → 再 COPY 原始碼。
    WHY：原始碼變更不重跑安裝；少了 `pnpm-workspace.yaml` 時 pnpm 看不到 workspace，`--frozen-lockfile` 會失敗。
 9. **MUST** `VITE_*` 用 `ARG` + `ENV` 傳入，`VITE_API_BASE_URL` 預設 `/api`。WHY：Vite 在 build 時把值寫死進 bundle；相對路徑 `/api` 讓瀏覽器維持同源，不需要 CORS。
@@ -171,11 +171,11 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - [ ] `docker/` 內 5 個檔案 + 根目錄 `.dockerignore` 都在；`docker/.env` 已加入 `.gitignore`
 - [ ] api.Dockerfile：有 COPY `global.json`、`server/Directory.Build.props`、`server/Directory.Packages.props`；每個 ProjectReference 都有對應 `COPY *.csproj`；沒有任何 `ENV ConnectionStrings__…`
 - [ ] api.Dockerfile：最終階段裝了 `curl`、`TZ=UTC`；healthcheck 用 `curl`，不是 `wget`
-- [ ] web.Dockerfile：`node:24.22.2-alpine`、`PNPM_VERSION` 等於 `packageManager`、有 COPY `pnpm-workspace.yaml`、`--frozen-lockfile`
+- [ ] web.Dockerfile：`node:24.22.2-alpine`、`PNPM_VERSION` 等於 `packageManager`、有 COPY `pnpm-workspace.yaml`、`--frozen-lockfile`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] web.Dockerfile：刪除 `default.conf`、設定檔名為 `<app>.conf`
 - [ ] web.Dockerfile 有 `ARG VITE_USE_MOCK=false` + `ENV`；compose 與 release job 都傳 `VITE_USE_MOCK=false`
 - [ ] nginx：`/api/` 代理到 `http://api:8080/api/`、IPv4 + IPv6 listen、SPA fallback
-- [ ] compose：`postgres:18.6`、volume 在 `/var/lib/postgresql`、`pg_isready` healthcheck、`service_healthy`、帳密用 `${VAR:?}`
+- [ ] compose：`postgres:18.6`、volume 在 `/var/lib/postgresql`、`pg_isready` healthcheck、`service_healthy`、帳密用 `${VAR:?}`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] compose：只有 web 有 `ports`；api 有 `TZ: UTC`，連線字串含 `Timezone=UTC`
 - [ ] 本機 `pnpm docker:up` 後 `docker compose … ps` 三個服務皆 running / healthy，`http://localhost:8080/api/health` 回 200
 - [ ] release docker job：小寫前綴、兩個 tag、`packages: write`、每個映像各自的 gha `scope`
