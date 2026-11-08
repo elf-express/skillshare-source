@@ -266,4 +266,4 @@ CodeFirst 做不到的變更（刪欄位、改型別、partial / GIN 索引）�
 4. 寫入 `DateTime.UtcNow` 後讀回，`Kind` 與數值仍代表同一個 UTC 時刻（Npgsql 5 讀 `timestamptz` 可能回傳本機時間，見 elf-postgresql）。
 5. 產生的 DDL：表名 / 欄位 / 索引皆為 snake_case，`jsonb` 欄位型別正確。
 
-測試用資料庫：`postgres:18` 容器，一律以 **Testcontainers** 啟動（elf-integration 擁有範本與帳密），不可用 SQLite 代替 PostgreSQL 行為測試。
+測試用資料庫：`postgres:18.6` 容器，一律以 **Testcontainers** 啟動（elf-integration 擁有範本與帳密），不可用 SQLite 代替 PostgreSQL 行為測試。

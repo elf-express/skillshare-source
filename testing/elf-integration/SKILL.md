@@ -55,7 +55,7 @@ server/tests/Acme.Api.IntegrationTests/
 
 ### 2.2 資料庫（PostgreSQL 18 + SqlSugar）
 
-1. **MUST** 使用 Testcontainers 啟動 `postgres:18` 映像（本機與 CI 皆同），**MUST NOT** 連本機或共用的開發資料庫
+1. **MUST** 使用 Testcontainers 啟動 `postgres:18.6` 映像（本機與 CI 皆同），**MUST NOT** 連本機或共用的開發資料庫
    （唯一例外是第 7 條的 `ELF_TEST_PG_CONNECTION`，且只能指向拋棄式資料庫）。
 2. **MUST NOT** 用 SQLite / in-memory 取代 PostgreSQL 測 SqlSugar 程式（方言不同，會出現「測試綠、上線壞」）。
 3. **MUST** 整個測試執行共用**一個**容器（xUnit collection fixture），**MUST NOT** 每個測試類別各起一個容器。
@@ -157,7 +157,7 @@ dotnet test server/tests/Acme.Api.Tests
 ## 4. 檢查清單
 
 - [ ] 測試在 `server/tests/<App>.Api.IntegrationTests/`，已加入 `server/<App>.slnx`，Infrastructure 五個檔案齊全
-- [ ] 容器映像是 `postgres:18`，全部測試共用一個容器
+- [ ] 容器映像是 `postgres:18.6`，全部測試共用一個容器
 - [ ] 只用 `UseSetting("ConnectionStrings:Default", ...)` 覆寫連線字串；**沒有** `RemoveAll<ISqlSugarClient>()` 或重新註冊 client
 - [ ] 帳密為 `elf` / `elf_test_pw` / `elf_test`，連線字串含 `Timezone=UTC`
 - [ ] `TestAuthHandler` 的 claim 使用 `ElfClaimTypes`
@@ -175,7 +175,7 @@ dotnet test server/tests/Acme.Api.Tests
 
 | 錯誤 | 後果 | 正確做法 |
 |------|------|----------|
-| 用 SQLite `:memory:` 代替 PostgreSQL | 大小寫、型別、`ILIKE`、JSON 差異讓測試失真 | Testcontainers `postgres:18` |
+| 用 SQLite `:memory:` 代替 PostgreSQL | 大小寫、型別、`ILIKE`、JSON 差異讓測試失真 | Testcontainers `postgres:18.6` |
 | 只用 `ConfigureAppConfiguration` 覆寫連線字串 | Minimal hosting 下 Program 在覆寫前就讀了設定，仍連到正式設定的 DB | `builder.UseSetting("ConnectionStrings:Default", ...)` |
 | 在 `ConfigureTestServices` 重新註冊 `ISqlSugarClient` | 丟失 snake_case、AOP、多租戶 / 軟刪除過濾器；測試綠但上線行為不同 | 不動 client，只覆寫連線字串 |
 | TestAuthHandler 發 `ClaimTypes.NameIdentifier` / `"CompanyId"` | 租戶解析器讀 `company_id` 讀不到，全部查詢失敗或跨租戶測試失真 | 一律用 `ElfClaimTypes` |

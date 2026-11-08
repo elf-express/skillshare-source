@@ -73,7 +73,7 @@ public sealed class IntegrationFixture : IAsyncLifetime
         var external = Environment.GetEnvironmentVariable("ELF_TEST_PG_CONNECTION");
         if (string.IsNullOrWhiteSpace(external))
         {
-            _container = new PostgreSqlBuilder("postgres:18")
+            _container = new PostgreSqlBuilder("postgres:18.6")
                 .WithDatabase("elf_test")
                 .WithUsername("elf")
                 .WithPassword("elf_test_pw")
@@ -423,7 +423,7 @@ job id / 名稱**固定**為 `server` / `server (build · tests)`（branch prote
       - name: Build
         run: dotnet build server/<App>.slnx --no-restore --configuration Release
 
-      # Unit + integration tests together; Testcontainers starts postgres:18 by itself.
+      # Unit + integration tests together; Testcontainers starts postgres:18.6 by itself.
       - name: Test
         run: >-
           dotnet test server/<App>.slnx --no-build --configuration Release
