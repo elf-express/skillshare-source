@@ -2,7 +2,6 @@ schema_version: "1.1"
 name: new-repo-root-files
 skills:
   - cicd/elf-cicd-frontend
-  - stack/elf-stack
 expected_outcome: |
-  維持案例（RED 於 `E45_SHA` 全部 grader 通過）。
+  維持案例（不載入 elf-stack 重跑 RED，全部 grader 通過）。
   `.nvmrc` 是 `24.22.2`；根 `package.json` 的 `engines.node` 是 `>=24.22.2`；產出裡沒有 `24.18`。

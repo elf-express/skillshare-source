@@ -3,7 +3,6 @@ name: global-json-and-testcontainers
 skills:
   - cicd/elf-cicd-backend
   - testing/elf-integration
-  - stack/elf-stack
 expected_outcome: |
-  維持案例（RED 於 `E45_SHA` 全部 grader 通過）。
+  維持案例（不載入 elf-stack 重跑 RED，全部 grader 通過）。
   `"version": "10.0.403"` 搭 `"rollForward": "latestFeature"`，`PostgreSqlBuilder("postgres:18.6")`。
