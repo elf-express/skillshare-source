@@ -4,7 +4,7 @@ skills:
   - cicd/elf-cicd-frontend
   - stack/elf-stack
 expected_outcome: |
-  加 E2E job；把 Node、Vite 的落後列為差距，附專案現值、表值（`24.22.2`、`^8.3.5`）、是否跨 major、「未登記在 `exceptions.md`」；建議開升級單或登記到 `exceptions.md`；明說差距不擋這個 PR；這個 PR 不改 `.nvmrc`、`engines`、`package.json` 的版本（依 E-45 已核准的 elf-stack v2 規則 1 與 §0 第 3 種情況）。
+  加 E2E job；把 Node、Vite 的落後列為差距，附專案現值、表值（`24.22.2`、`^8.3.5`）、是否跨 major、「未登記在 `exceptions.md`」；建議開升級單或登記到 `exceptions.md`；不把差距當成這個 PR 的未通過項或合併條件；這個 PR 不改 `.nvmrc`、`engines`、`package.json` 的版本（依 E-45 已核准的 elf-stack v2 規則 1 與 §0 第 3 種情況）。
   這個專案沒有登記在 `stack/elf-stack/references/exceptions.md`。
 context:
   scaffold_script: place-files.sh
