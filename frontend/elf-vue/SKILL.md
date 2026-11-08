@@ -13,7 +13,7 @@ metadata:
 # Elf Express Vue 3 + TypeScript 規範
 
 > 事實來源：參考專案 `TypingTrainer/apps`（Vue 3.5、Vite 6、Pinia、vue-i18n、Vitest、ant-design-vue）。
-> 團隊標準（Node 24.18、pnpm、UI 函式庫 ant-design-vue 4）覆蓋參考專案（參考專案用 npm）。
+> 團隊標準（Node 24.22.2、pnpm、UI 函式庫 ant-design-vue 4）覆蓋參考專案（參考專案用 npm）。
 > 完整範本：[`references/templates.md`](references/templates.md)；設定檔：[`references/config.md`](references/config.md)。
 
 相關 skill：
@@ -155,7 +155,7 @@ apps/
 
 ### 2.9 工具鏈（MUST）
 
-44. **MUST** Node `>=24.18`（`package.json` `engines`；repo 根目錄 `.nvmrc` = `24.18`），engine-strict **只**寫在 `pnpm-workspace.yaml`（`engineStrict: true`）；`.npmrc` 只放 registry / auth（見 references/config.md、`elf-stack`）。
+44. **MUST** Node `>=24.22.2`（`package.json` `engines`；repo 根目錄 `.nvmrc` = `24.22.2`），engine-strict **只**寫在 `pnpm-workspace.yaml`（`engineStrict: true`）；`.npmrc` 只放 registry / auth（見 references/config.md、`elf-stack`）。
 45. **MUST** 使用 pnpm，`packageManager` 寫 `pnpm@<PNPM_VERSION>` 完整版號（版號見 `elf-stack`）。**MUST NOT** 使用 corepack。**MUST NOT** 提交 `package-lock.json` / `yarn.lock`；只提交 `pnpm-lock.yaml`。
 46. **MUST** CI 安裝用 `pnpm install --frozen-lockfile`（CI 細節見 `elf-cicd-frontend`）。前端依賴 **MUST** 加在 `apps`（`pnpm --filter ./apps add`），不加在 repo 根目錄。
 
@@ -319,11 +319,13 @@ pnpm --filter ./apps add <pkg>        # 前端依賴加在 apps，不加在根�
 
 以下項目**不要自行猜測**；遇到時沿用本檔預設並在 PR 中標注：
 
-1. **pnpm 確切版號**：11.x 或 12 由 `elf-stack` 決定；定案前 `packageManager` 寫 `pnpm@<PNPM_VERSION>` 並填本機完整版號。
+1. **pnpm 確切版號**：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`；`packageManager` 寫 `pnpm@<PNPM_VERSION>`，填 `elf-stack` 的完整版號。
 2. **套件版本基準**：Pinia 2（參考專案）或 3（`platform.client`）；vue-i18n 以 `elf-stack` 為準（現行 `^11.4.16`）；Vitest 主版本。以 `elf-stack` 為準，`elf-stack` 未定前沿用參考專案版本。
 3. **`defineOptions({ name })`**：SoybeanAdmin 規範要求每個元件都加；參考專案沒有。是否全團隊強制（KeepAlive `include` 需要）待定，本檔預設不強制。
 4. **v-model 寫法**：本檔規定 `defineModel`；參考專案 `ToggleSwitch.vue` 仍用 `modelValue` + `update:modelValue`。舊元件是否回頭統一待定。
 5. **覆蓋率排除清單擴充**：include / exclude 已固定（規則 41）；是否再排除 `router/`、`i18n/locales/` 等，待團隊決定（與 `elf-cicd-frontend` 同一項）。
 6. **Router 模式**：參考專案用 `createWebHashHistory`（為了 Tauri `file://`）；純 Web 專案是否改 `createWebHistory` 待定。
+7. **eslint-plugin-vue 版本**：`references/config.md` 範本仍是 `^9.32.0`（搭 ESLint 9），和 `elf-stack` 表值不同，屬 `elf-stack` §3.6 的過渡範圍。
+8. **範本換版號後尚未實裝驗證**：`references/config.md` 已依 `elf-stack` 換成 Vite 8、Pinia 4、vue-router 5、TypeScript 6 的版號。peer 範圍只在 npm registry 查過（2026-11-03），還沒在實際專案安裝並跑過 lint、typecheck、test、build。`vite.config.ts`、store、router 的寫法要不要跟著改，屬於寫法遷移，不在本檔。
 
 已決議、不再列入待確認：engine-strict 只寫 `pnpm-workspace.yaml`；UI 函式庫 = ant-design-vue 4（SoybeanAdmin / NaiveUI repo 為歷史例外，見規則 48）；`VITE_USE_MOCK` 預設開；覆蓋率 include / exclude。

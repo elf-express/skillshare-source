@@ -422,7 +422,7 @@ dotnet test server/<App>.slnx -p:CollectCoverage=true -p:Threshold=55 -p:Thresho
 
 - [ ] .NET 是否導入 mock 函式庫（Moq 或 NSubstitute）；決定前一律手寫 Fake
 - [ ] 參考專案用 xUnit 2.9.3；是否升級 xUnit v3（`xunit.v3`）
-- [ ] pnpm 版本 11.x 或 12（指令寫法相同；`packageManager` 以 `pnpm@<PNPM_VERSION>` 佔位）
+- [ ] pnpm 版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`（指令寫法相同；`packageManager` 以 `pnpm@<PNPM_VERSION>` 佔位）
 - [ ] 前端覆蓋率 `exclude` 除了已固定的 `src/api/mock/**`，是否再排除 `src/router/**`、`src/locales/**` 等
 
 已決定、不再列入待確認：.NET line 55% 以 `coverlet.msbuild`（`-p:Threshold=55 -p:ThresholdType=line -p:ThresholdStat=total`）

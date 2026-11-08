@@ -43,12 +43,12 @@
     "prettier": "^3.3.3"
   },
   "engines": {
-    "node": ">=24.18"
+    "node": ">=24.22.2"
   }
 }
 ```
 
-> `<PNPM_VERSION>` 換成完整版號（例 `11.26.0`）；團隊確切版號以 `elf-stack` 為準（見 SKILL.md 待確認 #1）。
+> `<PNPM_VERSION>` 換成完整版號（例 `12.16.1`）；團隊確切版號以 `elf-stack` 為準。
 > CI 的 `pnpm/action-setup` 與 Docker 的 `npm install -g pnpm@${PNPM_VERSION}` 都讀這個欄位；**不使用 corepack**。
 >
 > `verify` 跑 `test:coverage`（不是 `test`），所以本機提交前就會被 lines 55% 門檻擋下，與 CI 一致。
@@ -96,25 +96,25 @@ engine-strict 只由 `pnpm-workspace.yaml` 的 `engineStrict: true` 設定（團
     "@ant-design/icons-vue": "^7.0.1",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.7.9",
-    "pinia": "^2.2.6",
-    "vue": "^3.5.13",
+    "pinia": "^4.1.0",
+    "vue": "^3.5.44",
     "vue-i18n": "^11.4.16",
-    "vue-router": "^4.4.5"
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "@vitest/coverage-v8": "5.0.1",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "5.0.5",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.32.0",
     "jsdom": "^25.0.1",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "^8.18.1",
-    "vite": "^6.4.3",
-    "vitest": "5.0.1",
-    "vue-tsc": "^2.1.10"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vite": "^8.3.5",
+    "vitest": "5.0.5",
+    "vue-tsc": "^3.3.13"
   }
 }
 ```
