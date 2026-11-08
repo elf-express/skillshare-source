@@ -18,7 +18,7 @@ metadata:
 # Elf Express E2E 測試規範
 
 > 相關 skill：`elf-unit`（邏輯用 Vitest 測）、`elf-integration`（API / DB）、`elf-allure-report`（報告 UI）、
-> `elf-vue`（`data-testid` 命名）、`elf-cicd-frontend`（完整 workflow）、`elf-stack`（Node 24.18 / pnpm）。
+> `elf-vue`（`data-testid` 命名）、`elf-cicd-frontend`（完整 workflow）、`elf-stack`（Node 24.22.2 / pnpm）。
 >
 > 參考專案：`TypingTrainer` 的 `playwright.config.ts`、`e2e/*.spec.ts`、`.github/workflows/ci.yml`（`e2e` job）。
 
@@ -360,7 +360,7 @@ pnpm exec allure open allure-report
 
 - [ ] `video: 'on'` / `screenshot: 'on'` 全錄全截是否維持（CI artifact 體積大）或改 `retain-on-failure` / `only-on-failure`
 - [ ] 是否正式採用 Allure 取代 Playwright HTML 報告（見 `elf-allure-report`；即使採用，CI 仍保留 `github` reporter）
-- [ ] pnpm 11.x 或 12（`packageManager` 欄位以 `pnpm@<PNPM_VERSION>` 佔位，由 `elf-stack` 決定）
+- [ ] pnpm 版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`（`packageManager` 以 `pnpm@<PNPM_VERSION>` 佔位）
 - [ ] 登入變體的測試帳號如何在拋棄式資料庫建立（種子或 setup 時呼叫註冊 API）
 
 已決定、不再列入待確認：預設 mock 模式、無 auth setup project，登入 / 真後端為 opt-in（secrets 名稱 `E2E_USER` / `E2E_PASSWORD`）；

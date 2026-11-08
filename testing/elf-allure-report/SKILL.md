@@ -17,7 +17,7 @@ metadata:
 # Elf Express Allure Report v3 規範
 
 > 相關 skill：`elf-e2e`（Playwright，團隊標準 E2E 框架）、`elf-unit`（Vitest / xUnit）、`elf-integration`、
-> `elf-cicd-frontend` / `elf-cicd-backend`（CI 上產出與發布報告）、`elf-stack`（Node 24.18 / pnpm / .NET 10）。
+> `elf-cicd-frontend` / `elf-cicd-backend`（CI 上產出與發布報告）、`elf-stack`（Node 24.22.2 / pnpm / .NET 10）。
 
 ## 1. 何時使用
 
