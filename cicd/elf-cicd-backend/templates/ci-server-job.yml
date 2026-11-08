@@ -1,7 +1,7 @@
 # Paste under `jobs:` in .github/workflows/ci.yml (same file as the web/e2e jobs
 # from elf-cicd-frontend). Replace <AppName>.
 #
-# Tests that need PostgreSQL start their own postgres:18 via Testcontainers
+# Tests that need PostgreSQL start their own postgres:18.6 via Testcontainers
 # (fixture owned by elf-integration). ubuntu-latest ships Docker, so no
 # `services:` block is needed — do NOT add `services: postgres`.
 #

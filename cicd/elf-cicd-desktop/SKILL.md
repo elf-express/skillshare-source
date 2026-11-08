@@ -14,7 +14,7 @@ metadata:
 # Elf Express 桌面發佈流程（Tauri release pipeline）
 
 > 參考實作：`TypingTrainer/.github/workflows/release.yml`（v0.1.9 / v0.1.10 已實機驗證：Windows 自動更新、
-> macOS Apple Silicon 無 Gatekeeper 警告）。本 skill 以團隊標準（Node 24.18、pnpm 11.x）改寫。
+> macOS Apple Silicon 無 Gatekeeper 警告）。本 skill 以團隊標準（Node 24.22.2、pnpm 12）改寫。
 
 相關 skill：
 - `elf-tauri` — `src-tauri/` 專案慣例、updater 設定、簽章金鑰產生與保管（`docs/signing-and-keys.md`）
@@ -58,7 +58,7 @@ metadata:
 
 ### 工具鏈（團隊標準，覆蓋參考專案的 npm）
 
-9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.18`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。
+9. **MUST** 順序為 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） → `actions/setup-node` v5（SHA 見 elf-stack 3.5；`node-version-file: .nvmrc`、`cache: pnpm`）。`.nvmrc` 內容 `24.22.2`，規範見 `elf-cicd-frontend`；**MUST NOT** 寫死 `node-version`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
    WHY：`cache: pnpm` 需要 pnpm 已在 PATH，順序反了 setup-node 會報找不到 pnpm。
 10. **MUST NOT** 在 `pnpm/action-setup` 寫 `version:`；版本由根目錄 `package.json` 的 `"packageManager": "pnpm@<PNPM_VERSION>"` 決定。MUST NOT 使用 corepack。
     WHY：兩處都寫且不一致時 action 直接失敗；單一來源也保證 CI 與本機一致。
@@ -120,8 +120,8 @@ metadata:
 ```jsonc
 // package.json（根目錄）
 {
-  "packageManager": "pnpm@<PNPM_VERSION>",   // 待確認：pnpm 11.x 或 12 的確切版本
-  "engines": { "node": ">=24.18" },
+  "packageManager": "pnpm@<PNPM_VERSION>",   // 版號見 elf-stack
+  "engines": { "node": ">=24.22.2" },
   "scripts": {
     "tauri": "tauri",
     "build": "<建置前端的指令>"          // tauri.conf.json 的 beforeBuildCommand 會呼叫 `pnpm build`
@@ -210,7 +210,7 @@ curl -sSL -o /dev/null -w '%{http_code}\n' \
 
 ## 6. 待確認
 
-- pnpm 確切版本：`packageManager` 欄位要填 11.x 的哪一版，或改用 12（團隊尚未定案）。
+- pnpm 確切版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。
 - `pnpm/action-setup` 的主版號（範本用 v4（SHA 見 elf-stack 3.5）；是否已有更新的 major 需團隊確認後統一）。
 - 以 pnpm 取代 npm 後，tauri-action 依 `pnpm-lock.yaml` 自動改用 `pnpm tauri build` —— 參考專案只用 npm 驗證過，第一次 pnpm 發佈需實際確認 log。
 - Windows 程式碼簽章（`WINDOWS_CERTIFICATE` / `WINDOWS_CERTIFICATE_PASSWORD`）團隊是否要購買與導入；目前範本未含。

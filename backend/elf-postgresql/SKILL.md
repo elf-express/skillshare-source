@@ -2,7 +2,7 @@
 name: elf-postgresql
 description: |
   Elf Express PostgreSQL 18 資料庫規範。當任務涉及資料表 / 欄位 / 索引命名（snake_case）、C# 型別對應 PostgreSQL 型別、
-  timestamptz 與 UTC 時間處理、jsonb、連線字串格式（Npgsql）、本機 docker compose postgres:18、
+  timestamptz 與 UTC 時間處理、jsonb、連線字串格式（Npgsql）、本機 docker compose postgres:18.6、
   CodeFirst 結構變更與手寫遷移 SQL、schema 匯出審查、索引設計、備份還原（pg_dump / pg_restore）時觸發。
 metadata:
   version: 1.0.0
@@ -120,7 +120,7 @@ C# 端寫法見 **elf-sqlsugar**，實體設計見 **elf-domain-modeling**，版
 #   docker compose --env-file docker/.env -f docker/docker-compose.dev.yml up -d
 services:
   postgres:
-    image: postgres:18
+    image: postgres:18.6
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in docker/.env}
@@ -130,7 +130,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      # postgres:18 images keep data under /var/lib/postgresql/18/docker;
+      # postgres:18.6 images keep data under /var/lib/postgresql/18/docker;
       # mount the parent so the major-version subdirectory is included.
       - pgdata:/var/lib/postgresql
     healthcheck:
@@ -232,7 +232,7 @@ docker compose --env-file docker/.env -f docker/docker-compose.dev.yml exec -T p
 - [ ] 租戶表索引以 `company_id` 開頭
 - [ ] CodeFirst 做不到的變更已寫成可重複執行的 `server/db/migrations/*.sql`
 - [ ] `server/db/schema.sql` 已重新匯出並 commit
-- [ ] 本機 / CI 使用 `postgres:18`，volume 掛在 `/var/lib/postgresql`
+- [ ] 本機 / CI 使用 `postgres:18.6`，volume 掛在 `/var/lib/postgresql`
 - [ ] 沒有把正式密碼寫進 compose 或 appsettings（compose 用 `${POSTGRES_PASSWORD:?}` 取自 `docker/.env`；API 用 `ConnectionStrings__Default` 環境變數）
 - [ ] 本機 / 部署 compose 的資料庫服務名都是 `postgres`
 - [ ] `jsonb` GIN 索引只在有 `@>` / `?` 查詢時建立（規則 18）
@@ -248,12 +248,12 @@ docker compose --env-file docker/.env -f docker/docker-compose.dev.yml exec -T p
 | `DateTime.Now` 寫入 | `DateTime.UtcNow` |
 | 讀出的時間直接序列化給前端，開發機差 8 小時 | `UtcTime.Normalize` |
 | 連線字串沒有 `Timezone=UTC` | 加上 |
-| `volumes: - pgdata:/var/lib/postgresql/data`（沿用 17 以前的寫法） | `postgres:18` 掛 `/var/lib/postgresql` |
-| `image: postgres:latest` | `postgres:18` |
+| `volumes: - pgdata:/var/lib/postgresql/data`（沿用 17 以前的寫法） | `postgres:18.6` 掛 `/var/lib/postgresql` |
+| `image: postgres:latest` | `postgres:18.6` |
 | 刪掉實體屬性，以為欄位會被刪 | CodeFirst 不刪欄位；寫遷移 SQL |
 | 外鍵欄位沒有索引 | PostgreSQL 不會自動建，必須加 `[SugarIndex]` |
 | 金額用 `double` | `decimal` + `numeric(18,2)` |
-| 用 SQLite in-memory 測 PostgreSQL 行為 | 用 Testcontainers 啟動的 `postgres:18`（elf-integration） |
+| 用 SQLite in-memory 測 PostgreSQL 行為 | 用 Testcontainers 啟動的 `postgres:18.6`（elf-integration） |
 | 本機 compose 服務叫 `db`、帳密寫死在 yml | 服務 `postgres`，帳密取自 `docker/.env` 的 `POSTGRES_*` |
 | 為每個 `jsonb` 欄位先建 GIN 索引 | 依規則 18：有 `@>` / `?` 查詢才建 |
 
@@ -263,8 +263,8 @@ docker compose --env-file docker/.env -f docker/docker-compose.dev.yml exec -T p
 - 是否以手寫 SQL 補外鍵約束（CodeFirst 不建立）。
 - 正式環境帳號的確切 GRANT 腳本、是否使用多個 schema（owner / 應用程式帳號分離本身已決定，見規則 28）。
 - 備份排程、保留期限、WAL 歸檔 / PITR、還原演練頻率；託管平台（自架或雲端）。
-- `postgres:18` 是否釘 minor 或 OS 變體（見 elf-stack）。
+- PostgreSQL 映像是否釘 minor：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。是否改用 OS 變體（例如 `-alpine`）仍待確認（見 elf-stack）。
 - 是否升級 Npgsql（6+ 的時間行為不同，規則 11–13 需重新驗證；SqlSugar 在 Npgsql 6+ 會預設開啟 `Npgsql.EnableLegacyTimestampBehavior`）。
 - `DateOnly` / `TimeOnly` 在 SqlSugarCore 5.1.4.x + Npgsql 5 的支援度。
 - 連線池大小（`Maximum Pool Size`）等效能參數的團隊預設值。
-- 本 skill 的 postgres:18 volume 路徑與 Npgsql 5 時間行為是依官方文件 / 版本說明撰寫，尚未在團隊環境實測；首次導入時以整合測試確認。
+- 本 skill 的 `postgres:18.6` volume 路徑與 Npgsql 5 時間行為是依官方文件 / 版本說明撰寫，尚未在團隊環境實測；首次導入時以整合測試確認。

@@ -29,6 +29,6 @@
     "prettier": "<version>"
   },
   "engines": {
-    "node": ">=24.18"
+    "node": ">=24.22.2"
   }
 }

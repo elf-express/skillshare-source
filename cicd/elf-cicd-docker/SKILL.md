@@ -13,7 +13,7 @@ metadata:
 # Elf Express 容器映像規範（Docker + GHCR）
 
 > 參考實作：`TypingTrainer/docker/*`、`.dockerignore`、`release.yml` 的 `docker` job。
-> 本 skill 以團隊標準改寫：pnpm 11.x、Node 24.18、.NET 10、**PostgreSQL 18**（參考專案用 SQLite）、SqlSugar 5.x。
+> 本 skill 以團隊標準改寫：pnpm 12、Node 24.22.2、.NET 10、**PostgreSQL 18**（參考專案用 SQLite）、SqlSugar 5.x。
 
 相關 skill：
 - `elf-cicd-desktop` — 同一個 `release.yml` 的桌面 job；有桌面版時 docker job 放進那個檔案
@@ -56,7 +56,7 @@ metadata:
 
 ### web.Dockerfile（pnpm + Vite + nginx）
 
-7. **MUST** 建置階段 `FROM node:24.18-alpine`，以 `npm install -g pnpm@${PNPM_VERSION}` 安裝 pnpm，版本與根 `package.json` 的 `packageManager` 一致。
+7. **MUST** 建置階段 `FROM node:24.22.2-alpine`，以 `npm install -g pnpm@${PNPM_VERSION}` 安裝 pnpm，版本與根 `package.json` 的 `packageManager` 一致。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 8. **MUST** 先 COPY `package.json pnpm-lock.yaml pnpm-workspace.yaml` 與各 workspace 的 `package.json` → `pnpm install --frozen-lockfile` → 再 COPY 原始碼。
    WHY：原始碼變更不重跑安裝；少了 `pnpm-workspace.yaml` 時 pnpm 看不到 workspace，`--frozen-lockfile` 會失敗。
 9. **MUST** `VITE_*` 用 `ARG` + `ENV` 傳入，`VITE_API_BASE_URL` 預設 `/api`。WHY：Vite 在 build 時把值寫死進 bundle；相對路徑 `/api` 讓瀏覽器維持同源，不需要 CORS。
@@ -78,7 +78,7 @@ metadata:
 
 本 skill 的 `docker/docker-compose.yml` 是**部署用**的唯一 compose 檔；`elf-postgresql` 的 `docker/docker-compose.dev.yml` 只給本機開發，兩者同樣用服務名稱 `postgres` 與 `docker/.env`。
 
-15. **MUST** 三個服務：`postgres`（`image: postgres:18`）、`api`、`web`；只有 `web` 對外開 `ports`。
+15. **MUST** 三個服務：`postgres`（`image: postgres:18.6`）、`api`、`web`；只有 `web` 對外開 `ports`。
 16. **MUST** 資料庫帳密（`POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`）全部來自 `docker/.env`（git-ignored），compose 以 `${VAR:?訊息}` 強制必填；repo 只提交 `docker/.env.example`（假值）。
 17. **MUST** postgres volume 掛在 `/var/lib/postgresql`（**不是** `/var/lib/postgresql/data`）。
     WHY：postgres 18 官方映像把資料目錄改到 `/var/lib/postgresql/18/docker`，舊路徑會被拒絕。
@@ -171,11 +171,11 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - [ ] `docker/` 內 5 個檔案 + 根目錄 `.dockerignore` 都在；`docker/.env` 已加入 `.gitignore`
 - [ ] api.Dockerfile：有 COPY `global.json`、`server/Directory.Build.props`、`server/Directory.Packages.props`；每個 ProjectReference 都有對應 `COPY *.csproj`；沒有任何 `ENV ConnectionStrings__…`
 - [ ] api.Dockerfile：最終階段裝了 `curl`、`TZ=UTC`；healthcheck 用 `curl`，不是 `wget`
-- [ ] web.Dockerfile：`node:24.18-alpine`、`PNPM_VERSION` 等於 `packageManager`、有 COPY `pnpm-workspace.yaml`、`--frozen-lockfile`
+- [ ] web.Dockerfile：`node:24.22.2-alpine`、`PNPM_VERSION` 等於 `packageManager`、有 COPY `pnpm-workspace.yaml`、`--frozen-lockfile`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] web.Dockerfile：刪除 `default.conf`、設定檔名為 `<app>.conf`
 - [ ] web.Dockerfile 有 `ARG VITE_USE_MOCK=false` + `ENV`；compose 與 release job 都傳 `VITE_USE_MOCK=false`
 - [ ] nginx：`/api/` 代理到 `http://api:8080/api/`、IPv4 + IPv6 listen、SPA fallback
-- [ ] compose：`postgres:18`、volume 在 `/var/lib/postgresql`、`pg_isready` healthcheck、`service_healthy`、帳密用 `${VAR:?}`
+- [ ] compose：`postgres:18.6`、volume 在 `/var/lib/postgresql`、`pg_isready` healthcheck、`service_healthy`、帳密用 `${VAR:?}`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] compose：只有 web 有 `ports`；api 有 `TZ: UTC`，連線字串含 `Timezone=UTC`
 - [ ] 本機 `pnpm docker:up` 後 `docker compose … ps` 三個服務皆 running / healthy，`http://localhost:8080/api/health` 回 200
 - [ ] release docker job：小寫前綴、兩個 tag、`packages: write`、每個映像各自的 gha `scope`
@@ -209,11 +209,11 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 
 ## 6. 待確認
 
-- pnpm 確切版本（11.x 或 12），決定 `PNPM_VERSION` 與 `packageManager` 的值。
+- pnpm 確切版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`；`PNPM_VERSION` 與 `packageManager` 填同一個值。
 - 映像 tag 是否保留 `v` 前綴（目前沿用 git tag，例 `v1.2.3`），或改為純 semver `1.2.3`。
 - postgres 18 volume 路徑改為 `/var/lib/postgresql` 依據官方映像變更說明，團隊尚未在實際專案驗證。
 - 各映像獨立 gha cache `scope` 是對參考專案的改良（參考專案未設定 scope），尚未在團隊 CI 實測命中率。
-- `node:24.18-alpine` tag 在 Docker Hub 是否存在（若只有 `24-alpine` / `24.18.x-alpine`，需調整）。
+- `node:<ver>-alpine` tag 在 Docker Hub 是否存在：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。
 - 以 `workflow_dispatch` 重建舊 tag 時，docker job 仍會推 `latest`，等於把 `latest` 退回舊版（既有行為，elf-cicd-versioning 3.3 把重建列為正式操作後更容易遇到）。是否改為 `inputs.tag` 有值時不推 `latest`，待決定。
 - 正式環境部署方式（直接 compose、Kubernetes 或其他）與 secrets 注入方式尚未定義；本 skill 只涵蓋建置與推送。
 - 正式環境的應用程式帳號如何建立（`docker-entrypoint-initdb.d` 初始化腳本、部署管線，或 DBA 手動），以及 CodeFirst 在正式環境由哪個步驟以擁有者帳號執行（規則 19a、elf-postgresql 規則 28、elf-sqlsugar 規則 18a）。

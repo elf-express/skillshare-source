@@ -21,7 +21,7 @@ metadata:
 - `elf-cicd-desktop` — 三平台 release workflow、secrets 檢查、latest.json 驗證
 - `elf-cicd-versioning` — `scripts/version.mjs`、版號 PR 與在 `release` 上打 tag
 - `elf-vue` — 前端元件 / store 規範（desktop 橋接只能在 `api/` 層被呼叫）
-- `elf-stack` — 團隊版本總表（Node 24.18、pnpm 版號）
+- `elf-stack` — 團隊版本總表（Node 24.22.2、pnpm 版號）
 
 ---
 
@@ -50,6 +50,7 @@ metadata:
    ├─ src-tauri/
    │  ├─ tauri.conf.json
    │  ├─ Cargo.toml / Cargo.lock / build.rs
+   │  ├─ rust-toolchain.toml   # 釘 Rust stable 與 rustfmt、clippy（見 elf-stack）
    │  ├─ capabilities/default.json
    │  ├─ icons/
    │  └─ src/
@@ -132,6 +133,7 @@ metadata:
 |---|---|---|
 | [`templates/tauri.conf.json`](templates/tauri.conf.json) | `src-tauri/tauri.conf.json` | `<AppName>` `<appname>` `<web-dir>` `<owner>/<repo>` `<api-origin>`（CSP，必填或整段移除）、pubkey、描述 |
 | [`templates/Cargo.toml`](templates/Cargo.toml) | `src-tauri/Cargo.toml` | `<appname>` `<AppName>` |
+| [`templates/rust-toolchain.toml`](templates/rust-toolchain.toml) | `src-tauri/rust-toolchain.toml` | — |
 | [`templates/main.rs`](templates/main.rs) | `src-tauri/src/main.rs` | `<appname>` |
 | [`templates/lib.rs`](templates/lib.rs) | `src-tauri/src/lib.rs` | `<AppName>`、範例 command |
 | [`templates/capabilities/default.json`](templates/capabilities/default.json) | `src-tauri/capabilities/default.json` | — |
@@ -151,7 +153,7 @@ fn main() {
 ```jsonc
 {
   "packageManager": "pnpm@<PNPM_VERSION>",   // full version; exact team version in elf-stack. No corepack.
-  "engines": { "node": ">=24.18" },
+  "engines": { "node": ">=24.22.2" },
   "scripts": {
     "dev": "pnpm --filter <web> dev",
     "build": "pnpm --filter <web> build",
@@ -163,7 +165,7 @@ fn main() {
     "version:minor": "node scripts/version.mjs minor",
     "version:major": "node scripts/version.mjs major"
   },
-  "devDependencies": { "@tauri-apps/cli": "^2" }
+  "devDependencies": { "@tauri-apps/cli": "^2.12.4" }
 }
 ```
 
@@ -240,7 +242,7 @@ export async function readSetting(key: string): Promise<string | null> {
 
 ## 6. 待確認
 
-- pnpm 確切版號（11.x 或 12）由 `elf-stack` 決定；定案前 `packageManager` 寫 `pnpm@<PNPM_VERSION>` 並填完整版號。
+- pnpm 確切版號：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`；`packageManager` 寫 `pnpm@<PNPM_VERSION>` 並填完整版號。
 - `identifier` 前綴 `tw.elf.` 是否為團隊正式規範（取自參考專案 `tw.elf.typelab`）。
 - 「前端只有 `api/desktop.ts` 可 import `@tauri-apps/*`」是由參考專案結構歸納出的規則，需團隊確認是否納入 `elf-vue`。
 - `rust-version = "1.77.2"`、`edition = "2021"` 是否為團隊統一最低版本。

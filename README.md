@@ -68,7 +68,7 @@ winget install voidtools.Everything voidtools.Everything.Cli
 ```text
 skillshare-source/
 ├── stack/
-│   └── elf-stack/                 ★ 版本唯一真實來源（Node 24.18、pnpm 11、.NET 10、PG 18、SqlSugar 5.x…）
+│   └── elf-stack/                 ★ 版本唯一真實來源（Node 24.22.2、pnpm 12、.NET 10、PG 18、SqlSugar 5.x…）
 ├── frontend/
 │   ├── elf-vue/                   ★ Vue 3 + TS 目錄、SFC、Pinia、測試
 │   ├── elf-ui-pattern/            ★ 元件、三態、無障礙、design token、ant-design-vue 選用

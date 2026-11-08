@@ -1,7 +1,7 @@
 ---
 name: elf-cicd-frontend
 description: |
-  Elf Express Vue 前端 CI 規範（pnpm + Node 24.18 + Vitest 覆蓋率門檻 + Playwright E2E）。
+  Elf Express Vue 前端 CI 規範（pnpm + Node 24.22.2 + Vitest 覆蓋率門檻 + Playwright E2E）。
   當任務涉及新增或修改 .github/workflows/ci.yml 的 web / e2e job、pnpm 安裝與快取、
   .nvmrc / engines / packageManager 釘版、format / lint / typecheck / 單元測試 / 覆蓋率門檻、
   前端 build artifact、Playwright 在 CI 上執行，或把專案從 npm 轉成 pnpm 時觸發。
@@ -28,10 +28,10 @@ metadata:
 
 **版本釘死（為什麼：本機、CI、同事三方版本不一致是「本機明明可以」的頭號原因）**
 
-1. MUST 在 repo 根目錄放 `.nvmrc`，內容**只有一行** `24.18`。
-2. MUST 在根 `package.json` 設 `"engines": { "node": ">=24.18" }`，並在 `pnpm-workspace.yaml` 設 `engineStrict: true`。
+1. MUST 在 repo 根目錄放 `.nvmrc`，內容**只有一行** `24.22.2`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
+2. MUST 在根 `package.json` 設 `"engines": { "node": ">=24.22.2" }`，並在 `pnpm-workspace.yaml` 設 `engineStrict: true`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
    為什麼：沒有 strict，版本不符只是一行警告，真正的錯誤會在很後面、不相干的地方才冒出來。
-3. MUST 在根 `package.json` 設 `"packageManager": "pnpm@<PNPM_VERSION>"`（pnpm 11.x，確切版本見「待確認」）。MUST NOT 使用 corepack（CI 用 `pnpm/action-setup`、Docker 用 `npm install -g pnpm@${PNPM_VERSION}`）。
+3. MUST 在根 `package.json` 設 `"packageManager": "pnpm@<PNPM_VERSION>"`（pnpm 12，確切版本見 `elf-stack`）。MUST NOT 使用 corepack（CI 用 `pnpm/action-setup`、Docker 用 `npm install -g pnpm@${PNPM_VERSION}`）。
 4. MUST 在 CI 用 `actions/setup-node` 的 `node-version-file: .nvmrc`。MUST NOT 在 workflow 裡寫死 `node-version: 24`。
    為什麼：版本只能有一個來源，改 `.nvmrc` 就全部跟著改。
 5. MUST 使用 `pnpm/action-setup` v4（SHA 見 elf-stack 3.5） 且**不傳 `version:`**，讓它讀 `packageManager`。
@@ -140,7 +140,7 @@ export default defineConfig({
 
 ### 3.3 npm → pnpm 轉換步驟（照順序做）
 
-1. 本機安裝 pnpm 11.x（`npm install -g pnpm@<PNPM_VERSION>`，不用 corepack），根 `package.json` 加 `"packageManager": "pnpm@<PNPM_VERSION>"`。
+1. 本機安裝 pnpm 12（`npm install -g pnpm@<PNPM_VERSION>`，不用 corepack），根 `package.json` 加 `"packageManager": "pnpm@<PNPM_VERSION>"`。
 2. 刪除 `package-lock.json`、所有 `node_modules/`。
 3. 刪除根 `package.json` 的 `"workspaces"`，新增 `pnpm-workspace.yaml`。
 4. `.npmrc` 的 `engine-strict=true` 改成 `pnpm-workspace.yaml` 的 `engineStrict: true`（`.npmrc` 只留 registry / auth 設定）。
@@ -153,8 +153,8 @@ export default defineConfig({
 
 宣稱完成前逐項確認：
 
-- [ ] `.nvmrc` 存在且內容為 `24.18`
-- [ ] 根 `package.json` 有 `packageManager: "pnpm@..."` 與 `engines.node: ">=24.18"`
+- [ ] `.nvmrc` 存在且內容為 `24.22.2`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
+- [ ] 根 `package.json` 有 `packageManager: "pnpm@..."` 與 `engines.node: ">=24.22.2"`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] `pnpm-workspace.yaml` 存在，含 `packages: [apps]` 與 `engineStrict: true`
 - [ ] repo 內沒有 `package-lock.json` / `yarn.lock`；`pnpm-lock.yaml` 已提交
 - [ ] `ci.yml` 裡沒有 `node-version: 24`、沒有 `npm ci`、沒有 `npx`
@@ -192,8 +192,8 @@ export default defineConfig({
 
 ## 6. 待確認
 
-- pnpm 確切版本：**待確認（pnpm 11.x 或 12）**。`packageManager` 目前以 `pnpm@<PNPM_VERSION>` 佔位，確定後全團隊統一。
-- `pnpm/action-setup` 目前寫 v4（SHA 見 elf-stack 3.5）；是否已有對應 pnpm 11/12 的新 major 版本待確認（`actions/*` 已統一 v5 並釘 SHA，不在此列）。
-- pnpm 11 是否仍讀取 `.npmrc` 內的非 auth 設定未驗證；範本一律把 `engineStrict` 放在 `pnpm-workspace.yaml`，`.npmrc` 只放 registry / auth。
+- pnpm 確切版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。`packageManager` 以 `pnpm@<PNPM_VERSION>` 佔位，填 `elf-stack` 的完整版號。
+- `pnpm/action-setup` 目前寫 v4（SHA 見 elf-stack 3.5）；是否已有對應 pnpm 12 的新 major 版本待確認（`actions/*` 已統一 v5 並釘 SHA，不在此列）。
+- pnpm 12 是否仍讀取 `.npmrc` 內的非 auth 設定未驗證；範本一律把 `engineStrict` 放在 `pnpm-workspace.yaml`，`.npmrc` 只放 registry / auth。
 - pnpm 10+ 預設不執行相依套件的 install scripts；需要允許時的欄位名稱（`onlyBuiltDependencies` 或新版名稱）依 pnpm 版本待確認。
 - `coverage.exclude` 已固定排除測試檔 / `.d.ts` / `main.ts` / `src/api/mock/**`；是否還要排除 `router/`、`locales/` 等，待團隊決定（排除清單變動需 review）。

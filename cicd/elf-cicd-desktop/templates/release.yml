@@ -86,7 +86,7 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          # Single source of the Node version (24.18) — see elf-cicd-frontend.
+          # Single source of the Node version (24.22.2) — see elf-cicd-frontend.
           node-version-file: .nvmrc
           cache: pnpm
 

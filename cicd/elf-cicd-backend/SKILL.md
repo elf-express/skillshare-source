@@ -64,9 +64,9 @@ metadata:
 
 **資料庫（PostgreSQL 18 + SqlSugar 5.x）**
 
-16. 需要真的資料庫的測試 MUST 用 Testcontainers（`postgres:18`，由 elf-integration 的 fixture 啟動）。MUST NOT 在 `ci.yml` 加 `services: postgres`。
+16. 需要真的資料庫的測試 MUST 用 Testcontainers（`postgres:18.6`，由 elf-integration 的 fixture 啟動）。MUST NOT 在 `ci.yml` 加 `services: postgres`。
     為什麼：同一份 fixture 本機與 CI 行為一致；GitHub `ubuntu-latest` runner 內建 Docker，不需要額外設定。
-17. MUST 釘 `postgres:18`，MUST NOT 用 `postgres:latest` / `postgres`。為什麼：新 major 會在沒有 PR 的情況下改變測試行為。
+17. MUST 釘 `postgres:18.6`，MUST NOT 用 `postgres:latest` / `postgres`。為什麼：新 major 會在沒有 PR 的情況下改變測試行為。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 18. 測試用拋棄帳密全團隊統一：user `elf`、password `elf_test_pw`、db `elf_test`；連線字串 MUST 含 `Timezone=UTC`。MUST NOT 放真實密碼或 production 連線字串。
     要改連既有資料庫（例如除錯）時，由 elf-integration 的 `ELF_TEST_PG_CONNECTION` 環境變數切換；CI 範本不設定它。
 19. MUST NOT 在 CI 讓測試連外部共用資料庫。每次 job 都是全新空庫，測試自己建表 / 種資料。
@@ -108,7 +108,7 @@ server/
 
 ### 3.2 本機重現 CI（與 CI 完全相同的指令）
 
-需要 Docker 執行中（整合測試用 Testcontainers 自己起 `postgres:18`）。
+需要 Docker 執行中（整合測試用 Testcontainers 自己起 `postgres:18.6`）。
 
 ```bash
 dotnet restore server/<AppName>.slnx
@@ -139,7 +139,7 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 - [ ] 測試 csproj 參考 `coverlet.msbuild`，**沒有** `coverlet.collector`、沒有 `Version=`、沒有自己的 `TargetFramework`
 - [ ] `dotnet test` 帶 `CollectCoverage` + `MergeWith` + `-m:1`；門檻檢查看合併後的 `coverage/coverage.cobertura.xml`（line ≥ 55%）
 - [ ] 門檻裡沒有 `branch`；branch 只有 advisory warning
-- [ ] `ci.yml` 沒有 `services: postgres`；DB 測試走 Testcontainers `postgres:18`
+- [ ] `ci.yml` 沒有 `services: postgres`；DB 測試走 Testcontainers `postgres:18.6`
 - [ ] 測試帳密為 `elf` / `elf_test_pw` / `elf_test`，連線字串含 `Timezone=UTC`
 - [ ] job `name: server (build · tests)` 未變更
 - [ ] 本機跑 3.2 的指令全綠，且合併後 line-rate ≥ 0.55
@@ -157,7 +157,7 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 | 新測試專案的測試 CI 沒跑 | 沒加進 `server/<AppName>.slnx` | `dotnet sln ... add ...` |
 | 整合測試報 Docker 無法連線 | 在沒有 Docker 的 runner（非 Linux / 自架）上執行 | 用 `ubuntu-latest`（內建 Docker）；本機先啟動 Docker |
 | `NU1008`（CPM 專案不應定義版本） | 測試 csproj 的 `PackageReference` 帶了 `Version=` | 刪掉 `Version=`，版本放 `Directory.Packages.props` |
-| 本機綠、CI 資料庫行為不同 | 本機 Postgres 版本與 CI / production 不同，或用 `latest` | 全部釘 `postgres:18` |
+| 本機綠、CI 資料庫行為不同 | 本機 Postgres 版本與 CI / production 不同，或用 `latest` | 全部釘 `postgres:18.6` |
 | 時間欄位差 8 小時 | 連線字串沒有 `Timezone=UTC` | 所有連線字串加 `Timezone=UTC` |
 | SqlSugar 讀資料時 `Activator.CreateInstance` 丟例外 | Entity 用了 C# `required` 成員（參考專案踩過） | 改用屬性預設值（見 elf-sqlsugar） |
 | 測試在 CI 綠、`dotnet run` 卻找不到檔案 | 程式用相對於「目前目錄」的路徑；測試剛好從輸出目錄跑（參考專案踩過） | 改用 `AppContext.BaseDirectory` |
@@ -165,7 +165,7 @@ grep -o -m1 'line-rate="[0-9.]*"' coverage/coverage.cobertura.xml
 
 ## 6. 待確認
 
-- `global.json` 的確切 SDK 版本（範本暫填 `10.0.100`）：團隊要釘哪個 feature band / patch 待確認。
+- `global.json` 的確切 SDK 版本：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。
 - 是否改用 xUnit v3 待確認（版本號一律在 `Directory.Packages.props`，由 elf-stack 維護）。
 - 是否把單元測試與整合測試分成兩段執行（例如 `--filter "Category!=Integration"`），待確認；目前範本一次跑全部並合併覆蓋率。
 - 覆蓋率摘要是否要貼到 PR（例如 ReportGenerator 產生 `$GITHUB_STEP_SUMMARY`），待確認；目前只上傳 artifact + warning。
