@@ -1,7 +1,0 @@
-schema_version: "1.1"
-name: rules-gatekeeper-approves
-regression: true
-kind: fix
-run: node run.cjs <tree>
-expected_outcome: |
-  `create_exit=0`、`approver_id=4ef4f859-7490-433e-9e50-5e33c30bc09a`、`linear_comment_id=01a1a1df-fb35-7594-b168-2bdf6efca516`。嚴把關（Multica agent）的合格核准能建出憑證。

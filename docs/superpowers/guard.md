@@ -71,15 +71,15 @@ Guard 用 `branchTicket()` 從分支名稱取出單號 N（`e-<N>` 或 `<類型>
 - 在對應的 Plan 上（Linear 的 Plan issue，或 Multica 的 Plan issue）。
 - 作者 id 在核准者名單 `APPROVER_IDS` 內（不比對顯示名稱）：
   - Linear：user ID `f7c5792e-6252-49dd-8210-b15b30c5229d`（Eddie），留言欄位 `author.id`。
-  - Multica：agent 甄固執(Gatekeeper)-審查架構師 `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`、agent 嚴把關(Gatekeeper)-規範審查 `4ef4f859-7490-433e-9e50-5e33c30bc09a`，或 Eddie 的 Multica 帳號 `a02b935e-1138-4e81-861f-377086a05478`；留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
+  - Multica：Gatekeeper agent id `2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82`，或 Eddie 的 Multica 帳號 `a02b935e-1138-4e81-861f-377086a05478`；留言欄位 `author_id`；留言 id 是 Multica 的 comment id。
 - 文字開頭符合「計畫已核准（YYYY-MM-DD，審計員：<模型>）」或「計畫已核准 vN（…）」。
-- Eddie 本人（Linear 或 Multica 帳號）可以只寫「計畫已核准」或「計畫已核准 vN」（可帶句號），下一行可以接「執行方式：…」，除此之外不能有其他文字：核准日取留言的台北日期，審計員記 `Eddie`；沒寫版號時核准的是留言當下的最新版。甄固執、嚴把關等代理仍要寫完整格式。
+- Eddie 本人（Linear 或 Multica 帳號）可以只寫「計畫已核准」或「計畫已核准 vN」（可帶句號），下一行可以接「執行方式：…」，除此之外不能有其他文字：核准日取留言的台北日期，審計員記 `Eddie`；沒寫版號時核准的是留言當下的最新版。Gatekeeper 等代理仍要寫完整格式。
 - Eddie 本人的留言中，若有一整行剛好是「決議：核准執行」（multica 輸入框的「決議」下拉送出的），也算核准，核准的是留言當下的最新版；「決議：再議討論」不算核准。
 - 留言依 `createdAt`（Multica 為 `created_at`）由舊到新判斷：「計畫已修改 vN」之後要有版號 ≥ N 的「計畫已核准 vN」才算；「核准撤回」之後要有新的核准留言才算。這兩種留言不限作者。
 
 Linear／Multica 讀不到、找不到有效留言或欄位不完整時，一律不建立憑證、不開工。
 
-id 比對只能排除其他帳號與其他 agent。Linear MCP 以 Eddie 的帳號發言，AI 與審計員 session 的留言作者也都是 Eddie；Multica 上任何能以名單內 agent（甄固執或嚴把關）身分發言的 run 也會通過比對。所以它不是人類身分驗證，也不是防止 AI 自我核准的安全邊界。A 方案的保障是流程提醒與事後稽核，不是不可偽造的授權。
+id 比對只能排除其他帳號與其他 agent。Linear MCP 以 Eddie 的帳號發言，AI 與審計員 session 的留言作者也都是 Eddie；Multica 上任何能以 Gatekeeper 身分發言的 run 也會通過比對。所以它不是人類身分驗證，也不是防止 AI 自我核准的安全邊界。A 方案的保障是流程提醒與事後稽核，不是不可偽造的授權。
 
 ### 憑證欄位
 
@@ -88,7 +88,7 @@ id 比對只能排除其他帳號與其他 agent。Linear MCP 以 Eddie 的帳�
 | `ticket` | Plan 編號，與檔名 `E-<N>` 相同 |
 | `plan` | Plan 編號，與 `ticket` 相同 |
 | `spec` | Spec 編號 |
-| `approver_id` | 核准留言作者的 id（Linear user ID、Multica agent id 或 Eddie 的 Multica 帳號 id），必須在核准者名單內 |
+| `approver_id` | 核准留言作者的 id（Linear user ID 或 Multica Gatekeeper agent id），必須在核准者名單內 |
 | `linear_comment_id` | 那則「計畫已核准」留言的 id；Multica 來源也存在這欄（欄位名不改） |
 | `comment_created_at` | 該留言的 `createdAt`（Multica 為 `created_at`）原字串 |
 | `approved_at` | 留言文字裡的日期，`YYYY-MM-DD` |

@@ -26,12 +26,11 @@ bindings:
           'auditor',
           'plan_hash',
         ];
-        // 核准留言認可的核准者 id：Linear user（Eddie）、Multica agent 甄固執與嚴把關、Eddie 的 Multica 帳號。
+        // 核准留言認可的核准者 id：Linear user（Eddie）、Multica 的 Gatekeeper agent 與 Eddie 的 Multica 帳號。
         const APPROVER_IDS = [
           'f7c5792e-6252-49dd-8210-b15b30c5229d', // Linear user（Eddie）
-          '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82', // Multica agent 甄固執(Gatekeeper)-審查架構師
+          '2c8a076b-e4c0-4fc7-81b9-3ea21cd3ac82', // Multica Gatekeeper agent
           'a02b935e-1138-4e81-861f-377086a05478', // Multica member（Eddie）
-          '4ef4f859-7490-433e-9e50-5e33c30bc09a', // Multica agent 嚴把關(Gatekeeper)-規範審查
         ];
         // Eddie 本人的帳號（Linear 與 Multica）：只有他可以只寫「計畫已核准」，不必附日期與審計員。
         const HUMAN_APPROVER_IDS = [APPROVER_IDS[0], APPROVER_IDS[2]];
