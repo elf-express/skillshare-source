@@ -1,7 +1,7 @@
 # docker/web.Dockerfile
 # Build context is the repo root: docker compose -f docker/docker-compose.yml build
 # Placeholders: <web-dir> (the web workspace, e.g. apps), <app> (config file name)
-FROM node:24.18-alpine AS build
+FROM node:24.22.2-alpine AS build
 WORKDIR /repo
 
 # Must match "packageManager": "pnpm@<PNPM_VERSION>" in the root package.json.
