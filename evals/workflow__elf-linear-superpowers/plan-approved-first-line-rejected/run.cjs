@@ -32,15 +32,6 @@ const get = (k) => (out.find(([key]) => key === k) || [])[1];
 show('create_exit', create.status);
 const reason = /原因: (.*)/.exec(create.stdout || '');
 if (reason) show('reason', reason[1]);
-const credFile = path.join(approvalsDir, 'E-46.yaml');
-const field = (name) => {
-  try {
-    const m = new RegExp(`^${name}: (.*)$`, 'm').exec(fs.readFileSync(credFile, 'utf8'));
-    return m ? m[1].trim() : '';
-  } catch {
-    return '';
-  }
-};
 let files = 0;
 try {
   files = fs.readdirSync(approvalsDir).length;
