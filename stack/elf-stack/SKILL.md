@@ -139,9 +139,9 @@ dotnet test server/<App>.slnx -c Release \
 | `actions/upload-artifact` | v5.0.0 | `330a01c490aca151604b8cf639adc76d48f6c5d4` | v7.0.2 | major → 開單 |
 | `actions/download-artifact` | v5.0.0 | `634f93cb2916e3fdff6788551b99b062d0335ce0` | v8.0.2 | 只出現在 elf-allure-report 的說明文字（沒有 `uses:` 行），validate.sh 對它報「未使用」警告是預期的 |
 | `anthropics/claude-code-action` | v1.0.252 | `f27be6b65a4652f08a2ba3cff79114829b588967` | v1.0.264 | patch：先更新本列，再接受 Dependabot PR |
-| `docker/build-push-action` | v6.19.2 | `10e90e3645eae34f1e60eeb005ba3a3d33f178e8` | v7.4.0 | major → 開單，docker 批次 |
-| `docker/login-action` | v3.7.0 | `c94ce9fb468520275223c153574b00df6fe4bcc9` | v4.7.0 | docker 批次 |
-| `docker/setup-buildx-action` | v3.12.0 | `8d2750c68a42422c14e847fe6c8ac0403b4cbd6f` | v4.4.1 | docker 批次 |
+| `docker/build-push-action` | v7.4.0 | `c3c9e263c25d99ce0380d002d59b67737d91b0dc` | v7.4.0 | docker 批次（Multica E-143 升到 Node 24 版） |
+| `docker/login-action` | v4.8.0 | `8aa5831fb8d48d8f76594c7ddde61ae58019f550` | v4.7.0 | docker 批次（Multica E-143 升到 Node 24 版） |
+| `docker/setup-buildx-action` | v4.4.1 | `f87e5991a6d7451dcb8d9637bfbc97413f497069` | v4.4.1 | docker 批次（Multica E-143 升到 Node 24 版） |
 | `pnpm/action-setup` | v4.4.0 | `fc06bc1257f339d1d5d8b3a19a8cae5388b55320` | v6.1.0 | major → 開單 |
 | `Swatinem/rust-cache` | v2.9.2 | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` | v2.9.3 | patch：先更新本列，再接受 Dependabot PR |
 | `tauri-apps/tauri-action` | v0.6.2 | `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` | action-v1.0.0 | major → 開單；重跑 elf-cicd-desktop 三平台矩陣 |
