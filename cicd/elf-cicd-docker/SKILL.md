@@ -101,8 +101,8 @@ metadata:
 22. **MUST** 映像名稱：`ghcr.io/<owner>/<repo>/api`、`ghcr.io/<owner>/<repo>/web`，前綴以 `${GITHUB_REPOSITORY,,}` 轉**小寫**。
     WHY：GHCR 拒絕大寫，而 repo slug 常含大寫（例：`TW199501/TypingTrainer`）。
 23. **MUST** 每個映像推兩個 tag：release tag（`${{ inputs.tag || github.ref_name }}`，例 `v1.2.3`）與 `latest`。
-24. **MUST** job 權限 `contents: read`、`packages: write`；登入用 `docker/login-action` v3（SHA 見 elf-stack 3.5） + `secrets.GITHUB_TOKEN`。**MUST NOT** 使用個人 PAT。
-25. **MUST** 使用 `docker/setup-buildx-action` v3（SHA 見 elf-stack 3.5） + `docker/build-push-action` v6（SHA 見 elf-stack 3.5），快取 `type=gha` 並**每個映像獨立 `scope`**
+24. **MUST** job 權限 `contents: read`、`packages: write`；登入用 `docker/login-action` v4（SHA 見 elf-stack 3.5） + `secrets.GITHUB_TOKEN`。**MUST NOT** 使用個人 PAT。
+25. **MUST** 使用 `docker/setup-buildx-action` v4（SHA 見 elf-stack 3.5） + `docker/build-push-action` v7（SHA 見 elf-stack 3.5），快取 `type=gha` 並**每個映像獨立 `scope`**
     （`cache-from: type=gha,scope=api` / `cache-to: type=gha,mode=max,scope=api`，web 同理）。
     WHY：未指定 scope 時兩個映像共用預設 scope，互相覆蓋快取。
 26. **MUST** 有桌面版的專案把 docker job 放進 `elf-cicd-desktop` 的同一個 `release.yml`；純網頁專案才用獨立的 [`templates/release-docker.yml`](templates/release-docker.yml)。
