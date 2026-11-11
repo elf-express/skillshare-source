@@ -1,0 +1,16 @@
+$ pnpm vitest run
+ RUN  v3.2.4 /repo
+
+ ✓ src/notifications/useNotifications.test.ts (3 tests) 22ms
+   ✓ useNotifications > lists latest 50 notifications with unread marks (60 stored, 3 unread)
+   ✓ useNotifications > marks a notification as read when opened
+   ✓ useNotifications > keeps other notifications unread after opening one
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Duration  501ms
+
+$ pnpm lint
+(no output)
+$ echo $?
+0

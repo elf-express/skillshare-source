@@ -1,0 +1,9 @@
+schema: spec-driven
+
+context: |
+  Tech stack: TypeScript, Node.js 24, Vue 3 admin console
+  Package manager: pnpm
+
+rules:
+  specs:
+    - Requirements describe observable user behavior

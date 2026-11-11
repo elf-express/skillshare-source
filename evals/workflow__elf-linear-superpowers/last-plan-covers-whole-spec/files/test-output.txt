@@ -1,0 +1,17 @@
+$ pnpm vitest run
+ RUN  v3.2.4 /repo
+
+ ✓ src/report.test.ts (4 tests) 27ms
+   ✓ buildMonthlyReport > sums last month revenue per branch (A: 3 orders -> 900)
+   ✓ buildMonthlyReport > uses branch local timezone to cut the month
+   ✓ reportToCsv > downloads report as revenue-YYYY-MM.csv
+   ✓ registerMonthlyJob > schedules report generation at 06:00 on day 1
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Duration  530ms
+
+$ pnpm lint
+(no output)
+$ echo $?
+0

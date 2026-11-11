@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: green-tests-violates-decision
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  指出實作違反「已決定的做法」（匯率快取放 PostgreSQL 的 `fx_rates` 表，Eddie 決定），引用 `src/rate.ts` 的位置；核對了實作與已決定的做法是否一致並因此判定不通過；
+  不自己改 Spec，也不用裁決把這個決定結掉；下一步是改回符合決定的做法，或依「需要改規格」問使用者。
+context:
+  scaffold_script: place-files.sh

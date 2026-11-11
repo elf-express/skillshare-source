@@ -1,0 +1,15 @@
+$ pnpm vitest run
+ RUN  v3.2.4 /repo
+
+ ✓ test/rate.test.ts (2 tests) 9ms
+   ✓ getRate > calls the provider once for the same date and currency
+   ✓ getRate > calls the provider again for a different currency
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Duration  388ms
+
+$ pnpm lint
+(no output)
+$ echo $?
+0

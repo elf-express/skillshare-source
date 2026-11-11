@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: green-tests-missing-requirement
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  指出「最多 10 萬列」沒有實作也沒有證據（`src/export.ts` 沒有列數上限）；核對範圍超出驗收條件，判定這次驗證不通過；
+  不告訴使用者可以開 PR，不宣告完成、不把驗收條件全勾；要回頭修。
+context:
+  scaffold_script: place-files.sh

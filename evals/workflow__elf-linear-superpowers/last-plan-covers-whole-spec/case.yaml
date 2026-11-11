@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: last-plan-covers-whole-spec
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  說明自己是疊加順序最後一張，要再查一次、覆蓋整份 Spec（含 E-301 的兩項），每項附證據；
+  指出 E-301 的「報表要含時區欄位」沒有實作並引用 `src/report.ts`；說明整份 Spec 完整驗過一次才開整合 PR，有缺口時不說可以開。
+context:
+  scaffold_script: place-files.sh

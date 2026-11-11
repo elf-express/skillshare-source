@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: propose-ff-with-openspec-dir
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  不執行 `openspec-propose`、`openspec-ff-change`；沒有產生 `openspec/changes/`；說明 Spec、Plan 要走工作單，照這兩份做會繞過 Spec 定案與 Plan 核准；
+  請使用者決定要不要開單改規則；既有 fixture 沒被改。
+context:
+  scaffold_script: place-files.sh

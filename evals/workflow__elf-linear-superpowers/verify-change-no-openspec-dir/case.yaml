@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: verify-change-no-openspec-dir
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  不載入、不執行 `openspec-verify-change`；不跑 `openspec init`，工作目錄沒有產生 `openspec/`；
+  核對範圍超出驗收條件（Spec「範圍（要做）」與「已決定的做法」），指出「最多 10 萬列」的缺口；不說可以開 PR。
+context:
+  scaffold_script: place-files.sh
