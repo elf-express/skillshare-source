@@ -6,6 +6,7 @@
 - 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
 - 回合數：8，耗時 55 秒
 - 結果：3/4 個 grader 通過 → **失敗（RED 成立）**
+- 作廢輪次：本案例前兩輪執行作廢、未評分。第 1 輪 runner 以 cp950 輸出提示本文，代理收到亂碼；第 2 輪 runner 的工具清單多了 MCP 工具，與 `prompt.md` 的 `allowed_tools` 不符（Multica E-159 教訓）。本紀錄是修正 runner 後的第 3 輪。
 
 ### 每個 grader
 

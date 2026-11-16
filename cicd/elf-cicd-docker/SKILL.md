@@ -44,7 +44,7 @@ metadata:
 
 本 skill 的 [`templates/api.Dockerfile`](templates/api.Dockerfile) 是團隊**唯一**的 API Dockerfile 範本；`elf-dotnet` 引用這裡，不另外維護一份。
 
-3. **MUST** 兩階段：`mcr.microsoft.com/dotnet/sdk:10.0.403` 建置 → `mcr.microsoft.com/dotnet/aspnet:10.0.14` 執行，值取自 `elf-stack` 3.1 容器映像表，交付時說明 tag 依據該表（審查者據此逐項對表，不必回頭查範本）。WHY：`10.0` 是滾動 tag，每次建置可能換 patch（`elf-stack` 規則 7）。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
+3. **MUST** 兩階段：`mcr.microsoft.com/dotnet/sdk:10.0.403` 建置 → `mcr.microsoft.com/dotnet/aspnet:10.0.14` 執行，值取自 `elf-stack` 3.1 容器映像表，交付時說明 tag 依據該表。WHY：`10.0` 是滾動 tag，每次建置可能換 patch（`elf-stack` 規則 7）；說明依據，審查者才能逐項對表。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 4. **MUST** 依序 COPY `global.json` → `server/Directory.Build.props` + `server/Directory.Packages.props` → 所有被參考專案的 `.csproj`（維持 `server/src/<Project>/` 相對結構）→ `dotnet restore` → 再 COPY `server/` → `dotnet publish --no-restore`。
    WHY：restore 需要 SDK 釘版、共用 MSBuild 屬性（`TargetFramework`、CPM 版本）與每個 ProjectReference 的 manifest；少了 `Directory.Packages.props`，CPM 專案的 `PackageReference` 沒有版本，restore 直接失敗。只複製 manifest 讓這層在依賴沒變時保持快取。新增專案參考時 **MUST** 同步加一行 COPY。
 5. **MUST** 以非 root 的 `$APP_UID` 執行、`ENV ASPNETCORE_HTTP_PORTS=8080`、`ENV TZ=UTC`、`EXPOSE 8080`。

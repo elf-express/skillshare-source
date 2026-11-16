@@ -11,7 +11,9 @@
 
 ## nginx 為什麼釘 mainline 線
 
-`alpine`、`mainline-alpine`、`1.31.8-alpine` 三個 tag 的 digest 相同（`sha256:fed7e14b…`），也就是 `1.31.8-alpine` 就是當天的 mainline。`stable-alpine` 的 digest 與 `1.30.6-alpine` 相同（`sha256:901e593c…`），是另一條線。要換成 stable 線是版本決定（Spec 第 6 節 A2），不是查證能決定的，這裡只記錄事實。
+`alpine`、`mainline-alpine`、`1.31.8-alpine` 三個 tag 的 digest 相同（`sha256:fed7e14b…`），也就是 `1.31.8-alpine` 就是當天的 mainline。`stable-alpine` 的 digest 與 `1.30.6-alpine` 相同（`sha256:901e593c…`），是另一條線。要換成 stable 線是版本決定（elf-stack 第 6 節（升級政策）；Multica E-117 A2），不是查證能決定的，這裡只記錄事實。
+
+2026-11-13 探測時同一組 tag 的 digest 是 `sha256:713fc2eb…`；nginx 於 2026-11-13T13:51Z 重建同一 tag，2026-11-16 查得 `sha256:fed7e14b…`。tag 不變、底下的映像會變，只有 digest 釘選能完全固定。
 
 ```text
 $ curl -s https://hub.docker.com/v2/repositories/library/nginx/tags/1.31.8-alpine | python -c "import json,sys;d=json.load(sys.stdin);print(d['name'],d['digest'],d['last_updated'])"
@@ -28,7 +30,7 @@ $ curl -s https://hub.docker.com/v2/repositories/library/nginx/tags/1.30.6-alpin
 
 ## runtime 映像為什麼不是 10.0.403
 
-`sdk:10.0.403` 是 SDK 版號（對齊 `global.json`），runtime 映像的版號跟 ASP.NET Core 套件版走，兩者不同步：`aspnet:10.0.403` 在 MCR 不存在（`404`），`aspnet:10.0.14` 存在（`200`）。所以 api 建置階段用 `sdk:10.0.403`、執行階段用 `aspnet:10.0.14`（A1）。
+`sdk:10.0.403` 是 SDK 版號（對齊 `global.json`），runtime 映像的版號跟 ASP.NET Core 套件版走，兩者不同步：`aspnet:10.0.403` 在 MCR 不存在（`404`），`aspnet:10.0.14` 存在（`200`）。所以 api 建置階段用 `sdk:10.0.403`、執行階段用 `aspnet:10.0.14`（Multica E-117 A1）。
 
 ```text
 $ curl -s -o /dev/null -w '%{http_code}\n' -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json' https://mcr.microsoft.com/v2/dotnet/aspnet/manifests/10.0.14

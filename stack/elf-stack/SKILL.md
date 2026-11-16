@@ -59,7 +59,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 
 ## 3. 版本表
 
-range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`packageManager`、`global.json`、docker tag 與 action SHA 寫精確值；**本表列出的** Cargo crate 也寫精確 `major.minor.patch`，與 NuGet 同待遇。未列在本表的 Cargo 相依（例 `serde`、`serde_json`）沿用既有 range 寫法，由規則 6 的 `Cargo.lock` ＋ `--locked` 鎖定，是否納表見第 8 節。把本表的值寫進 manifest 時，回覆要說明每個值依據哪一列、屬 3.7 哪一批、寫法是精確值還是 caret（預設或註明例外）（WHY：使用者與審查者據此逐項對表，升級時也知道哪些要一起動）。「v1」是前一版表（1.1.0）的值，「v2」是本表現行值。「待確認」指沒有裁定的項目，沿用 v1。
+range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`packageManager`、`global.json`、docker tag 與 action SHA 寫精確值；**本表列出的** Cargo crate 也寫精確 `major.minor.patch`，與 NuGet 同待遇。未列在本表的 Cargo 相依（例 `serde`、`serde_json`）沿用既有 range 寫法，由規則 6 的 `Cargo.lock` ＋ `--locked` 鎖定，是否納表見第 8 節。把表列 Cargo crate 或 3.7 Tauri 批次的值寫進 manifest 時，回覆要說明它們屬 Tauri 批次、各自是精確值還是 npm caret 預設（WHY：同一批 Cargo 寫精確值、npm 寫 caret，不說明，讀者會把其中一邊改成另一邊的寫法）。「v1」是前一版表（1.1.0）的值，「v2」是本表現行值。「待確認」指沒有裁定的項目，沿用 v1。
 
 ### 3.1 Runtime / SDK / 基礎設施
 
@@ -330,7 +330,7 @@ services:
 - [ ] 所有 `.csproj` 的 `<PackageReference>` 都沒有 `Version=`
 - [ ] 所有 `.csproj` 沒有自己寫 `<TargetFramework>`（統一由 `Directory.Build.props` 提供）
 - [ ] docker image tag 為 `postgres:18.6`，不是 `latest`
-- [ ] Dockerfile 的 `FROM` 是 3.1 容器映像表的完整 tag，沒有 `major.minor` 簡寫或 `alpine`／`stable` 滾動別名（規則 7）
+- [ ] Dockerfile 的 `FROM` 是 3.1 容器映像表的完整 tag，沒有 `major.minor` 簡寫或 `alpine`／`stable`／`mainline` 滾動別名（規則 7）
 - [ ] CI 的 Node / .NET 版本來自 `.nvmrc` / `global.json`，不是寫死在 yml；`uses:` 皆為 3.5 對照表的 SHA＋版本註解
 - [ ] 測試專案用 `coverlet.msbuild`，沒有 `coverlet.collector`
 - [ ] 沒有任何 `corepack enable`
@@ -393,5 +393,5 @@ services:
 - 不得把 `dev` 合併或 dry-run 成功當成已發版、已同步或任何單（含 Linear E-426）可結案的證據。
 - 不得把「新專案用 v2」簡化成「新專案先開在 v1 比較省事」，也不得簡化成「舊專案也要立刻對齊」。
 - 不得把「舊專案可緩步」簡化成「舊專案永遠不升」：每筆例外都寫明收斂條件或明寫 none yet。
-- 不得把容器映像的完整 tag 簡化回 `major.minor` 簡寫（`dotnet/sdk:10.0`）或 `alpine`／`stable` 這類滾動別名（`nginx:alpine`），也不得因為「表上沒有這個映像」就照下游範本寫浮動 tag，要先補表（規則 7；證據 E7）。
+- 不得把容器映像的完整 tag 簡化回 `major.minor` 簡寫（`dotnet/sdk:10.0`）或 `alpine`／`stable`／`mainline` 這類滾動別名（`nginx:alpine`），也不得因為「表上沒有這個映像」就照下游範本寫浮動 tag，要先補表（規則 7；證據 E7）。
 - 不得把表列 Cargo crate 的精確版號簡化回 `"2"` 這類 major range，也不得讓 `rust-version`（MSRV）低於表列 `tauri`／`tauri-build` 在 crates.io 宣告的 `rust_version`；未列表的相依不在此限（§3 前言；證據 E8、E9）。
