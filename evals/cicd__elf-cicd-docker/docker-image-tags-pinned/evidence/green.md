@@ -84,3 +84,48 @@
 - `web.Dockerfile` 會讀 `docker/nginx.conf`，這個檔還不存在，前端映像目前 build 不了。
 - 範本另外有 `docker-compose.yml`、`.env.example`、根目錄的 `.dockerignore`，你這次沒要求，所以沒做。要的話我照範本一起補上。
 ````
+
+## 最終樹（Task 8，HEAD `e431a746`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive e431a746eed9e276440e2f4865da4c14c418a2cd`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：7，耗時 55 秒
+- 結果：5/5 個 grader 通過 → **通過**
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-api-images` | 通過 | work/docker/api.Dockerfile:6 `FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build`；:22 `FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS runtime`。 |
+| `02-web-images` | 通過 | work/docker/web.Dockerfile:4 `FROM node:24.22.2-alpine AS build`；:35 `FROM nginx:1.31.8-alpine AS runtime`。 |
+| `03-no-floating-tags` | 通過 | 在 work 跑 grep -rnE 'dotnet/(sdk\|aspnet):10\.0([^.0-9]\|$)\|nginx:(alpine\|stable\|mainline)' docker/ ，無輸出，結束碼 1。 |
+| `04-cites-image-table` | 通過 | final-response.md 稱「elf-stack 3.1 容器映像表，四個都寫完整版號，沒有 10.0、alpine 這類簡寫」，並逐列對照；無沿用範本浮動 tag 的說法。 |
+| `05-evidence-file` | 通過 | E:/source/e117-runs/final-tree/stack/elf-stack/references/docker-images.md 存在；第 47 節 `node:24.22.2-alpine` 含 curl 指令與逐字輸出（24.22.2-alpine sha256:a34ab6d7… 2026-11-05），表第 7 行亦列。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我照團隊範本建好了 `docker/api.Dockerfile` 和 `docker/web.Dockerfile`。目前 repo 裡還沒有程式碼，所以還沒跑過 `docker build`。
+
+**還不能直接建置，有兩件事要處理：**
+1. **專案名稱還沒填。** 我不知道專案叫什麼，所以 `<AppName>`（api.Dockerfile 4 處，例如 `MyApp`，對應 `server/src/MyApp.Api/`）和 `<app>`（web.Dockerfile 1 處，小寫，nginx 設定檔名）先留著範本的佔位符。告訴我名稱，我就填上。
+2. **缺 `docker/nginx.conf`。** web.Dockerfile 會複製這個檔，沒有它建置會失敗。團隊範本另外還有 `docker-compose.yml`、`.env.example`、根目錄的 `.dockerignore` 和 `release.yml`。這次你只要兩個 Dockerfile，所以我沒有建這些。要的話我照範本一起補。
+
+**映像 tag 的依據（elf-stack 3.1 容器映像表，四個都寫完整版號，沒有 `10.0`、`alpine` 這類會自動換版的簡寫）：**
+
+| 位置 | 值 | 依據哪一列 | 屬於哪一批（3.7） |
+|---|---|---|---|
+| api 建置階段 | `mcr.microsoft.com/dotnet/sdk:10.0.403` | .NET SDK 映像，和 `global.json` 同一個值 | 不屬於任何批次 |
+| api 執行階段 | `mcr.microsoft.com/dotnet/aspnet:10.0.14` | ASP.NET Core 執行映像（MCR 上沒有 `aspnet:10.0.403`） | ASP.NET 批次 |
+| web 建置階段 | `node:24.22.2-alpine` | Node（web 建置），和 Node.js 列同版 | Node 批次 |
+| web 執行階段 | `nginx:1.31.8-alpine` | nginx（web 執行），mainline 線 | 不屬於任何批次 |
+| `PNPM_VERSION` | `12.16.1` | pnpm 列 | 不屬於任何批次 |
+
+依 elf-stack 的查證紀錄，這四個 tag 都已在 registry 確認存在。
+
+**另外照團隊預設填的值：**
+- 前端目錄設為 `apps`，這是團隊慣例；如果你的前端放在別的目錄要告訴我。
+- 根目錄 `package.json` 要寫 `"packageManager": "pnpm@12.16.1"`，跟 Dockerfile 的版本一致，否則 pnpm 會報版本不符。
+````

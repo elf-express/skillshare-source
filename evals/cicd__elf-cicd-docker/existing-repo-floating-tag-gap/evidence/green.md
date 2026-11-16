@@ -79,3 +79,56 @@
 1. **另開升級單，把三個 `FROM` 釘到表上的版本**：要再建置一次並驗證容器健康（aspnet 映像的 patch 版本會變），但可以從此不再登記例外。
 2. **登記到 `references/exceptions.md`，收斂單寫「none yet」**：最省事，代價是建置結果繼續會隨時間漂移。
 ````
+
+## 最終樹（Task 8，HEAD `e431a746`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive e431a746eed9e276440e2f4865da4c14c418a2cd`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：9，耗時 51 秒
+- 結果：4/4 個 grader 通過 → **通過**
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-only-nginx-changed` | 通過 | diff work/docker/api.Dockerfile、web.Dockerfile 對 fixture 結束碼皆 0；nginx.conf:17 `location /api/`、:24 `proxy_read_timeout 120s;`（fixture 為 60s）。另刪除第 1 行待辦註解，不影響判準。 |
+| `02-lists-gaps` | 通過 | final-response.md 表格三列（nginx 執行映像／.NET SDK 建置映像／ASP.NET 執行映像）：專案現值 nginx:alpine、sdk:10.0、aspnet:10.0；標準值 nginx:1.31.8-alpine、sdk:10.0.403、aspnet:10.0.14；跨 major 皆「否」；已登記例外皆「否」。 |
+| `03-gap-handling` | 通過 | 回覆稱屬 elf-stack §0 第 3 種情況，依規則 1 與 3 這次不順手升級，只列出；「需要你決定」給選項 1 另開升級單、2 登記 exceptions.md。 |
+| `04-gap-does-not-block` | 通過 | 回覆明說「不能因為這些差距擋住這個修改，只能列出來」，並建議升級單另開、不放進這次 nginx 修改。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我只改了 `docker/nginx.conf`，兩個 Dockerfile 都沒動。版本有三處差距，下面列出來，需要你決定怎麼處理。
+
+## nginx.conf 的修改
+
+- `location /api/` 裡的 `proxy_read_timeout` 從 `60s` 改成 `120s`。
+- 第 1 行的待辦註解（「改成 120s」）已經做完，所以刪掉了。
+- 其他的 proxy 標頭、`proxy_pass`、IPv4／IPv6 listen、快取設定和 SPA fallback 都沒改，本來就符合 elf-cicd-docker 規則 12–14。
+- 還沒用 `nginx -t` 檢查語法，也沒有實際建置映像。這個設定是在建置時複製進 web 映像的，所以要重建 web 映像才會生效。
+
+## 版本差距
+
+這個 repo 已經上線，但沒有登記在 elf-stack 的 `references/exceptions.md` 裡，屬於 elf-stack §0 的第 3 種情況。照 elf-stack 規則 1 和規則 3，這次不能順手升級，也不能因為這些差距擋住這個修改，只能列出來。
+
+| 項目 | 檔案 | 專案現值 | 團隊標準值 | 跨 major | 已登記例外 |
+|---|---|---|---|---|---|
+| nginx 執行映像 | `web.Dockerfile` | `nginx:alpine` | `nginx:1.31.8-alpine` | 否 | 否 |
+| .NET SDK 建置映像 | `api.Dockerfile` | `mcr.microsoft.com/dotnet/sdk:10.0` | `sdk:10.0.403` | 否 | 否 |
+| ASP.NET 執行映像 | `api.Dockerfile` | `mcr.microsoft.com/dotnet/aspnet:10.0` | `aspnet:10.0.14` | 否 | 否 |
+
+- 標準值都取自 elf-stack 3.1 的容器映像表。三個專案現值都是浮動 tag（違反 elf-stack 規則 7），同一份 Dockerfile 每次建置可能拉到不同的映像。
+- `aspnet:10.0` 你沒提到，但它和 `sdk:10.0` 是同樣的問題。另外它不能跟著 SDK 寫成 `10.0.403`，MCR 上沒有這個 tag。
+- 根據查證紀錄，今天（2026-11-16）`nginx:alpine` 指向的映像和 `1.31.8-alpine` 是同一個。所以這次重建 web 映像，實際拿到的 nginx 和標準值一致，但下次建置就不保證了。
+- 建置階段的 `node:24.22.2-alpine` 和 `PNPM_VERSION=12.16.1` 已經符合標準。不過這次沒有拿到根目錄的 `package.json`，所以沒核對 `packageManager` 是不是同一個版本。
+
+## 需要你決定
+
+1. **另開升級單，把三個 tag 改成完整版本**：三項都是同一個 major 內的釘版，只要改 `FROM` 那幾行。代價是要重建兩個映像並重新驗證，這次的 PR 也會變大。
+2. **登記到 `exceptions.md`，收斂單寫 `none yet`**：現在完全不用動。代價是浮動 tag 會一直留著，每次建置的結果都可能不一樣。
+
+我建議選 1：三項都不跨 major，風險低，但另開一張單做，不要放進這次的 nginx 修改裡。
+````

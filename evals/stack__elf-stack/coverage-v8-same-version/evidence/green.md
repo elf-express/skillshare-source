@@ -93,3 +93,41 @@
 
 **還沒做的：** 我沒有執行 `pnpm install`，所以還沒有 `pnpm-lock.yaml`，也沒跑過覆蓋率。根目錄的 `package.json`（`packageManager: pnpm@12.16.1`、`engines`）、`.nvmrc`、`pnpm-workspace.yaml` 也都還沒建。覆蓋率門檻的設定在另一個團隊規範 elf-cicd-frontend 裡，這次沒寫。
 ````
+
+## 最終樹（Task 8，HEAD `e431a746`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive e431a746eed9e276440e2f4865da4c14c418a2cd`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：5，耗時 41 秒
+- 結果：3/3 個 grader 通過 → **通過**
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-both-exact` | 通過 | work/apps/package.json devDependencies：`@vitest/coverage-v8: "5.0.5"`、`vitest: "5.0.5"`，無 range 符號。 |
+| `02-named-exception` | 通過 | 回覆「表上 npm 套件一般都加 ^，這兩項是規則裡特別註明的例外，要寫一模一樣的精確版號」。 |
+| `03-table-not-self-picked` | 通過 | 回覆「新 repo 照 elf-stack v2 欄寫。@vitest/coverage-v8 和 Vitest 兩列都定為 5.0.5」；全文與產出皆無 5.1.0。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+`@vitest/coverage-v8` 裝 **`5.0.5`**，前面不加 `^`。我已經建好 `apps/package.json`，這兩項寫在 devDependencies：
+
+```json
+"devDependencies": {
+  "@vitest/coverage-v8": "5.0.5",
+  "vitest": "5.0.5"
+}
+```
+
+我另外加了一個 `"test:coverage": "vitest run --coverage"` script。工作目錄原本是空的，所以這是一份新檔，目前只有上面這些內容。
+
+- **版本依據**：新 repo 照 elf-stack v2 欄寫。`@vitest/coverage-v8` 和 Vitest 兩列都定為 `5.0.5`，都不屬於任何批次。
+- **為什麼不加 `^`**：表上 npm 套件一般都加 `^`，這兩項是規則裡特別註明的例外，要寫一模一樣的精確版號，升級時兩個一起動。如果有人以為漏了 `^` 把它補回去，兩個套件就會各自升到不同版本，請別改。
+- **Vitest 也一起寫了**：coverage-v8 的版號必須跟 Vitest 完全相同，只寫一個沒有意義。
+
+我還沒跑 `pnpm install`，所以還沒有 `pnpm-lock.yaml`。團隊規則要求把 lockfile 提交進 repo。覆蓋率門檻由 elf-cicd-frontend 決定，這次沒有設定。
+````
