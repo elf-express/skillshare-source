@@ -86,7 +86,8 @@ range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`
 | Pinia | `^2.2.6` | **`^4.1.0`** | Router | dependencies；與 vue-router 同一張單 |
 | vue-router | `^4.4.5` | **`^5.4.0`** | Router | dependencies |
 | vue-i18n | `^11.4.16` | **`^11.4.16`** | — | dependencies。BasicApp 已依安全性修補升級（Multica E-21 升級、Multica E-22 補登） |
-| Vitest | `^5.0.1` | **`^5.0.5`** | — | devDependencies；V8 覆蓋率門檻由 elf-cicd-frontend 擁有 |
+| Vitest | `^5.0.1` | **`5.0.5`**（精確） | — | devDependencies；**註明例外**：不套用 §3 前言的 caret 預設，與 `@vitest/coverage-v8` 寫完全相同的精確版號（elf-cicd-frontend 規則 16、elf-unit）；V8 覆蓋率門檻由 elf-cicd-frontend 擁有 |
+| @vitest/coverage-v8 | — | **`5.0.5`**（精確） | — | `apps/package.json` devDependencies；**註明例外**：不套用 §3 前言的 caret 預設，版號必須與 Vitest 列完全相同、不帶 `^`，兩者一起升；寫進 manifest 或回答版號時要說明這是 caret 預設的註明例外（WHY：不說明，讀者會以為漏寫 `^` 而改回 caret，兩個套件就各自浮動） |
 | @playwright/test | `^1.63.0` | **`^1.64.1`** | — | 根 `package.json` devDependencies |
 | eslint-plugin-vue | `^10.11.1` | **`^10.12.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile；與 3.6 同值 |
 | globals | `^17.13.0` | **`^17.13.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile |
