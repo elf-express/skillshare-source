@@ -380,6 +380,9 @@ services:
 - 大版本的寫法遷移（Vite 8 config、Pinia 4、vue-router 5、xunit.runner 4、Test.Sdk 18、coverlet 10 與 3.3 的覆蓋率指令）還沒在團隊專案實跑，歸各領域 skill。
 - .NET 的 `packages.lock.json`（`RestorePackagesWithLockFile`、`dotnet restore --locked-mode`）還沒在團隊專案實跑，實跑後另開單。
 - ELF.Studio／ELF.BasicApp 的例外（`references/exceptions.md`）只能由各自產品的 PR 驗證後解除；本表的 peer 查證不代替實跑。
+- 下游 `dependabot.yml` 要不要啟用 `package-ecosystem: docker`，並比照規則 11 忽略主版本：沒有裁定，目前不啟用（Multica E-117 Q4）。
+- `System.Security.Cryptography.Pkcs` 8.0.1 的 `NU1902`／`NU1903` 弱點警告來源（疑為 SqlSugarCore 的間接相依）：由 Multica E-146（弱點警告調查單）查依賴樹，查清前本表不改任何版本值。
+- `serde`、`serde_json` 等未列在 3.2 的 Cargo 相依要不要納表並改精確值：目前由規則 6 的 `Cargo.lock` ＋ `--locked` 鎖定（Multica E-117 A8）。
 
 ## 9. 禁止簡化
 
@@ -389,3 +392,5 @@ services:
 - 不得把 `dev` 合併或 dry-run 成功當成已發版、已同步或任何單（含 Linear E-426）可結案的證據。
 - 不得把「新專案用 v2」簡化成「新專案先開在 v1 比較省事」，也不得簡化成「舊專案也要立刻對齊」。
 - 不得把「舊專案可緩步」簡化成「舊專案永遠不升」：每筆例外都寫明收斂條件或明寫 none yet。
+- 不得把容器映像的完整 tag 簡化回 `major.minor` 簡寫（`dotnet/sdk:10.0`）或 `alpine`／`stable` 這類滾動別名（`nginx:alpine`），也不得因為「表上沒有這個映像」就照下游範本寫浮動 tag，要先補表（規則 7；證據 E7）。
+- 不得把表列 Cargo crate 的精確版號簡化回 `"2"` 這類 major range，也不得讓 `rust-version`（MSRV）低於表列 `tauri`／`tauri-build` 在 crates.io 宣告的 `rust_version`；未列表的相依不在此限（§3 前言；證據 E8、E9）。

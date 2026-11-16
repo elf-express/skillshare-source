@@ -25,3 +25,16 @@
 
 - E5 → 第 9 節「不得把『舊專案可緩步』簡化成『舊專案永遠不升』」（每筆例外寫收斂條件或 none yet）
 - E6 → 第 9 節「不得把『新專案用 v2』簡化成『新專案先開在 v1 比較省事』，也不得簡化成『舊專案也要立刻對齊』」
+
+## 映像 tag 與 Cargo 版本（Multica E-117）
+
+> 調查日期：2026-11-16。來源：`4be70e27`、`cc3d85bd`（Multica E-46 的 RED 紀錄）。
+
+| # | Commit / 位置 | 檔案 | 內容 | 重現方式 |
+|---|---|---|---|---|
+| E7 | `4be70e27` | `evals/cicd__elf-cicd-docker/web-image-and-compose/evidence/red.md:28` | 代理照 elf-cicd-docker 規則 10 寫 `nginx:alpine`，自述違反 elf-stack 規則 7，但表上沒有 nginx、不能自行定版 | `git show 4be70e27:evals/cicd__elf-cicd-docker/web-image-and-compose/evidence/red.md \| sed -n 28p` |
+| E8 | `cc3d85bd` | `evals/desktop__elf-tauri/new-src-tauri/evidence/red-v2.md:34` | 範本 MSRV `1.77.2` 低於 `tauri 2.12.5`／`tauri-build 2.7.4` 的 `rust_version 1.90`，代理自述 MSRV 宣告不實 | `git show cc3d85bd:evals/desktop__elf-tauri/new-src-tauri/evidence/red-v2.md \| sed -n 34p` |
+| E9 | `4be70e27` | `evals/desktop__elf-tauri/new-src-tauri/evidence/red.md:41` | 兩個 plugin 不在表上，代理沿用範本 `"2"`；前端 plugin 無表可查，所以沒寫 | `git show 4be70e27:evals/desktop__elf-tauri/new-src-tauri/evidence/red.md \| sed -n 41p` |
+
+- E7 → 第 9 節「不得把容器映像的完整 tag 簡化回…」
+- E8、E9 → 第 9 節「不得把表列 Cargo crate 的精確版號簡化回…」
