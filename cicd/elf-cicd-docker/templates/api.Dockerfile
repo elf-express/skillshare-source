@@ -3,7 +3,7 @@
 # Placeholder: <AppName> (e.g. MyApp → server/src/MyApp.Api/MyApp.Api.csproj)
 # Layout (elf-dotnet / elf-cicd-backend): global.json at the repo root,
 # server/Directory.Build.props, server/Directory.Packages.props, server/src/<Project>/.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build
 WORKDIR /src
 
 # Restore needs the SDK pin, the shared MSBuild props (TargetFramework, Central
@@ -19,7 +19,7 @@ RUN dotnet restore server/src/<AppName>.Api/<AppName>.Api.csproj
 COPY server/ server/
 RUN dotnet publish server/src/<AppName>.Api/<AppName>.Api.csproj -c Release -o /app --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS runtime
 WORKDIR /app
 
 # The aspnet image ships neither curl nor wget, so a container healthcheck that

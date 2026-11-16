@@ -49,7 +49,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 4. **MUST NOT** 使用表中標為「待確認」的值作為最終決定；遇到時照「暫定值」寫，並在 PR / 回覆中列出。
 5. **MUST** .NET 套件版本集中在 `Directory.Packages.props`；`.csproj` 內的 `<PackageReference>` **不得**帶 `Version=`。
 6. **MUST** 提交 lockfile（Node 專案 `pnpm-lock.yaml`、Rust／Tauri 專案 `Cargo.lock`），CI 以鎖定模式安裝（`pnpm install --frozen-lockfile`、`cargo build --locked`）。WHY：lockfile 被 git 忽略時，每個「解析版本」都只是本機快照，不是 repo 的事實。.NET 的 `packages.lock.json` 見第 8 節待確認。
-7. **MUST NOT** 使用 `latest`、`*`、浮動 docker tag（如 `postgres:latest`）。
+7. **MUST NOT** 使用 `latest`、`*` 或浮動 docker tag。比該映像完整版本短的 tag（如 `mcr.microsoft.com/dotnet/sdk:10.0` 這類 `major.minor` 簡寫、`postgres:18`）與 `alpine`／`stable`／`mainline` 這類滾動別名（如 `nginx:alpine`）都算浮動；映像一律寫 3.1 容器映像表或 PostgreSQL 列的完整 tag。WHY：浮動 tag 每次 pull 可能拿到不同映像，同一份 Dockerfile 今天與下週建出來的不一樣；表上的 tag 有查證紀錄（`references/docker-images.md`）。
 8. 升級流程見第 6 節：**先改本表，再改專案**。
 9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（Linear E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
 10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。WHY：同規則 9。
@@ -73,6 +73,15 @@ range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`
 | SqlSugarCore | 5.1.4.221 | **5.1.4.221** | `Directory.Packages.props` `<PackageVersion Include="SqlSugarCore" Version="5.1.4.221" />` | 確切 minor 待確認（第 8 節）；見 elf-sqlsugar |
 | Npgsql | 由 SqlSugarCore 5.1.4.221 間接帶入 5.0.18 | **間接 5.0.18** | 不直接引用；`Directory.Packages.props` 不寫 Npgsql | 方向是 10.0.3。SqlSugarCore 5.1.4.221 的 `PostgreSQLProvider` 預設開啟 `Npgsql.EnableLegacyTimestampBehavior`（`StaticConfig.AppContext_ConvertInfinityDateTime = true` 時不開），Npgsql 10.0.3 仍讀這個開關，但還沒在團隊專案實跑；由 Multica E-47（Npgsql 10.0.3 `timestamptz` 驗證）驗過才改成顯式引用。新 repo 用間接 5.0.18 就是本表值，不算例外。見 elf-postgresql 的時間欄位說明 |
 | Rust | stable | **stable ＋ `rust-toolchain.toml`** | `rust-toolchain.toml`（`channel = "stable"`、`components = ["rustfmt", "clippy"]`）；`Cargo.toml` `rust-version = "1.77.2"`（MSRV）、`edition = "2021"`；CI `dtolnay/rust-toolchain`（SHA 見 3.5） | 新 repo 附 toolchain 檔（v1 對此待確認）。參考專案無 `rust-toolchain.toml` |
+
+**容器映像**（`docker/*.Dockerfile` 的 `FROM`；查證紀錄見 `references/docker-images.md`；規則 7）
+
+| 映像 | v1 | **v2** | 釘選方式 | 備註 |
+|---|---|---|---|---|
+| Node（web 建置） | 表未列 | **`node:24.22.2-alpine`** | `docker/web.Dockerfile` 建置階段 `FROM` | 與 Node.js 列同版，屬 Node 批次 |
+| nginx（web 執行） | 表未列（範本 `nginx:alpine`） | **`nginx:1.31.8-alpine`** | `docker/web.Dockerfile` 執行階段 `FROM` | mainline 線（`nginx:alpine` 所指的線）；改用 stable 線是版本決定，走第 6 節 |
+| .NET SDK 映像 | 表未列（範本 `10.0`） | **`mcr.microsoft.com/dotnet/sdk:10.0.403`** | `docker/api.Dockerfile` 建置階段 `FROM` | 與 .NET SDK 列（`global.json`）同值 |
+| ASP.NET Core 執行映像 | 表未列（範本 `10.0`） | **`mcr.microsoft.com/dotnet/aspnet:10.0.14`** | `docker/api.Dockerfile` 執行階段 `FROM` | 與 ASP.NET Core 套件列同值，屬 ASP.NET 批次；MCR 沒有 `aspnet:10.0.403` |
 
 ### 3.2 前端 / 桌面（v1 取自參考專案 `apps/package.json`、`src-tauri/Cargo.toml`）
 
@@ -316,6 +325,7 @@ services:
 - [ ] 所有 `.csproj` 的 `<PackageReference>` 都沒有 `Version=`
 - [ ] 所有 `.csproj` 沒有自己寫 `<TargetFramework>`（統一由 `Directory.Build.props` 提供）
 - [ ] docker image tag 為 `postgres:18.6`，不是 `latest`
+- [ ] Dockerfile 的 `FROM` 是 3.1 容器映像表的完整 tag，沒有 `major.minor` 簡寫或 `alpine`／`stable` 滾動別名（規則 7）
 - [ ] CI 的 Node / .NET 版本來自 `.nvmrc` / `global.json`，不是寫死在 yml；`uses:` 皆為 3.5 對照表的 SHA＋版本註解
 - [ ] 測試專案用 `coverlet.msbuild`，沒有 `coverlet.collector`
 - [ ] 沒有任何 `corepack enable`
@@ -343,6 +353,8 @@ services:
 | 測試專案引用 `coverlet.collector`、用 `--collect:"XPlat Code Coverage"` | `coverlet.msbuild` ＋ `-p:CollectCoverage=true -p:Threshold=55 ...` |
 | CI 寫 `dotnet-version: '10.0.x'` 而 repo 沒有 `global.json` | 加 `global.json`，CI 用 `global-json-file` |
 | `image: postgres`、`postgres:latest` 或 `postgres:18` | `postgres:18.6` |
+| `FROM nginx:alpine` | `FROM nginx:1.31.8-alpine`（3.1 容器映像表；`alpine` 是滾動別名） |
+| `FROM mcr.microsoft.com/dotnet/sdk:10.0`、`aspnet:10.0` | `sdk:10.0.403`、`aspnet:10.0.14`（3.1 容器映像表；`10.0` 是 `major.minor` 簡寫） |
 | 只有 `engines`，沒有 `engineStrict: true` | 沒有 engine-strict 時 engines 只是警告（參考專案的 `.npmrc` 已註明此坑）；新專案寫在 `pnpm-workspace.yaml` |
 | 只升 Vite 沒升 plugin-vue、只升 Pinia 沒升 vue-router、.NET 測試套件只升一個 | 整批一起升（3.7） |
 | AI 看到新版就順手升級 | 只在使用者要求時升級，且先更新本表 |
