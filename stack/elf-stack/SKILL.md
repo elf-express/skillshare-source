@@ -3,7 +3,8 @@ name: elf-stack
 description: |
   Elf Express 技術堆疊版本的唯一真實來源（single source of truth），規定每個工具的版本、在 repo 中的釘選方式，以及既有專案要升級還是登記例外；不涵蓋大版本的寫法遷移（歸各領域 skill）。
   當任務涉及建立新專案、新增或升級套件 / SDK / runtime、撰寫 global.json、.nvmrc、package.json 的 engines 或
-  packageManager、Directory.Packages.props、docker image tag、CI 的 setup-* 或任何 `uses:` 行、審查 Dependabot PR、
+  packageManager、Directory.Packages.props、docker image tag（完整 tag 或浮動 tag）、Cargo.toml 的 rust-version（MSRV）
+  與 crate／Tauri plugin 版本、MSRV 或版本升級要誰核准、CI 的 setup-* 或任何 `uses:` 行、審查 Dependabot PR、
   審查 PR 時比對既有專案與團隊版本的差距、使用者要求「用最新版」、例外登記，或需要回答「團隊用哪一版」時觸發。
 metadata:
   version: 2.0.0
