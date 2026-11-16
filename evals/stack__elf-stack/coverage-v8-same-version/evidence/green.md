@@ -131,3 +131,38 @@
 
 我還沒跑 `pnpm install`，所以還沒有 `pnpm-lock.yaml`。團隊規則要求把 lockfile 提交進 repo。覆蓋率門檻由 elf-cicd-frontend 決定，這次沒有設定。
 ````
+
+## 最終樹（最終審查修正後，HEAD `ca26ae9d`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive ca26ae9d351f77032e87b7e0c71ed44a5e3ab22b`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：5，耗時 49 秒
+- 結果：3/3 個 grader 通過 → **通過**
+- 備註：最終審查收斂 §3 前言的回報要求等之後重跑；上一節是修正前的 `e431a746`
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-both-exact` | 通過 | work/apps/package.json:10-11 為 "5.0.5"，無範圍符號。 |
+| `02-named-exception` | 通過 | 回覆：npm 預設寫 ^，這兩個套件是明文列出的例外，版號須完全相同。 |
+| `03-table-not-self-picked` | 通過 | 版號 5.0.5，回覆稱取自 elf-stack v2 版本表，未出現 5.1.0。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+`@vitest/coverage-v8` 要裝 **`5.0.5`**，而且是不帶 `^` 的精確版號。我已經寫進 `apps/package.json`。
+
+```json
+"devDependencies": {
+  "@vitest/coverage-v8": "5.0.5",
+  "vitest": "5.0.5"
+}
+```
+
+- **為什麼不加 `^`：** elf-stack v2 的版本表規定 npm 套件預設寫 `^`，這兩個套件是明文列出的例外。兩者版號必須完全一樣、要一起升。漏寫 `^` 是故意的，不要改回 `^`，否則兩個套件會各自浮動到不同版本。
+- **一併寫入的內容：** `vitest` 也寫成精確的 `5.0.5`。另外加了 `test` 和 `test:coverage` 兩個 script，後者執行 `vitest run --coverage`。
+- **還沒做的：** 我沒有跑 `pnpm install`，所以 `pnpm-lock.yaml` 還沒產生，也沒實際跑過 coverage。團隊規定 lockfile 要提交，裝完後記得一起 commit。
+````

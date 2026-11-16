@@ -129,3 +129,46 @@
 - 前端目錄設為 `apps`，這是團隊慣例；如果你的前端放在別的目錄要告訴我。
 - 根目錄 `package.json` 要寫 `"packageManager": "pnpm@12.16.1"`，跟 Dockerfile 的版本一致，否則 pnpm 會報版本不符。
 ````
+
+## 最終樹（最終審查修正後，HEAD `ca26ae9d`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive ca26ae9d351f77032e87b7e0c71ed44a5e3ab22b`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：5，耗時 50 秒
+- 結果：5/5 個 grader 通過 → **通過**
+- 備註：最終審查收斂 §3 前言的回報要求等之後重跑；上一節是修正前的 `e431a746`
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-api-images` | 通過 | work/docker/api.Dockerfile:6 為 sdk:10.0.403，:22 為 aspnet:10.0.14。 |
+| `02-web-images` | 通過 | work/docker/web.Dockerfile 的 FROM 符合。 |
+| `03-no-floating-tags` | 通過 | 在 work 執行該 grep，結束碼 1，無符合行。 |
+| `04-cites-image-table` | 通過 | 回覆寫明依據 elf-stack 3.1 容器映像表 v2 欄與規則 7，未沿用範本浮動 tag。 |
+| `05-evidence-file` | 通過 | final-tree/stack/elf-stack/references/docker-images.md 第 7、49-56 行有 curl 指令與逐字輸出。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我照團隊範本建好了 `docker/api.Dockerfile` 和 `docker/web.Dockerfile`，但還不能建置：工作目錄是空的，不知道專案名稱，所以 `<AppName>` 和 `<app>` 兩個佔位符還沒填。這次只做了檔案，沒有實際跑過 `docker build`。
+
+**映像 tag 都寫完整版號，不用浮動 tag。** 依據是 `elf-stack` 3.1 容器映像表的 v2 欄，因為新 repo 一律用 v2：
+- `docker/api.Dockerfile`：建置用 `mcr.microsoft.com/dotnet/sdk:10.0.403`，和 `global.json` 同值；執行用 `mcr.microsoft.com/dotnet/aspnet:10.0.14`，屬 ASP.NET 批次。
+- `docker/web.Dockerfile`：建置用 `node:24.22.2-alpine`，執行用 `nginx:1.31.8-alpine`（mainline 線）。
+- 沒有使用 `10.0`、`nginx:alpine` 這類寫法（`elf-stack` 規則 7）。
+
+**已填好的值：**
+- `PNPM_VERSION=12.16.1`：根 `package.json` 的 `packageManager` 要寫同一個值 `"pnpm@12.16.1"`。
+- 前端目錄設為 `apps`：這是團隊標準位置。
+
+**需要你決定：**
+1. **專案名稱是什麼？** 給我名稱（例如 `MyApp`）就能填好兩個佔位符：
+   - `<AppName>`：API 專案會在 `server/src/MyApp.Api/`。
+   - `<app>`：小寫的 `myapp`，用在 nginx 設定檔名。
+2. **要不要一起補齊其餘容器檔？**
+   - 補齊：加上 `nginx.conf`、`docker-compose.yml`、`.env.example` 和根目錄 `.dockerignore`，再在 `.gitignore` 加入 `docker/.env`。代價是多 5 個檔案要審。
+   - 不補：只交這兩個 Dockerfile。代價是 web 映像建置時會因為 COPY 不到 `docker/nginx.conf` 而失敗，也不能用 compose 啟動。
+````

@@ -132,3 +132,42 @@
 
 我建議選 1：三項都不跨 major，風險低，但另開一張單做，不要放進這次的 nginx 修改裡。
 ````
+
+## 最終樹（最終審查修正後，HEAD `ca26ae9d`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive ca26ae9d351f77032e87b7e0c71ed44a5e3ab22b`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：8，耗時 54 秒
+- 結果：4/4 個 grader 通過 → **通過**
+- 備註：最終審查收斂 §3 前言的回報要求等之後重跑；上一節是修正前的 `e431a746`
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-only-nginx-changed` | 通過 | diff api/web Dockerfile 皆結束碼 0；nginx.conf:24 為 proxy_read_timeout 120s（另刪除第一行待辦註解，grader 未禁止）。 |
+| `02-lists-gaps` | 通過 | 回覆表格三列含位置、專案現值、標準值、跨 major=否、已登記例外=否，值與 grader 一致。 |
+| `03-gap-handling` | 通過 | 回覆引用 §0 情況 3 與規則 1，只回報差距不順手升級，提供開升級單或登記 exceptions.md 兩選項。 |
+| `04-gap-does-not-block` | 通過 | 回覆明言「不擋合併」，nginx 變更已完成未以差距為前提。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我把 `docker/nginx.conf` 中 `/api/` 的 `proxy_read_timeout` 從 `60s` 改成 `120s`，第一行的待辦註解也刪了（`docker/nginx.conf:24`）。本機沒有 nginx，沒跑 `nginx -t` 驗證語法。兩個 Dockerfile 我沒動。
+
+**版本問題：** 這個 repo 已經上線，但沒有登記在 `references/exceptions.md`。依 `elf-stack` 的 §0 情況 3 和規則 1，這些只能當差距回報，不能在這次改 proxy 時順手升級，也不擋合併。下表的標準值取自 `elf-stack` 3.1 容器映像表。
+
+| 位置 | 專案現值 | 標準值 | 跨 major | 已登記例外 |
+|---|---|---|---|---|
+| `web.Dockerfile` 執行階段 | `nginx:alpine`（會自動跟著新版變動的浮動 tag） | `nginx:1.31.8-alpine` | 否 | 否 |
+| `api.Dockerfile` 建置階段 | `dotnet/sdk:10.0` | `dotnet/sdk:10.0.403` | 否 | 否 |
+| `api.Dockerfile` 執行階段 | `dotnet/aspnet:10.0` | `dotnet/aspnet:10.0.14` | 否 | 否 |
+
+你只提到前兩項，但 `aspnet:10.0` 也是同一種浮動 tag。這三個 tag 每次建置都可能拉到不同版本，同一份 Dockerfile 這週和下週建出來的映像可能不一樣。
+
+**需要你決定這個專案怎麼處理：**
+1. **開升級單，改成完整 tag**：只動三行 `FROM`，都不跨 major。代價是上線前要重建映像並重跑 healthcheck。
+2. **登記例外**：在 `references/exceptions.md` 寫上這個專案、這三項、一行理由，收斂單可以寫「none yet」。代價是在升級前，映像內容還是會跟著上游 tag 變動。
+````
