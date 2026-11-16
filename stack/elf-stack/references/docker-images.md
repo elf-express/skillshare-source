@@ -28,6 +28,20 @@ $ curl -s https://hub.docker.com/v2/repositories/library/nginx/tags/1.30.6-alpin
 1.30.6-alpine sha256:901e593c95dc85f5a729f5765516321366ef4ac401821431d408897e95287d0a 2026-11-13T13:50:53.599123Z
 ```
 
+## 浮動別名查證日指向
+
+elf-stack 規則 7：既有專案的現值是浮動 tag 時，規則 1 的「是否跨 major」照這張表比。比的是 registry 別名在查證日指向哪個完整 tag，**不是**某個 repo 已部署映像的實際版本；部署映像要另外查（例如 `docker image inspect` 或部署紀錄），沒查過就不得說它是哪一版。
+
+| 浮動 tag | 種類 | 查證日指向（比較對象） | 依據 | 與表值比 | 查證日 |
+|---|---|---|---|---|---|
+| `nginx:alpine` | 滾動別名 | `nginx:1.31.8-alpine` | digest 與 `1.31.8-alpine` 相同（`sha256:fed7e14b…`，上節逐字輸出） | 同 major（1），不跨 | 2026-11-16 |
+| `nginx:mainline-alpine` | 滾動別名 | `nginx:1.31.8-alpine` | 同上 | 同 major（1），不跨 | 2026-11-16 |
+| `nginx:stable-alpine` | 滾動別名 | `nginx:1.30.6-alpine` | digest 與 `1.30.6-alpine` 相同（`sha256:901e593c…`，上節逐字輸出） | 同 major（1），不跨；但是 stable 線，換線見上節 | 2026-11-16 |
+| `mcr.microsoft.com/dotnet/sdk:10.0` | `major.minor` 簡寫 | 不必查：major 就寫在 tag 上（10） | tag 本身 | 與 `sdk:10.0.403` 同 major（10），不跨 | — |
+| `mcr.microsoft.com/dotnet/aspnet:10.0` | `major.minor` 簡寫 | 不必查：major 就寫在 tag 上（10） | tag 本身 | 與 `aspnet:10.0.14` 同 major（10），不跨 | — |
+
+別名的指向會隨上游重建改變；表值或查證日更新時，這張表要跟著重查。2026-11-16 13:53Z 重跑上節五個 nginx 指令，digest 與上節逐字輸出相同。
+
 ## runtime 映像為什麼不是 10.0.403
 
 `sdk:10.0.403` 是 SDK 版號（對齊 `global.json`），runtime 映像的版號跟 ASP.NET Core 套件版走，兩者不同步：`aspnet:10.0.403` 在 MCR 不存在（`404`），`aspnet:10.0.14` 存在（`200`）。所以 api 建置階段用 `sdk:10.0.403`、執行階段用 `aspnet:10.0.14`（Multica E-117 A1）。

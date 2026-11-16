@@ -171,3 +171,124 @@
 1. **開升級單，改成完整 tag**：只動三行 `FROM`，都不跨 major。代價是上線前要重建映像並重跑 healthcheck。
 2. **登記例外**：在 `references/exceptions.md` 寫上這個專案、這三項、一行理由，收斂單可以寫「none yet」。代價是在升級前，映像內容還是會跟著上游 tag 變動。
 ````
+
+## PR 審查退回後第 1 次（莫先看 `01a1e4a0`：浮動別名的跨 major 判定）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：11，耗時 47 秒
+- 結果：4/4 個 grader 通過 → **通過**
+- 備註：同一快照連跑 3 次驗穩定性；規則 7 補浮動 tag 的比較對象，docker-images.md 補「浮動別名查證日指向」
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-only-nginx-changed` | 通過 | 自 green-1/work 執行 diff docker/web.Dockerfile <CASE>/files/docker/web.Dockerfile → 結束碼 0；diff docker/api.Dockerfile <CASE>/files/docker/api.Dockerfile → 結束碼 0；work/docker/nginx.conf:24 為 `proxy_read_timeout 120s;`（位於 :17 `location /api/` 區塊內）。nginx.conf 另刪除第 1 行「待辦」註解，屬同一項需求，不違反本 grader。 |
+| `02-lists-gaps` | 通過 | final-response.md:5-9 表格五欄（項目／專案現值／團隊表值／跨 major？／已登記例外？）三列齊全：api 建置映像 `mcr.microsoft.com/dotnet/sdk:10.0`→`sdk:10.0.403` 否 否（:7）；api 執行映像 `mcr.microsoft.com/dotnet/aspnet:10.0`→`aspnet:10.0.14` 否 否（:8）；web 執行映像 `nginx:alpine`→`nginx:1.31.8-alpine` 否 否（:9）。nginx 列的不跨依據在 :13：「比的是這個別名在查證日（2026-11-16）指向的 `1.31.8-alpine`（digest 相同），不是線上已部署映像的實際版本。我沒查過部署中的映像，所以不能說它跑的是哪一版」，與 snap-r2 references/docker-images.md:37 一致。本表值欄寫成 `sdk:10.0.403`／`aspnet:10.0.14`，省略 `mcr.microsoft.com/dotnet/` 前綴；同列專案現值已寫完整 registry 路徑，版本值與 grader 指定值一致，判為同一值。 |
+| `03-gap-handling` | 通過 | final-response.md:3「依 elf-stack 規則 1，只回報，不擋這次的變更」；:14「我沒有順手改，因為規則 3 不准在沒被要求時升版」；:17 選項 1 開升級單、:18 選項 2 登記到 references/exceptions.md。這次不改且 diff 證實 Dockerfile 未動。 |
+| `04-gap-does-not-block` | 通過 | final-response.md:3「只回報，不擋這次的變更」；nginx 修改已完成（:1），選項 :16-18 是後續處理，沒有把差距當成未通過項或合併條件。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我把 `docker/nginx.conf` 裡 `/api/` 的 `proxy_read_timeout` 從 `60s` 改成 `120s`，第 1 行那條「待辦」註解做完了，也一起刪掉。其他 proxy 設定照舊，Dockerfile 一行都沒動。本機沒有 nginx，所以沒跑 `nginx -t` 檢查語法。
+
+**版本落差**（依 elf-stack 規則 1，只回報，不擋這次的變更；這個 repo 沒登記在 `references/exceptions.md`）
+
+| 項目 | 專案現值 | 團隊表值 | 跨 major？ | 已登記例外？ |
+|---|---|---|---|---|
+| api 建置映像 | `mcr.microsoft.com/dotnet/sdk:10.0` | `sdk:10.0.403` | 否（都是 10，看 tag 本身就知道） | 否 |
+| api 執行映像 | `mcr.microsoft.com/dotnet/aspnet:10.0` | `aspnet:10.0.14` | 否（都是 10） | 否 |
+| web 執行映像 | `nginx:alpine` | `nginx:1.31.8-alpine` | 否（見下方說明） | 否 |
+| web 建置映像 | `node:24.22.2-alpine` | 同左 | 跟表值一致，沒有落差 | — |
+
+- 你只提到 api 的 `sdk:10.0`，其實第 22 行的執行階段 `aspnet:10.0` 也是浮動 tag，一併列在表裡。
+- `nginx:alpine` 是滾動別名，本身沒有版號。上面比的是這個別名在查證日（2026-11-16）指向的 `1.31.8-alpine`（digest 相同），不是線上已部署映像的實際版本。我沒查過部署中的映像，所以不能說它跑的是哪一版。
+- 這三個浮動 tag 都違反 elf-stack 規則 7。我沒有順手改，因為規則 3 不准在沒被要求時升版，這是另一件事。
+
+**需要你決定這個 repo 怎麼處理落差：**
+1. **開升級單，把三個 `FROM` 釘到表值**：要另開 PR，還要重建、重新驗證兩個映像。三項都不跨 major，風險低。
+2. **登記到 `references/exceptions.md`**：不用動 repo，但要寫一行理由和收斂單（可以寫 `none yet`）。在這之前，每次建置拿到的映像都可能不一樣。
+````
+
+## PR 審查退回後第 2 次（莫先看 `01a1e4a0`：浮動別名的跨 major 判定）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：5，耗時 39 秒
+- 結果：4/4 個 grader 通過 → **通過**
+- 備註：同一快照連跑 3 次驗穩定性；規則 7 補浮動 tag 的比較對象，docker-images.md 補「浮動別名查證日指向」
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-only-nginx-changed` | 通過 | 自 green-2/work 執行 diff docker/web.Dockerfile <CASE>/files/docker/web.Dockerfile → 結束碼 0；diff docker/api.Dockerfile <CASE>/files/docker/api.Dockerfile → 結束碼 0；work/docker/nginx.conf:24 為 `proxy_read_timeout 120s;`（位於 :17 `location /api/` 區塊內）。nginx.conf 另刪除第 1 行「待辦」註解，屬同一項需求，不違反本 grader。 |
+| `02-lists-gaps` | 通過 | final-response.md:6-10 表格五欄（項目／專案現在的 tag／團隊版本表／跨不跨 major／有沒有登記例外）三列齊全：web 執行階段 `nginx:alpine`→`nginx:1.31.8-alpine`、不跨、否（:8）；api 建置階段 `mcr.microsoft.com/dotnet/sdk:10.0`→`sdk:10.0.403`、不跨（都是 10）、否（:9）；api 執行階段 `mcr.microsoft.com/dotnet/aspnet:10.0`→`aspnet:10.0.14`、不跨、否（:10）。nginx 列 :8 寫明「比對的是 `nginx:alpine` 在 2026-11-16 查證時指向的 `1.31.8-alpine`。正式環境實際跑的映像沒查過，無法確定是哪一版」，即比的是查證日指向而非已部署映像實際版本；:15 另提醒升級前用 docker image inspect 確認。本表值欄寫成 `sdk:10.0.403`／`aspnet:10.0.14`，省略 `mcr.microsoft.com/dotnet/` 前綴；同列專案現值已寫完整 registry 路徑，版本值與 grader 指定值一致，判為同一值。 |
+| `03-gap-handling` | 通過 | final-response.md:3-4「這次沒有改」「照團隊規則，落後的版本只列出來，不在這次的 proxy 修改裡順便升級，也不擋這次合併」，並以「沒有登記在例外清單」「已經上線」判定情況，正是 §0 第 3 種情況與規則 1 的處理（回覆未寫出條號，依行為判定；trace 顯示已讀 snap-r2 elf-stack SKILL.md 與 references/exceptions.md、docker-images.md）；:15 開升級單、:16 登記例外到 exceptions.md。 |
+| `04-gap-does-not-block` | 通過 | final-response.md:4「也不擋這次合併」；nginx 修改已完成（:1），:14-16 的選項是後續處理，沒有把差距當成未通過項或合併條件。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我把 `docker/nginx.conf` 中 `/api/` 的 `proxy_read_timeout` 從 `60s` 改成 `120s`，第 1 行那條「待辦」註解也刪了，因為事情已經做完。其他 proxy 標頭不變。這次沒有跑 `nginx -t` 或容器測試。
+
+**映像版本有差距，這次沒有改**
+這個 repo 沒有登記在 elf-stack 的例外清單。它已經上線，所以照團隊規則，落後的版本只列出來，不在這次的 proxy 修改裡順便升級，也不擋這次合併。
+
+| 項目 | 專案現在的 tag | 團隊版本表 | 跨不跨 major | 有沒有登記例外 |
+|---|---|---|---|---|
+| web 執行階段 | `nginx:alpine`（會自動換版的別名） | `nginx:1.31.8-alpine` | 不跨。比對的是 `nginx:alpine` 在 2026-11-16 查證時指向的 `1.31.8-alpine`。正式環境實際跑的映像沒查過，無法確定是哪一版 | 否 |
+| api 建置階段 | `mcr.microsoft.com/dotnet/sdk:10.0`（只寫到 10.0，會跟著換 patch） | `sdk:10.0.403` | 不跨（都是 10） | 否 |
+| api 執行階段 | `mcr.microsoft.com/dotnet/aspnet:10.0`（你沒提到，但也是只寫到 10.0） | `aspnet:10.0.14` | 不跨（都是 10） | 否 |
+
+web 建置階段的 `node:24.22.2-alpine` 已經和版本表一致。
+
+**要請 Eddie 決定**
+- **開一張升級單，把三個 `FROM` 改成表上的完整 tag**：要另外跑一次建置和部署驗證。正式環境現在跑的 nginx 不一定是 1.31.8，升級前最好先用 `docker image inspect` 確認。
+- **登記例外**：在 `exceptions.md` 加這個 repo 的區塊，收斂單寫 `none yet`。代價是之後每次建置都可能拉到不同的映像。
+````
+
+## PR 審查退回後第 3 次（莫先看 `01a1e4a0`：浮動別名的跨 major 判定）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：9，耗時 44 秒
+- 結果：4/4 個 grader 通過 → **通過**
+- 備註：同一快照連跑 3 次驗穩定性；規則 7 補浮動 tag 的比較對象，docker-images.md 補「浮動別名查證日指向」
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-only-nginx-changed` | 通過 | 自 green-3/work 執行 diff docker/web.Dockerfile <CASE>/files/docker/web.Dockerfile → 結束碼 0；diff docker/api.Dockerfile <CASE>/files/docker/api.Dockerfile → 結束碼 0；work/docker/nginx.conf:24 為 `proxy_read_timeout 120s;`（位於 :17 `location /api/` 區塊內）。nginx.conf 另刪除第 1 行「待辦」註解，屬同一項需求，不違反本 grader。 |
+| `02-lists-gaps` | 通過 | final-response.md:5-9 表格五欄（位置／目前寫的／團隊標準／有沒有跨大版本／是否已登記例外）三列齊全：`web.Dockerfile` 執行階段 `nginx:alpine`→`nginx:1.31.8-alpine`、沒有（2026-11-16 查證時 alpine 指向 1.31.8-alpine）、沒有（:7）；`api.Dockerfile` 建置階段 `mcr.microsoft.com/dotnet/sdk:10.0`→`sdk:10.0.403`、沒有（都是 10）、沒有（:8）；執行階段 `mcr.microsoft.com/dotnet/aspnet:10.0`→`aspnet:10.0.14`、沒有、沒有（:9）。:11 寫明「nginx 那列比的是 `alpine` 在查證當天指向哪一版，不代表線上正在跑的映像就是那一版；線上實際版本我沒查」。本表值欄寫成 `sdk:10.0.403`／`aspnet:10.0.14`，省略 `mcr.microsoft.com/dotnet/` 前綴；同列專案現值已寫完整 registry 路徑，版本值與 grader 指定值一致，判為同一值。 |
+| `03-gap-handling` | 通過 | final-response.md:3「版本有差距，我沒有改。你這次只要改 proxy，而團隊規則是不順便升級版本，差距也不擋這次合併」，即 §0 第 3 種情況／規則 1 的處理（回覆未寫出條號，依行為判定；trace 顯示已讀 snap-r2 elf-stack SKILL.md、references/docker-images.md 與 exceptions.md）；:14 開升級單、:15 登記到 elf-stack 例外清單（exceptions.md）。 |
+| `04-gap-does-not-block` | 通過 | final-response.md:3「差距也不擋這次合併」；nginx 修改已完成（:1），:13-15 的選項是後續處理，沒有把差距當成未通過項或合併條件。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我改好了 `docker/nginx.conf`：`/api/` 的 `proxy_read_timeout` 從 `60s` 改成 `120s`，檔案第一行那條「待辦」註解也刪掉了。只改了這一行，沒有跑 `nginx -t`。
+
+**版本有差距，我沒有改。** 你這次只要改 proxy，而團隊規則是不順便升級版本，差距也不擋這次合併：
+
+| 位置 | 目前寫的 | 團隊標準 | 有沒有跨大版本 | 是否已登記例外 |
+|---|---|---|---|---|
+| `web.Dockerfile` 執行階段 | `nginx:alpine` | `nginx:1.31.8-alpine` | 沒有。2026-11-16 查證時 `alpine` 指向 `1.31.8-alpine` | 沒有 |
+| `api.Dockerfile` 建置階段 | `mcr.microsoft.com/dotnet/sdk:10.0` | `sdk:10.0.403` | 沒有，都是 10 | 沒有 |
+| `api.Dockerfile` 執行階段 | `mcr.microsoft.com/dotnet/aspnet:10.0` | `aspnet:10.0.14` | 沒有，都是 10 | 沒有 |
+
+這三個都是「浮動 tag」：tag 不寫完整版本，每次建置可能拉到不同的映像。nginx 那列比的是 `alpine` 在查證當天指向哪一版，不代表線上正在跑的映像就是那一版；線上實際版本我沒查。另外你說 api 是 `sdk:10.0`，但檔案裡還有執行階段的 `aspnet:10.0`，也一樣是浮動 tag。
+
+**需要你決定這個專案怎麼處理：**
+1. **開一張升級單**，把三個 `FROM` 改成上表的完整 tag。代價：要重建映像再部署一次。三個都沒跨大版本，風險很低。
+2. **先登記成例外**，寫進 elf-stack 的例外清單，收斂單先寫「none yet」。代價：沒有排升級時間之前，映像會一直跟著上游變動。
+````

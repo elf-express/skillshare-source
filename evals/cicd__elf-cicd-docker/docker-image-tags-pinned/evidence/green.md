@@ -172,3 +172,43 @@
    - 補齊：加上 `nginx.conf`、`docker-compose.yml`、`.env.example` 和根目錄 `.dockerignore`，再在 `.gitignore` 加入 `docker/.env`。代價是多 5 個檔案要審。
    - 不補：只交這兩個 Dockerfile。代價是 web 映像建置時會因為 COPY 不到 `docker/nginx.conf` 而失敗，也不能用 compose 啟動。
 ````
+
+## PR 審查退回後（莫先看 `01a1e4a0`）重跑
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：7，耗時 43 秒
+- 結果：5/5 個 grader 通過 → **通過**
+- 備註：elf-stack 規則 7 有改，載入它的案例全部重跑
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-api-images` | 通過 | work/docker/api.Dockerfile:6 `FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build`；:22 `FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS runtime`，兩個 FROM 皆符合。 |
+| `02-web-images` | 通過 | work/docker/web.Dockerfile:4 `FROM node:24.22.2-alpine AS build`；:35 `FROM nginx:1.31.8-alpine AS runtime`，兩個 FROM 皆符合。 |
+| `03-no-floating-tags` | 通過 | 在 work/ 執行 `grep -rnE 'dotnet/(sdk\|aspnet):10\.0([^.0-9]\|$)\|nginx:(alpine\|stable\|mainline)' docker/`：無輸出，exit=1。 |
+| `04-cites-image-table` | 通過 | final-response.md:3「四個基底映像的 tag 都照 `elf-stack` 3.1 容器映像表寫完整版號，沒有用 `10.0`、`alpine` 這類會自己變動的 tag」；全文無沿用範本浮動 tag 的說法。 |
+| `05-evidence-file` | 通過 | E:/source/e117-runs/snap-r2/stack/elf-stack/references/docker-images.md 存在；:63-70 `## node:24.22.2-alpine` 節含 `curl -s https://hub.docker.com/v2/repositories/library/node/tags/24.22.2-alpine \| python -c ...` 指令與逐字輸出 `24.22.2-alpine sha256:a34ab6d7... 2026-11-05T23:39:52.751445Z`。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我照團隊範本做好了 `docker/api.Dockerfile` 和 `docker/web.Dockerfile`。repo 還沒有程式碼，所以兩個檔案都還沒跑過 `docker build`。
+
+四個基底映像的 tag 都照 `elf-stack` 3.1 容器映像表寫完整版號，沒有用 `10.0`、`alpine` 這類會自己變動的 tag：
+- **api 建置**：`mcr.microsoft.com/dotnet/sdk:10.0.403`，跟 `global.json` 的 SDK 版本相同。
+- **api 執行**：`mcr.microsoft.com/dotnet/aspnet:10.0.14`，跟 ASP.NET Core 套件同一批版本。
+- **web 建置**：`node:24.22.2-alpine`；pnpm 版本 `PNPM_VERSION` 設為 `12.16.1`，根目錄 `package.json` 的 `packageManager` 要寫同一版。
+- **web 執行**：`nginx:1.31.8-alpine`。
+
+**需要你決定：** 我不知道專案名稱，所以有兩個佔位符還沒換：
+- `api.Dockerfile` 的 `<AppName>`，例如 `MyApp`，會對應到 `server/src/MyApp.Api/`。
+- `web.Dockerfile` 的 `<app>`，用小寫，例如 `myapp`。
+
+前端目錄先用了團隊預設的 `apps`。告訴我名稱我就換掉。
+
+另外，`web.Dockerfile` 要讀 `docker/nginx.conf`，目前還沒有這個檔，web 映像會建不起來。規範裡同一組的還有 `docker/nginx.conf`、`docker/docker-compose.yml`、`docker/.env.example` 和根目錄的 `.dockerignore`，我可以一起補上。
+````

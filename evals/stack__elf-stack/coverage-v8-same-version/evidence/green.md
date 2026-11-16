@@ -166,3 +166,31 @@
 - **一併寫入的內容：** `vitest` 也寫成精確的 `5.0.5`。另外加了 `test` 和 `test:coverage` 兩個 script，後者執行 `vitest run --coverage`。
 - **還沒做的：** 我沒有跑 `pnpm install`，所以 `pnpm-lock.yaml` 還沒產生，也沒實際跑過 coverage。團隊規定 lockfile 要提交，裝完後記得一起 commit。
 ````
+
+## PR 審查退回後（莫先看 `01a1e4a0`）重跑
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：6，耗時 32 秒
+- 結果：3/3 個 grader 通過 → **通過**
+- 備註：elf-stack 規則 7 有改，載入它的案例全部重跑
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-both-exact` | 通過 | work/apps/package.json:9 `"@vitest/coverage-v8": "5.0.5"`、:10 `"vitest": "5.0.5"`，皆在 devDependencies，無 ^/~。 |
+| `02-named-exception` | 通過 | final-response.md:3「這裡不用 caret 是 elf-stack 特別註明的例外，不是漏寫：這兩個套件的版號必須完全相同，也要一起升級」。 |
+| `03-table-not-self-picked` | 通過 | final-response.md:1「依據是 elf-stack §3.2 的 v2 欄」；skill 樹 stack/elf-stack/SKILL.md:99-100 兩列皆 `5.0.5`（精確）；work/apps/package.json 無 5.1.0，回覆無「表上沒有」說法。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+`apps/package.json` 已建立，`@vitest/coverage-v8` 和 `vitest` 都寫成精確版 `5.0.5`，不加 `^`。依據是 elf-stack §3.2 的 v2 欄：工作目錄原本是空的，算新 repo，所以用 v2 值。
+
+這裡不用 caret 是 elf-stack 特別註明的例外，不是漏寫：這兩個套件的版號必須完全相同，也要一起升級。以後不要把它改回 `^`，否則兩個套件會各自升到不同版本。
+
+`pnpm-lock.yaml` 還沒產生，因為我沒有執行安裝。依規則 6，lockfile 要提交進 repo，請之後執行 `pnpm install` 再一起 commit。
+````
