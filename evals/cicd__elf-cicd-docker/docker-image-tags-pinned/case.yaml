@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: docker-image-tags-pinned
+skills:
+  - cicd/elf-cicd-docker
+  - stack/elf-stack
+expected_outcome: |
+  api 建置階段 `mcr.microsoft.com/dotnet/sdk:10.0.403`、執行階段 `mcr.microsoft.com/dotnet/aspnet:10.0.14`；web 建置階段 `node:24.22.2-alpine`、執行階段 `nginx:1.31.8-alpine`；沒有任何浮動 tag；回覆以 elf-stack 的容器映像表或規則 7 為依據；skill 樹的 `stack/elf-stack/references/docker-images.md` 有 `node:24.22.2-alpine` 的查證結果。
