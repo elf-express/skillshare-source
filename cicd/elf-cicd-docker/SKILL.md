@@ -44,12 +44,12 @@ metadata:
 
 本 skill 的 [`templates/api.Dockerfile`](templates/api.Dockerfile) 是團隊**唯一**的 API Dockerfile 範本；`elf-dotnet` 引用這裡，不另外維護一份。
 
-3. **MUST** 兩階段：`mcr.microsoft.com/dotnet/sdk:10.0` 建置 → `mcr.microsoft.com/dotnet/aspnet:10.0` 執行。
+3. **MUST** 兩階段：`mcr.microsoft.com/dotnet/sdk:10.0.403` 建置 → `mcr.microsoft.com/dotnet/aspnet:10.0.14` 執行，值取自 `elf-stack` 3.1 容器映像表，交付時說明 tag 依據該表。WHY：`10.0` 是滾動 tag，每次建置可能換 patch（`elf-stack` 規則 7）；說明依據，審查者才能逐項對表。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
 4. **MUST** 依序 COPY `global.json` → `server/Directory.Build.props` + `server/Directory.Packages.props` → 所有被參考專案的 `.csproj`（維持 `server/src/<Project>/` 相對結構）→ `dotnet restore` → 再 COPY `server/` → `dotnet publish --no-restore`。
    WHY：restore 需要 SDK 釘版、共用 MSBuild 屬性（`TargetFramework`、CPM 版本）與每個 ProjectReference 的 manifest；少了 `Directory.Packages.props`，CPM 專案的 `PackageReference` 沒有版本，restore 直接失敗。只複製 manifest 讓這層在依賴沒變時保持快取。新增專案參考時 **MUST** 同步加一行 COPY。
 5. **MUST** 以非 root 的 `$APP_UID` 執行、`ENV ASPNETCORE_HTTP_PORTS=8080`、`ENV TZ=UTC`、`EXPOSE 8080`。
 5a. **MUST** 在執行階段以 `apt-get install -y --no-install-recommends curl` 安裝 `curl`（切回 `$APP_UID` 之前），healthcheck 一律 `curl -fsS http://localhost:8080/api/health`。**MUST NOT** 用 `wget`。
-    WHY：`mcr.microsoft.com/dotnet/aspnet:10.0` 沒有 `curl` 也沒有 `wget`；healthcheck 呼叫不存在的指令會永遠 unhealthy，而 web 只等 `service_started`，不容易察覺。
+    WHY：`mcr.microsoft.com/dotnet/aspnet:10.0.14` 沒有 `curl` 也沒有 `wget`；healthcheck 呼叫不存在的指令會永遠 unhealthy，而 web 只等 `service_started`，不容易察覺。
 5b. 健康檢查端點固定 `GET /api/health`；連線字串設定鍵固定 `ConnectionStrings:Default`（環境變數 `ConnectionStrings__Default`）。
 6. **MUST NOT** 在 Dockerfile 寫連線字串或任何帳密。WHY：`ENV` 會永久留在映像層，任何能 pull 映像的人都看得到。
    連線字串只從執行期環境變數 `ConnectionStrings__Default` 注入。
@@ -62,7 +62,7 @@ metadata:
 9. **MUST** `VITE_*` 用 `ARG` + `ENV` 傳入，`VITE_API_BASE_URL` 預設 `/api`。WHY：Vite 在 build 時把值寫死進 bundle；相對路徑 `/api` 讓瀏覽器維持同源，不需要 CORS。
 9a. **MUST** 有 `ARG VITE_USE_MOCK=false` + `ENV VITE_USE_MOCK=$VITE_USE_MOCK`；compose 與 release job 也明確傳 `VITE_USE_MOCK=false`。
     WHY：程式碼預設開啟 mock（`import.meta.env.VITE_USE_MOCK !== 'false'`，方便本機與 CI e2e）；production 映像不設這個值就會打包成**假資料版**，畫面正常、資料全是假的。
-10. **MUST** 執行階段 `FROM nginx:alpine`，先 `rm -f /etc/nginx/conf.d/default.conf`，設定檔複製成 `/etc/nginx/conf.d/<app>.conf`。
+10. **MUST** 執行階段 `FROM nginx:1.31.8-alpine`（`elf-stack` 3.1 容器映像表，mainline 線，交付時說明 tag 依據該表；不得寫 `nginx:alpine` 等滾動別名，`elf-stack` 規則 7），先 `rm -f /etc/nginx/conf.d/default.conf`，設定檔複製成 `/etc/nginx/conf.d/<app>.conf`。既有專案的版本落差依 `elf-stack` §0 與規則 1 處理。
     WHY：映像的 `10-listen-on-ipv6-by-default.sh` 只在 `default.conf` 存在時執行，會呼叫 `apk manifest nginx`，無網路時容器啟動卡死。
 11. **MUST NOT** 在前端映像放任何 secret。WHY：`VITE_*` 最後都是公開的 JS 字串。
 
@@ -171,8 +171,9 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - [ ] `docker/` 內 5 個檔案 + 根目錄 `.dockerignore` 都在；`docker/.env` 已加入 `.gitignore`
 - [ ] api.Dockerfile：有 COPY `global.json`、`server/Directory.Build.props`、`server/Directory.Packages.props`；每個 ProjectReference 都有對應 `COPY *.csproj`；沒有任何 `ENV ConnectionStrings__…`
 - [ ] api.Dockerfile：最終階段裝了 `curl`、`TZ=UTC`；healthcheck 用 `curl`，不是 `wget`
+- [ ] api.Dockerfile：`FROM mcr.microsoft.com/dotnet/sdk:10.0.403` 與 `mcr.microsoft.com/dotnet/aspnet:10.0.14`，不是 `10.0`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
 - [ ] web.Dockerfile：`node:24.22.2-alpine`、`PNPM_VERSION` 等於 `packageManager`、有 COPY `pnpm-workspace.yaml`、`--frozen-lockfile`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
-- [ ] web.Dockerfile：刪除 `default.conf`、設定檔名為 `<app>.conf`
+- [ ] web.Dockerfile：執行階段 `nginx:1.31.8-alpine`、刪除 `default.conf`、設定檔名為 `<app>.conf`
 - [ ] web.Dockerfile 有 `ARG VITE_USE_MOCK=false` + `ENV`；compose 與 release job 都傳 `VITE_USE_MOCK=false`
 - [ ] nginx：`/api/` 代理到 `http://api:8080/api/`、IPv4 + IPv6 listen、SPA fallback
 - [ ] compose：`postgres:18.6`、volume 在 `/var/lib/postgresql`、`pg_isready` healthcheck、`service_healthy`、帳密用 `${VAR:?}`（既有專案的版本落差依 `elf-stack` §0 與規則 1 處理）
@@ -213,7 +214,7 @@ docker pull ghcr.io/<owner>/<repo>/web:latest
 - 映像 tag 是否保留 `v` 前綴（目前沿用 git tag，例 `v1.2.3`），或改為純 semver `1.2.3`。
 - postgres 18 volume 路徑改為 `/var/lib/postgresql` 依據官方映像變更說明，團隊尚未在實際專案驗證。
 - 各映像獨立 gha cache `scope` 是對參考專案的改良（參考專案未設定 scope），尚未在團隊 CI 實測命中率。
-- `node:<ver>-alpine` tag 在 Docker Hub 是否存在：已由 Multica E-45（elf-stack 版本政策修正單）定案，見 `elf-stack`。
+- `node:<ver>-alpine`、`nginx`、`dotnet/sdk`、`dotnet/aspnet` 的 tag 在 registry 是否存在：查證紀錄見 `elf-stack` 的 `references/docker-images.md`（Multica E-117，elf-stack 映像與 Cargo 版本釘選單）。
 - 以 `workflow_dispatch` 重建舊 tag 時，docker job 仍會推 `latest`，等於把 `latest` 退回舊版（既有行為，elf-cicd-versioning 3.3 把重建列為正式操作後更容易遇到）。是否改為 `inputs.tag` 有值時不推 `latest`，待決定。
 - 正式環境部署方式（直接 compose、Kubernetes 或其他）與 secrets 注入方式尚未定義；本 skill 只涵蓋建置與推送。
 - 正式環境的應用程式帳號如何建立（`docker-entrypoint-initdb.d` 初始化腳本、部署管線，或 DBA 手動），以及 CodeFirst 在正式環境由哪個步驟以擁有者帳號執行（規則 19a、elf-postgresql 規則 28、elf-sqlsugar 規則 18a）。

@@ -1,0 +1,251 @@
+# cargo-msrv-and-plugin-versions：GREEN 紀錄
+
+## 第 1 次（Plan Task 5 原文）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `8bf449e825569535bd8b3e06938fb0c8f375945b`（HEAD `54291d8c7d715d95fc5cc471a8089a2ceaec3072` ＋ 未提交的 stack/elf-stack/SKILL.md、desktop/elf-tauri/templates/Cargo.toml）；`git diff --stat`：`2 files changed, 13 insertions(+), 7 deletions(-)`，只列這兩個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：13，耗時 82 秒
+- 結果：4/5 個 grader 通過 → **未通過**
+- 備註：05 未通過 → 修 skill（§3 前言同行加「寫進 manifest 時要說明依據哪一列、屬 3.7 哪一批、精確或 caret」與 WHY）；同一快照的回歸 new-src-tauri 5/5、desktop-root-package-json 3/3，修正後用新快照重跑
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-msrv-1-90` | 通過 | work/src-tauri/Cargo.toml:7 為 rust-version = "1.90"。 |
+| `02-table-crates-exact` | 通過 | Cargo.toml 的 tauri 2.12.5、tauri-build 2.7.4、updater 2.14.1、process 2.4.0；grep -nE '= "2"' 結束碼 1。 |
+| `03-serde-untouched` | 通過 | serde = { version = "1", features = ["derive"] }、serde_json = "1" 原樣。 |
+| `04-npm-plugins-caret` | 通過 | apps/package.json 多出 plugin-process ^2.4.0、plugin-updater ^2.14.1，其餘欄位與 fixture 相同。 |
+| `05-cites-rules` | 未通過 | final-response.md 只說「範本和團隊版本表 elf-stack 一致」，沒有引用 §3 前言的 Cargo 精確值規定、沒有指出 §3.7 Tauri 批次、也沒有說明 npm plugin 用 caret 預設而非例外；三點皆缺。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我已新增 `src-tauri/`，`Cargo.toml` 是照團隊範本寫的，兩個前端 plugin 也加進了 `apps/package.json`。目前還沒編譯過：缺圖示和前端產物，`tauri.conf.json` 裡也還有幾項要你填。
+
+**`Cargo.toml` 的版本**（範本和團隊版本表 elf-stack 一致）
+- `rust-version = "1.90"`、`edition = "2021"`。elf-tauri 第 6 節「待確認」還寫著舊的 `1.77.2`，我以團隊版本表為準，沒有用它。
+- `tauri = "2.12.5"`、`tauri-build = "2.7.4"`。`tauri-plugin-updater = "2.14.1"`、`tauri-plugin-process = "2.4.0"` 放在只限桌面平台的相依區塊，在 `lib.rs` 的 `setup` 裡用 `#[cfg(desktop)]` 註冊。
+- 另外產生了 `Cargo.lock`。產生時 Cargo 先自動解析到較新的 `tauri 2.12.6` 和 `tauri-build 2.7.5`，我把它們降回表上的 `2.12.5` 和 `2.7.4`，避免順手升級。四個 crate 在 lock 裡現在都和表一致。
+
+**一起加的檔案**：`build.rs`、`rust-toolchain.toml`、`src/main.rs`（只呼叫 `acme_lib::run()`）、`src/lib.rs`、`capabilities/default.json`（只開基本權限）、`tauri.conf.json`。
+
+**`apps/package.json`**：加了 `@tauri-apps/plugin-updater ^2.14.1`、`@tauri-apps/plugin-process ^2.4.0`。repo 原本的版本都已和團隊表一致，沒有落差要回報。
+
+**需要你決定或補上的**
+1. **App 名稱和 `identifier`**：我從 `@acme/web` 推成 `acme`，所以 identifier 是 `tw.elf.acme`。它一上線就不能再改，不對的話要在第一次發版前換掉。
+2. **`tauri.conf.json` 還有三個佔位字串**，不填就建置不了：
+   - `pubkey`：要先執行 `pnpm tauri signer generate -w ~/.tauri/acme.key`，再把產生的公鑰完整貼上，私鑰要備份到密碼管理器。我沒有替你產生金鑰。
+   - `endpoints` 裡的 `<owner>/<repo>`。
+   - CSP 裡的 `<api-origin>`：填後端的網址來源；如果是完全離線的 App，就把這一段刪掉。
+3. **範本要求、但這次範圍外沒建立的**：
+   - 根目錄的 `package.json`（含 `packageManager: pnpm@12.16.1`、`tauri`／`desktop:*` scripts、`@tauri-apps/cli ^2.12.4`）和 `pnpm-workspace.yaml`。`tauri.conf.json` 裡的 `pnpm dev`／`pnpm build` 要靠根目錄的 `package.json` 才能跑。
+   - 前端串接檔 `apps/src/api/desktop.ts`。
+   - `docs/signing-and-keys.md`。
+   - `icons/` 底下的圖示，可以用 `pnpm tauri icon <圖檔>` 產生；目前資料夾是空的，所以還不能 `cargo check`。
+
+要的話，我可以接著補第 3 點的這些檔案。
+````
+
+## 第 2 次（修正 1：§3 前言要求說明依據）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ec0bfccaab52f307386a454a47ba2f776b2db6df`（HEAD `54291d8c7d715d95fc5cc471a8089a2ceaec3072` ＋ 同上兩個未提交檔）；`git diff --stat`：`2 files changed, 13 insertions(+), 7 deletions(-)`，只列這兩個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：10，耗時 92 秒
+- 結果：5/5 個 grader 通過 → **通過**
+- 備註：05 依行為判通過：回覆沒有逐字寫「§3 前言」，但寫明表列 crate 精確值、四個 crate 屬 3.7 Tauri 批次、npm plugin 是一般 caret 寫法。回覆另指出 Cargo 的 "2.12.5" 實為 ^2.12.5，已記為後續事項，本單不改規則
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-msrv-1-90` | 通過 | work/src-tauri/Cargo.toml:7 為 rust-version = "1.90"。 |
+| `02-table-crates-exact` | 通過 | Cargo.toml 的 tauri-build 2.7.4、tauri 2.12.5、tauri-plugin-updater 2.14.1、tauri-plugin-process 2.4.0；grep -nE '= "2"' 結束碼 1。 |
+| `03-serde-untouched` | 通過 | serde = { version = "1", features = ["derive"] }、serde_json = "1" 皆未動。 |
+| `04-npm-plugins-caret` | 通過 | diff 與 fixture 只多兩行：plugin-process ^2.4.0、plugin-updater ^2.14.1；其餘欄位逐項相同。 |
+| `05-cites-rules` | 通過 | 回覆寫明「都屬 elf-stack 3.7 的 Tauri 批次」；表列 Rust crate 要寫精確值（用版本表規定，未逐字寫「§3 前言」但內容是同一條規定）；兩個 npm plugin 標「一般的 caret 寫法」，與 Cargo 精確值對照，指出不是精確值例外。三點實質都有。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我已按團隊範本建好 `src-tauri/`，兩個前端 plugin 也加進了 `apps/package.json`。目前只驗證到 `cargo metadata --locked` 成功，**還沒編譯過**：`cargo check` 要 `icons/` 下有圖示，現在是空的，所以沒跑。`pnpm install` 也沒跑，因為 repo 沒有根目錄的 `package.json` 和 workspace 設定，`pnpm-lock.yaml` 還沒產生。
+
+**新增的檔案**：`src-tauri/` 下有 `Cargo.toml`、`Cargo.lock`、`build.rs`、`rust-toolchain.toml`、`tauri.conf.json`、`capabilities/default.json`、`src/main.rs`、`src/lib.rs` 和 `.gitignore`。app 名稱取自 `@acme/web`，用的是 `acme`，crate 是 `acme_lib`，identifier 是 `tw.elf.acme`。
+
+**版本與依據**（都屬 elf-stack 3.7 的 Tauri 批次，取 v2 值；這個 repo 不在例外清單裡）：
+
+| 寫入位置 | 值 | 依據 | 寫法 |
+|---|---|---|---|
+| `rust-version` / `edition` | `1.90` / `2021` | 3.1 Rust 列 | 精確值 |
+| `tauri` | `"2.12.5"` | 3.2 tauri（Rust crate） | 精確值 |
+| `tauri-build` | `"2.7.4"` | 3.2 tauri-build | 精確值 |
+| `tauri-plugin-updater` | `"2.14.1"` | 3.2，只給桌面平台的 target 依賴 | 精確值 |
+| `tauri-plugin-process` | `"2.4.0"` | 同上 | 精確值 |
+| `@tauri-apps/plugin-updater` | `^2.14.1` | 3.2 | 一般的 caret 寫法 |
+| `@tauri-apps/plugin-process` | `^2.4.0` | 3.2 | 一般的 caret 寫法 |
+
+`serde` 和 `serde_json` 不在版本表上，照範本寫 `"1"`，實際版本靠 `Cargo.lock` 鎖住。
+
+**跟規範對不上的地方**：版本表說 Rust crate 要寫「精確值」，但 Cargo 的 `"2.12.5"` 其實等於 `^2.12.5`。第一次產生的 lock 就解析出 `tauri 2.12.6`、`tauri-build 2.7.5`，比表上的版本高。我已用 `cargo update --precise` 把 lock 退回 2.12.5 和 2.7.4，四個 crate 現在都跟表一致。不過之後任何人跑 `cargo update` 都會再升上去。要不要處理，請你選：
+- **A. 照現在這樣**：跟範本一致，但只靠 lock 擋住，`cargo update` 就會漂掉。
+- **B. 這個 repo 改寫成 `"=2.12.5"`**：真正鎖死，但跟團隊範本不一樣。
+- **C. 先開 PR 改 elf-tauri 範本和 elf-stack 的說法**，再套用到這個 repo：最一致，但要先等核准。
+
+**還要你提供或決定的**：
+- `identifier`：`tw.elf.acme` 一上線就不能改，請確認名字。
+- `tauri.conf.json` 裡還有三個佔位字串：
+  - `pubkey`：產生金鑰後貼上公鑰。沒貼的話 build 會直接失敗。
+  - `endpoints` 的 `<owner>/<repo>`。
+  - CSP 的 `<api-origin>`：有後端就填它的 origin，純離線的 App 就整段刪掉。
+- `icons/` 是空的，要先跑 `pnpm tauri icon <圖檔>` 產生。
+- 規範還要求根目錄 `package.json`（含 `@tauri-apps/cli ^2.12.4` 和 `desktop:*` scripts）、`pnpm-workspace.yaml`、`apps/src/api/desktop.ts`、`docs/signing-and-keys.md`。這次範圍沒包含它們，所以沒建；沒有根目錄 `package.json`，`pnpm tauri dev` 跑不起來。
+````
+
+## 最終樹（Task 8，HEAD `e431a746`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive e431a746eed9e276440e2f4865da4c14c418a2cd`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：7，耗時 60 秒
+- 結果：5/5 個 grader 通過 → **通過**
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-msrv-1-90` | 通過 | work/src-tauri/Cargo.toml:7 `rust-version = "1.90"`。 |
+| `02-table-crates-exact` | 通過 | Cargo.toml:15 tauri-build "2.7.4"、:18 tauri "2.12.5"、:24 tauri-plugin-updater "2.14.1"、:26 tauri-plugin-process "2.4.0"；grep -nE '= "2"' src-tauri/Cargo.toml 結束碼 1。 |
+| `03-serde-untouched` | 通過 | Cargo.toml:19 `serde = { version = "1", features = ["derive"] }`、:20 `serde_json = "1"`。 |
+| `04-npm-plugins-caret` | 通過 | work/apps/package.json:11-12 `@tauri-apps/plugin-process ^2.4.0`、`@tauri-apps/plugin-updater ^2.14.1`；與 fixture diff 只多這兩行。 |
+| `05-cites-rules` | 通過 | 回覆開頭「全部屬於 elf-stack 3.7 的 Tauri 批次」；表格「寫法」欄表列 crate 皆「精確」、serde 註明「不在表上…靠 Cargo.lock 鎖住」（即 §3 前言 Cargo 規定的內容）；兩個 npm plugin「`^` 是 npm 預設寫法，不是例外」。註：未逐字寫出「§3 前言」，第 1 點以內容傳達，依行為判。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我照團隊範本新增了 `src-tauri/`，也把兩個前端 plugin 補進了 `apps/package.json`。目前還沒編譯過，也還沒有 `Cargo.lock`，下面有三個值要你給。
+
+**版本與出處**（全部屬於 elf-stack 3.7 的 Tauri 批次）
+
+| 套件 | 寫入的值 | 對應 elf-stack 哪一列 | 寫法 |
+|---|---|---|---|
+| `rust-version` | `"1.90"` | 3.1 Rust 列（MSRV） | 精確 |
+| `edition` | `"2021"` | 3.1 Rust 列 | — |
+| `tauri` | `"2.12.5"` | 3.2 tauri（Rust crate） | 精確 |
+| `tauri-build` | `"2.7.4"` | 3.2 tauri-build | 精確 |
+| `tauri-plugin-updater` | `"2.14.1"` | 3.2 同名列 | 精確，只給桌面平台 |
+| `tauri-plugin-process` | `"2.4.0"` | 3.2 同名列 | 精確，只給桌面平台 |
+| `serde`、`serde_json` | `"1"` | 不在表上 | 照範本的寫法，靠 `Cargo.lock` 鎖住 |
+| `@tauri-apps/plugin-updater` | `^2.14.1` | 3.2 同名列 | `^` 是 npm 預設寫法，不是例外 |
+| `@tauri-apps/plugin-process` | `^2.4.0` | 3.2 同名列 | `^` 是 npm 預設寫法，不是例外 |
+
+`apps/package.json` 原本的版本都已經是團隊現行版（v2），沒有落差。這個專案也不在例外清單裡。
+
+**新增的檔案**：`Cargo.toml`、`build.rs`、`rust-toolchain.toml`、`src/main.rs`、`src/lib.rs`、`capabilities/default.json`、`tauri.conf.json`。App 名稱我從 `@acme/web` 取作 `acme`，所以 crate 叫 `acme_lib`，`identifier` 是 `tw.elf.acme`。`identifier` 上線後就不能再改，名稱不對要現在說。
+
+**要你提供的值**（`tauri.conf.json` 裡還是佔位字串）：
+1. 後端網址 `<api-origin>`：寫進 CSP 的 `connect-src`。如果是不連後端的離線 App，就把這一段刪掉。
+2. GitHub 的 `<owner>/<repo>`：自動更新要從這裡抓新版本。
+3. 簽章公鑰 `pubkey`：先跑 `pnpm tauri signer generate -w ~/.tauri/acme.key`，再把 `acme.key.pub` 的完整內容貼進來。
+
+**還沒做的**：
+- 沒跑 `cargo build`，所以還沒有 `Cargo.lock`。團隊規則要求把它 commit 進去。
+- 還沒裝前端套件，`pnpm-lock.yaml` 也沒更新。
+- 缺 `icons/`，`tauri build` 會因此失敗。
+- 根目錄的 `package.json`、`apps/src/api/desktop.ts`、`docs/signing-and-keys.md` 都還沒建立。
+````
+
+## 最終樹（最終審查修正後，HEAD `ca26ae9d`）
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：`git archive ca26ae9d351f77032e87b7e0c71ed44a5e3ab22b`（已提交的 HEAD）取出的樹
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：13，耗時 112 秒
+- 結果：5/5 個 grader 通過 → **通過**
+- 備註：最終審查收斂 §3 前言的回報要求等之後重跑；上一節是修正前的 `e431a746`
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-msrv-1-90` | 通過 | work/src-tauri/Cargo.toml:7。 |
+| `02-table-crates-exact` | 通過 | Cargo.toml tauri-build 2.7.4、tauri 2.12.5、updater 2.14.1、process 2.4.0；grep -nE '= "2"' 結束碼 1。 |
+| `03-serde-untouched` | 通過 | Cargo.toml serde = { version = "1", features = ["derive"] }、serde_json = "1"。 |
+| `04-npm-plugins-caret` | 通過 | work/apps/package.json 加 plugin-process ^2.4.0、plugin-updater ^2.14.1；與 fixture diff 只有這兩行新增。 |
+| `05-cites-rules` | 通過 | (1) 回覆說明表上 crate 寫完整三段版號（未逐字標 §3 前言，依行為判通過）；(2) 「都屬 Tauri 批次」；(3) 「npm 照團隊預設寫 caret，不是例外」。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我用團隊範本建好了 `src-tauri/`，兩個 plugin 也加進了 `apps/package.json`。目前只驗證過 `Cargo.lock` 能產生、兩個 JSON 能解析；沒跑 `cargo check` 和 `pnpm install`（還缺圖示和下面幾個真實值），所以 `pnpm-lock.yaml` 還沒更新。
+
+**`src-tauri/` 內容**：`Cargo.toml`、`Cargo.lock`、`build.rs`、`rust-toolchain.toml`、`tauri.conf.json`、`capabilities/default.json`、`src/main.rs`、`src/lib.rs`，另外建了空的 `icons/`。
+
+**版本（都屬 Tauri 批次，取自團隊版本表的現行值）**
+- `Cargo.toml`：`rust-version = "1.90"`、`edition = "2021"`。表上列出的 crate 寫成完整的三段版號：`tauri` 2.12.5、`tauri-build` 2.7.4、`tauri-plugin-updater` 2.14.1、`tauri-plugin-process` 2.4.0。`serde`、`serde_json` 不在表上，維持範本的 `"1"`。
+- `Cargo.lock`：第一次產生時，Cargo 把 `tauri` 解析成 2.12.6、`tauri-build` 解析成 2.7.5，比表上的值新。這等於沒經同意就升級，所以我用 `cargo update --precise` 把兩者鎖回表上的值，四個 crate 現在都跟表一致。
+- `apps/package.json`：`@tauri-apps/plugin-updater` `^2.14.1`、`@tauri-apps/plugin-process` `^2.4.0`。npm 這邊照團隊預設寫 caret（`^`），不是例外。所以同一批裡 Cargo 寫三段版號、npm 寫 `^` 是刻意的，不要改成同一種寫法。
+- 這個 repo 原本的前端版本已經跟團隊版本表一致，沒有差距要回報。
+
+**需要你決定的事**
+1. **App 名稱**：我暫時從 `@acme/web` 取了 `acme`，所以 `identifier = tw.elf.acme`，crate 叫 `acme` / `acme_lib`。這個 identifier 第一次發版後就不能改，否則使用者資料會「消失」。
+   - 名稱沒問題：照現在的寫法即可，不用動。
+   - 要換名稱：趁發版前替換所有出現 `acme` 的地方並重新產生 `Cargo.lock`，現在改不影響任何人。
+2. **後端位址**：`tauri.conf.json` 的 CSP 裡還留著 `<api-origin>`。
+   - 有後端：填真實位址（例如 `https://api.example.com`），後端的 CORS 也要允許 Tauri 的來源。
+   - 純離線：直接刪掉這一段，但之後就連不到任何 API。
+3. **發版必填**：簽章公鑰（`pubkey`）和更新來源的 GitHub repo（`<owner>/<repo>`）都還是佔位字串。在 `pubkey` 換成真實公鑰之前，`tauri build` 一定會失敗。
+
+**還沒做（不在這次要求內）**
+- 圖示：`icons/` 是空的，要用 `pnpm tauri icon` 產生。
+- 前端：呼叫桌面功能的 `apps/src/api/desktop.ts`。
+- 根目錄：`package.json`（含 `@tauri-apps/cli` 和 `tauri` / `desktop:*` 指令）、`docs/signing-and-keys.md`。
+
+要我接著補哪一項，說一聲就好。
+````
+
+## PR 審查退回後（莫先看 `01a1e4a0`）重跑
+
+- 日期：2026-11-16
+- 模型：claude-opus-5-5（`claude -p` 全新 headless session，每個案例一次；工具清單 ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'Write']，與 `prompt.md` 的 `allowed_tools` 相同；`max_turns` 20、逾時 600 秒）
+- skill 來源：工作樹快照 tree `ecd4d9272c75743d461ffd9798bf6d567a478ee3`（HEAD `5ab282f31dfa322b444ff6628a8469014a24aca4` ＋ 未提交的 stack/elf-stack/SKILL.md、stack/elf-stack/references/docker-images.md、本案例 graders/02-lists-gaps.md、case.yaml）；`git diff --stat`：`4 files changed, 17 insertions(+), 3 deletions(-)`，只列這四個檔
+- 當時的 `origin/dev`：`86651e5b2530bdc516d995e99246da832205c1f3`
+- 回合數：10，耗時 80 秒
+- 結果：5/5 個 grader 通過 → **通過**
+- 備註：elf-stack 規則 7 有改，載入它的案例全部重跑
+
+### 每個 grader
+
+| grader | 結果 | 理由 |
+| --- | --- | --- |
+| `01-msrv-1-90` | 通過 | work/src-tauri/Cargo.toml:7 `rust-version = "1.90"`。 |
+| `02-table-crates-exact` | 通過 | work/src-tauri/Cargo.toml:16 tauri-build 2.7.4、:19 tauri 2.12.5、:26 tauri-plugin-updater 2.14.1、:28 tauri-plugin-process 2.4.0；在 work/ 執行 `grep -nE '= "2"' src-tauri/Cargo.toml` 無輸出，exit=1。 |
+| `03-serde-untouched` | 通過 | work/src-tauri/Cargo.toml:20 `serde = { version = "1", features = ["derive"] }`、:21 `serde_json = "1"`，未改精確值也未升版。 |
+| `04-npm-plugins-caret` | 通過 | work/apps/package.json:11 `@tauri-apps/plugin-process: ^2.4.0`、:12 `@tauri-apps/plugin-updater: ^2.14.1`；以 python json.dumps(sort_keys) 與 files/apps/package.json 比對，diff 只多出這兩行，name/private/type/scripts/其他 dependencies/devDependencies 皆相同。 |
+| `05-cites-rules` | 通過 | 依行為判（與 evidence/green.md 第 2 次同標準）：(1) final-response.md:4「Cargo，寫確切版本」並以版本表為準（:6 lock 鎖回版本表值）；(2) :3「這幾個套件同屬 Tauri 批次，要一起升級」；(3) :5「npm，用團隊預設的 `^` … 這不是例外，是一般寫法」。三點皆有，惟未逐字寫「§3 前言」「§3.7」。 |
+
+### 子代理最後回覆（逐字）
+
+````markdown
+我在 `src-tauri/` 照團隊範本建好了 Tauri 2 桌面版骨架，也在 `apps/package.json` 補上兩個 plugin。這次沒有跑編譯：`icons/` 還是空的，`tauri-build` 一定會失敗。目前只做過兩項檢查：兩個 JSON 檔格式正確，`cargo tree` 解析依賴成功。
+
+**版本寫法**（這幾個套件同屬 Tauri 批次，要一起升級，Cargo 和 npm 的寫法刻意不同）：
+- **Cargo，寫確切版本**：`tauri = "2.12.5"`、`tauri-build = "2.7.4"`、`tauri-plugin-updater = "2.14.1"`、`tauri-plugin-process = "2.4.0"`；`rust-version = "1.90"`。
+- **npm，用團隊預設的 `^`**：`@tauri-apps/plugin-updater` 是 `^2.14.1`，`@tauri-apps/plugin-process` 是 `^2.4.0`。這不是例外，是一般寫法。
+- **`Cargo.lock`**：Cargo 會把 `"2.12.5"` 當成 `^2.12.5`，第一次產生 lockfile 時抓到了比版本表新的 tauri 2.12.6 和 tauri-build 2.7.5。我已用 `cargo update --precise` 改回版本表的值，現在四個套件的鎖定版本都和表上一致。
+
+**需要你決定或補上的地方**：
+1. **App 名稱**：repo 裡只有 `@acme/web` 可以參考，所以我暫時用 `acme`，識別碼是 `tw.elf.acme`。識別碼一旦上線就不能改，否則使用者的資料會「消失」，請在發版前確認。要改的話，現在只需改 `Cargo.toml`、`main.rs`、`tauri.conf.json` 三個檔，代價很小。
+2. **`tauri.conf.json` 還有三個佔位字串**，正式建置前一定要換掉：
+   - `pubkey`：先用 `pnpm tauri signer generate` 產生簽章金鑰，再貼上公鑰的完整內容；
+   - `endpoints` 裡的 `<owner>/<repo>`；
+   - CSP 的 `<api-origin>`：填後端網址；如果是不連後端的離線 App，就把這一段刪掉。
+3. **範圍外沒做的部分**：`icons/` 要用 `pnpm tauri icon` 產生；根目錄的 `package.json` 和 `pnpm-workspace.yaml`（沒有這兩個，`tauri dev` 的 `pnpm dev` 跑不起來）；`apps/src/api/desktop.ts`；`scripts/version.mjs`；`docs/signing-and-keys.md`。要的話我可以接著補。
+
+另外，`apps/package.json` 原有的版本都已經符合團隊 v2 版本表，沒有落後的地方。
+````

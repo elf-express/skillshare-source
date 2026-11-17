@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: coverage-v8-same-version
+skills:
+  - stack/elf-stack
+expected_outcome: |
+  `apps/package.json` devDependencies 的 `vitest` 與 `@vitest/coverage-v8` 都是 `5.0.5`，不帶 `^`；回覆指出這是 §3 caret 慣例的註明例外；版號取自表，不是自己挑的。

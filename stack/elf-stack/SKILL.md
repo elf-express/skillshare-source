@@ -3,7 +3,8 @@ name: elf-stack
 description: |
   Elf Express 技術堆疊版本的唯一真實來源（single source of truth），規定每個工具的版本、在 repo 中的釘選方式，以及既有專案要升級還是登記例外；不涵蓋大版本的寫法遷移（歸各領域 skill）。
   當任務涉及建立新專案、新增或升級套件 / SDK / runtime、撰寫 global.json、.nvmrc、package.json 的 engines 或
-  packageManager、Directory.Packages.props、docker image tag、CI 的 setup-* 或任何 `uses:` 行、審查 Dependabot PR、
+  packageManager、Directory.Packages.props、docker image tag（完整 tag 或浮動 tag）、Cargo.toml 的 rust-version（MSRV）
+  與 crate／Tauri plugin 版本、MSRV 或版本升級要誰核准、CI 的 setup-* 或任何 `uses:` 行、審查 Dependabot PR、
   審查 PR 時比對既有專案與團隊版本的差距、使用者要求「用最新版」、例外登記，或需要回答「團隊用哪一版」時觸發。
 metadata:
   version: 2.0.0
@@ -49,7 +50,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 4. **MUST NOT** 使用表中標為「待確認」的值作為最終決定；遇到時照「暫定值」寫，並在 PR / 回覆中列出。
 5. **MUST** .NET 套件版本集中在 `Directory.Packages.props`；`.csproj` 內的 `<PackageReference>` **不得**帶 `Version=`。
 6. **MUST** 提交 lockfile（Node 專案 `pnpm-lock.yaml`、Rust／Tauri 專案 `Cargo.lock`），CI 以鎖定模式安裝（`pnpm install --frozen-lockfile`、`cargo build --locked`）。WHY：lockfile 被 git 忽略時，每個「解析版本」都只是本機快照，不是 repo 的事實。.NET 的 `packages.lock.json` 見第 8 節待確認。
-7. **MUST NOT** 使用 `latest`、`*`、浮動 docker tag（如 `postgres:latest`）。
+7. **MUST NOT** 使用 `latest`、`*` 或浮動 docker tag。比該映像完整版本短的 tag（如 `mcr.microsoft.com/dotnet/sdk:10.0` 這類 `major.minor` 簡寫、`postgres:18`）與 `alpine`／`stable`／`mainline` 這類滾動別名（如 `nginx:alpine`）都算浮動；映像一律寫 3.1 容器映像表或 PostgreSQL 列的完整 tag。WHY：浮動 tag 每次 pull 可能拿到不同映像，同一份 Dockerfile 今天與下週建出來的不一樣；表上的 tag 有查證紀錄（`references/docker-images.md`）。既有專案的現值是浮動 tag 時，規則 1 的「是否跨 major」**MUST** 這樣比：`major.minor` 簡寫直接比 tag 上的 major；滾動別名比 `references/docker-images.md`「浮動別名查證日指向」記錄的完整 tag（例 `nginx:alpine` 指向 `1.31.8-alpine`，與表值同 major），並寫明比的是別名在查證日的指向、不是已部署映像的實際版本；**MUST NOT** 沒查過部署映像就說它是哪一版。WHY：滾動別名本身沒有版號，不給比較對象時只能答「無法判定」，規則 1 的五欄就缺一欄。
 8. 升級流程見第 6 節：**先改本表，再改專案**。
 9. **MUST** 範本與文件中的 `uses:` 一律釘 40 碼 commit SHA 並在行尾註解版本，SHA 與版本逐字取自 3.5 節對照表；升版先改本表再改範本。WHY：tag 可被改指；tj-actions/changed-files 於 2025-03 被改指 tag，外洩使用者 CI secrets（CVE-2025-30066，`gh api advisories/GHSA-mrrh-fwg8-r2c3`）；elf-cicd-desktop 的 release.yml 把自動更新簽章金鑰交給未釘的 action（Linear E-302 稽核）。證據見 `references/simplification-evidence.md` E1–E3。
 10. **MUST NOT** 把 `uses:` 改回 `@vN`／`@stable`／分支名，或新增未列在 3.5 對照表的 action。WHY：同規則 9。
@@ -58,7 +59,7 @@ elf-cicd-backend…）只引用這張表，不自行寫版本號。表上沒有�
 
 ## 3. 版本表
 
-range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`packageManager`、`global.json`、docker tag 與 action SHA 寫精確值。「v1」是前一版表（1.1.0）的值，「v2」是本表現行值。「待確認」指沒有裁定的項目，沿用 v1。
+range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`packageManager`、`global.json`、docker tag 與 action SHA 寫精確值；**本表列出的** Cargo crate 也寫精確 `major.minor.patch`，與 NuGet 同待遇。未列在本表的 Cargo 相依（例 `serde`、`serde_json`）沿用既有 range 寫法，由規則 6 的 `Cargo.lock` ＋ `--locked` 鎖定，是否納表見第 8 節。把表列 Cargo crate 或 3.7 Tauri 批次的值寫進 manifest 時，回覆要說明它們屬 Tauri 批次、各自是精確值還是 npm caret 預設（WHY：同一批 Cargo 寫精確值、npm 寫 caret，不說明，讀者會把其中一邊改成另一邊的寫法）。「v1」是前一版表（1.1.0）的值，「v2」是本表現行值。「待確認」指沒有裁定的項目，沿用 v1。
 
 ### 3.1 Runtime / SDK / 基礎設施
 
@@ -72,7 +73,16 @@ range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`
 | PostgreSQL | 18 | **18.6** | docker image `postgres:18.6`（compose 與 Testcontainers 用相同 tag） | 釘到 minor；OS 變體（`-bookworm`／`-alpine`）待確認（第 8 節）。參考專案用 SQLite；團隊標準改 PostgreSQL，見 elf-postgresql |
 | SqlSugarCore | 5.1.4.221 | **5.1.4.221** | `Directory.Packages.props` `<PackageVersion Include="SqlSugarCore" Version="5.1.4.221" />` | 確切 minor 待確認（第 8 節）；見 elf-sqlsugar |
 | Npgsql | 由 SqlSugarCore 5.1.4.221 間接帶入 5.0.18 | **間接 5.0.18** | 不直接引用；`Directory.Packages.props` 不寫 Npgsql | 方向是 10.0.3。SqlSugarCore 5.1.4.221 的 `PostgreSQLProvider` 預設開啟 `Npgsql.EnableLegacyTimestampBehavior`（`StaticConfig.AppContext_ConvertInfinityDateTime = true` 時不開），Npgsql 10.0.3 仍讀這個開關，但還沒在團隊專案實跑；由 Multica E-47（Npgsql 10.0.3 `timestamptz` 驗證）驗過才改成顯式引用。新 repo 用間接 5.0.18 就是本表值，不算例外。見 elf-postgresql 的時間欄位說明 |
-| Rust | stable | **stable ＋ `rust-toolchain.toml`** | `rust-toolchain.toml`（`channel = "stable"`、`components = ["rustfmt", "clippy"]`）；`Cargo.toml` `rust-version = "1.77.2"`（MSRV）、`edition = "2021"`；CI `dtolnay/rust-toolchain`（SHA 見 3.5） | 新 repo 附 toolchain 檔（v1 對此待確認）。參考專案無 `rust-toolchain.toml` |
+| Rust | stable | **stable ＋ `rust-toolchain.toml`** | `rust-toolchain.toml`（`channel = "stable"`、`components = ["rustfmt", "clippy"]`）；`Cargo.toml` `rust-version = "1.90"`（MSRV，依 `tauri`／`tauri-build` 在 crates.io 宣告的 `rust_version`；升 MSRV 比照 minor，見第 6 節）、`edition = "2021"`；CI `dtolnay/rust-toolchain`（SHA 見 3.5） | 新 repo 附 toolchain 檔（v1 對此待確認）。參考專案無 `rust-toolchain.toml` |
+
+**容器映像**（`docker/*.Dockerfile` 的 `FROM`；查證紀錄見 `references/docker-images.md`；規則 7）
+
+| 映像 | v1 | **v2** | 釘選方式 | 備註 |
+|---|---|---|---|---|
+| Node（web 建置） | 表未列 | **`node:24.22.2-alpine`** | `docker/web.Dockerfile` 建置階段 `FROM` | 與 Node.js 列同版，屬 Node 批次 |
+| nginx（web 執行） | 表未列（範本 `nginx:alpine`） | **`nginx:1.31.8-alpine`** | `docker/web.Dockerfile` 執行階段 `FROM` | mainline 線（`nginx:alpine` 所指的線）；改用 stable 線是版本決定，走第 6 節 |
+| .NET SDK 映像 | 表未列（範本 `10.0`） | **`mcr.microsoft.com/dotnet/sdk:10.0.403`** | `docker/api.Dockerfile` 建置階段 `FROM` | 與 .NET SDK 列（`global.json`）同值 |
+| ASP.NET Core 執行映像 | 表未列（範本 `10.0`） | **`mcr.microsoft.com/dotnet/aspnet:10.0.14`** | `docker/api.Dockerfile` 執行階段 `FROM` | 與 ASP.NET Core 套件列同值，屬 ASP.NET 批次；MCR 沒有 `aspnet:10.0.403` |
 
 ### 3.2 前端 / 桌面（v1 取自參考專案 `apps/package.json`、`src-tauri/Cargo.toml`）
 
@@ -86,7 +96,8 @@ range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`
 | Pinia | `^2.2.6` | **`^4.1.0`** | Router | dependencies；與 vue-router 同一張單 |
 | vue-router | `^4.4.5` | **`^5.4.0`** | Router | dependencies |
 | vue-i18n | `^11.4.16` | **`^11.4.16`** | — | dependencies。BasicApp 已依安全性修補升級（Multica E-21 升級、Multica E-22 補登） |
-| Vitest | `^5.0.1` | **`^5.0.5`** | — | devDependencies；V8 覆蓋率門檻由 elf-cicd-frontend 擁有 |
+| Vitest | `^5.0.1` | **`5.0.5`**（精確） | — | devDependencies；**註明例外**：不套用 §3 前言的 caret 預設，與 `@vitest/coverage-v8` 寫完全相同的精確版號（elf-cicd-frontend 規則 16、elf-unit）；V8 覆蓋率門檻由 elf-cicd-frontend 擁有 |
+| @vitest/coverage-v8 | — | **`5.0.5`**（精確） | — | `apps/package.json` devDependencies；**註明例外**：不套用 §3 前言的 caret 預設，版號必須與 Vitest 列完全相同、不帶 `^`，兩者一起升；寫進 manifest 或回答版號時要說明這是 caret 預設的註明例外（WHY：不說明，讀者會以為漏寫 `^` 而改回 caret，兩個套件就各自浮動） |
 | @playwright/test | `^1.63.0` | **`^1.64.1`** | — | 根 `package.json` devDependencies |
 | eslint-plugin-vue | `^10.11.1` | **`^10.12.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile；與 3.6 同值 |
 | globals | `^17.13.0` | **`^17.13.0`** | Lint | 根 `package.json` devDependencies ＋ lockfile |
@@ -94,6 +105,10 @@ range 寫法：npm range 除註明外一律用 caret（`^`）；NuGet 套件、`
 | @tauri-apps/api | `^2.11.1` | **`^2.12.4`** | Tauri | dependencies |
 | tauri（Rust crate） | `"2"` | **`"2.12.5"`** | Tauri | `src-tauri/Cargo.toml` ＋ commit `Cargo.lock` |
 | tauri-build | `"2"` | **`"2.7.4"`** | Tauri | `[build-dependencies]` |
+| tauri-plugin-updater（Rust crate） | `"2"` | **`"2.14.1"`** | Tauri | `src-tauri/Cargo.toml` 桌面 target dependencies，精確值 ＋ commit `Cargo.lock` |
+| tauri-plugin-process（Rust crate） | `"2"` | **`"2.4.0"`** | Tauri | 同上 |
+| @tauri-apps/plugin-updater | 範本未寫 | **`^2.14.1`** | Tauri | `apps/package.json` dependencies，npm caret 預設（不是例外） |
+| @tauri-apps/plugin-process | 範本未寫 | **`^2.4.0`** | Tauri | 同上 |
 | ant-design-vue | `^4.2.6` | **`^4.2.6`** | — | dependencies（`apps/package.json`） |
 
 > UI 元件庫（已決議）：**ant-design-vue 4** 是團隊標準。既有 SoybeanAdmin / NaiveUI repo 屬歷史例外，依該 repo 自己的 CLAUDE.md；AI 不得在任何 repo 自行替換 UI 庫。
@@ -186,7 +201,7 @@ ELF.Studio、ELF.BasicApp 的過渡例外與收斂條件登記在 `references/ex
 | Vite | vite、@vitejs/plugin-vue |
 | TS | typescript、vue-tsc（Lint 批次必須支援該 TS 線） |
 | Router | pinia、vue-router |
-| Tauri | @tauri-apps/cli、@tauri-apps/api、tauri、tauri-build；重跑桌面三平台矩陣 |
+| Tauri | @tauri-apps/cli、@tauri-apps/api、@tauri-apps/plugin-updater、@tauri-apps/plugin-process、tauri、tauri-build、tauri-plugin-updater、tauri-plugin-process；重跑桌面三平台矩陣 |
 | ASP.NET | Microsoft.AspNetCore.*、Microsoft.AspNetCore.Mvc.Testing |
 | .NET 測試 | xunit.runner.visualstudio、Microsoft.NET.Test.Sdk、coverlet.msbuild |
 | Lint | 3.6 的全部套件 |
@@ -315,17 +330,19 @@ services:
 - [ ] 所有 `.csproj` 的 `<PackageReference>` 都沒有 `Version=`
 - [ ] 所有 `.csproj` 沒有自己寫 `<TargetFramework>`（統一由 `Directory.Build.props` 提供）
 - [ ] docker image tag 為 `postgres:18.6`，不是 `latest`
+- [ ] Dockerfile 的 `FROM` 是 3.1 容器映像表的完整 tag，沒有 `major.minor` 簡寫或 `alpine`／`stable`／`mainline` 滾動別名（規則 7）
 - [ ] CI 的 Node / .NET 版本來自 `.nvmrc` / `global.json`，不是寫死在 yml；`uses:` 皆為 3.5 對照表的 SHA＋版本註解
 - [ ] 測試專案用 `coverlet.msbuild`，沒有 `coverlet.collector`
 - [ ] 沒有任何 `corepack enable`
 - [ ] Tauri repo 有 `rust-toolchain.toml`
+- [ ] `src-tauri/Cargo.toml` 的 `rust-version` 等於 3.1 Rust 列的 MSRV，表列 crate 都是精確 `major.minor.patch`（§3 前言）
 - [ ] 新增的套件版本已先加到本表（或已在 PR 註明「待加入 elf-stack」）
 - [ ] lint／format 採 3.6 的完整 antfu，或專案已登記在 `references/exceptions.md` 並寫明收斂條件；實際解析的 TypeScript 在 typescript-eslint 上限內
 - [ ] 既有專案：已登記在 `references/exceptions.md`，或回報已列出差距並建議開升級單或登記（§0、規則 1）
 
 ## 6. 升級政策
 
-1. **決策者**：patch 可由任一成員提出，更新本表後直接套用；minor 由 Tech Lead（Eddie）核准；major（例如 .NET 10→11、Node 24→26、PostgreSQL 18→19、Vite 6→8、.NET 測試工具鏈）需團隊決議並附遷移計畫。各領域的決策者名單見第 8 節。
+1. **決策者**：patch 可由任一成員提出，更新本表後直接套用；minor 由 Tech Lead（Eddie）核准（`Cargo.toml` 的 `rust-version`（MSRV）比照 minor）；major（例如 .NET 10→11、Node 24→26、PostgreSQL 18→19、Vite 6→8、.NET 測試工具鏈）需團隊決議並附遷移計畫。各領域的決策者名單見第 8 節。
 2. **順序**：先開 PR 修改本 skill 的版本表（附升級理由、breaking changes 摘要、影響的 repo）→ 合併後各 repo 再各自開 PR 升級。不為了追上已經先升的 repo 去改本表。
 3. **批次**：3.7 的同批成員在同一張單一起升，不單獨升其中一個。
 4. **AI 行為**：AI 代理**只能在使用者明確要求時**升級；升級時必須同時更新本表（或提醒使用者更新本表）。
@@ -342,6 +359,9 @@ services:
 | 測試專案引用 `coverlet.collector`、用 `--collect:"XPlat Code Coverage"` | `coverlet.msbuild` ＋ `-p:CollectCoverage=true -p:Threshold=55 ...` |
 | CI 寫 `dotnet-version: '10.0.x'` 而 repo 沒有 `global.json` | 加 `global.json`，CI 用 `global-json-file` |
 | `image: postgres`、`postgres:latest` 或 `postgres:18` | `postgres:18.6` |
+| `FROM nginx:alpine` | `FROM nginx:1.31.8-alpine`（3.1 容器映像表；`alpine` 是滾動別名） |
+| `FROM mcr.microsoft.com/dotnet/sdk:10.0`、`aspnet:10.0` | `sdk:10.0.403`、`aspnet:10.0.14`（3.1 容器映像表；`10.0` 是 `major.minor` 簡寫） |
+| `Cargo.toml` 寫 `tauri-plugin-updater = "2"`、`rust-version = "1.77.2"` | 表列 crate 寫精確值（`"2.14.1"`），MSRV 寫 3.1 的 `1.90`；`serde` 等未列表的相依照舊 |
 | 只有 `engines`，沒有 `engineStrict: true` | 沒有 engine-strict 時 engines 只是警告（參考專案的 `.npmrc` 已註明此坑）；新專案寫在 `pnpm-workspace.yaml` |
 | 只升 Vite 沒升 plugin-vue、只升 Pinia 沒升 vue-router、.NET 測試套件只升一個 | 整批一起升（3.7） |
 | AI 看到新版就順手升級 | 只在使用者要求時升級，且先更新本表 |
@@ -361,6 +381,9 @@ services:
 - 大版本的寫法遷移（Vite 8 config、Pinia 4、vue-router 5、xunit.runner 4、Test.Sdk 18、coverlet 10 與 3.3 的覆蓋率指令）還沒在團隊專案實跑，歸各領域 skill。
 - .NET 的 `packages.lock.json`（`RestorePackagesWithLockFile`、`dotnet restore --locked-mode`）還沒在團隊專案實跑，實跑後另開單。
 - ELF.Studio／ELF.BasicApp 的例外（`references/exceptions.md`）只能由各自產品的 PR 驗證後解除；本表的 peer 查證不代替實跑。
+- 下游 `dependabot.yml` 要不要啟用 `package-ecosystem: docker`，並比照規則 11 忽略主版本：沒有裁定，目前不啟用（Multica E-117 Q4）。
+- `System.Security.Cryptography.Pkcs` 8.0.1 的 `NU1902`／`NU1903` 弱點警告來源（疑為 SqlSugarCore 的間接相依）：由 Multica E-146（弱點警告調查單）查依賴樹，查清前本表不改任何版本值。
+- `serde`、`serde_json` 等未列在 3.2 的 Cargo 相依要不要納表並改精確值：目前由規則 6 的 `Cargo.lock` ＋ `--locked` 鎖定（Multica E-117 A8）。
 
 ## 9. 禁止簡化
 
@@ -370,3 +393,5 @@ services:
 - 不得把 `dev` 合併或 dry-run 成功當成已發版、已同步或任何單（含 Linear E-426）可結案的證據。
 - 不得把「新專案用 v2」簡化成「新專案先開在 v1 比較省事」，也不得簡化成「舊專案也要立刻對齊」。
 - 不得把「舊專案可緩步」簡化成「舊專案永遠不升」：每筆例外都寫明收斂條件或明寫 none yet。
+- 不得把容器映像的完整 tag 簡化回 `major.minor` 簡寫（`dotnet/sdk:10.0`）或 `alpine`／`stable`／`mainline` 這類滾動別名（`nginx:alpine`），也不得因為「表上沒有這個映像」就照下游範本寫浮動 tag，要先補表（規則 7；證據 E7）。
+- 不得把表列 Cargo crate 的精確版號簡化回 `"2"` 這類 major range，也不得讓 `rust-version`（MSRV）低於表列 `tauri`／`tauri-build` 在 crates.io 宣告的 `rust_version`；未列表的相依不在此限（§3 前言；證據 E8、E9）。

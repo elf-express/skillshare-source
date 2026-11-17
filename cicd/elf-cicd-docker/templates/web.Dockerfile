@@ -32,7 +32,7 @@ ENV VITE_USE_MOCK=$VITE_USE_MOCK
 
 RUN pnpm run build
 
-FROM nginx:alpine AS runtime
+FROM nginx:1.31.8-alpine AS runtime
 # Not named default.conf on purpose: the image's
 # 10-listen-on-ipv6-by-default.sh entrypoint only runs when that exact file is
 # present, and it shells out to `apk manifest nginx` to checksum it — which

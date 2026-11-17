@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: cargo-msrv-and-plugin-versions
+skills:
+  - desktop/elf-tauri
+  - stack/elf-stack
+expected_outcome: |
+  `src-tauri/Cargo.toml` 的 `rust-version = "1.90"`；`tauri` `2.12.5`、`tauri-build` `2.7.4`、`tauri-plugin-updater` `2.14.1`、`tauri-plugin-process` `2.4.0` 都是精確值，沒有 `= "2"`；`serde = { version = "1", features = ["derive"] }`、`serde_json = "1"` 不變；`apps/package.json` 多出 `@tauri-apps/plugin-updater ^2.14.1`、`@tauri-apps/plugin-process ^2.4.0`，fixture 原有的值不變；回覆引用 §3 前言的 Cargo 規定與 §3.7 Tauri 批次，並指出 npm plugin 用的是 caret 預設、不是例外。
+context:
+  scaffold_script: place-files.sh
