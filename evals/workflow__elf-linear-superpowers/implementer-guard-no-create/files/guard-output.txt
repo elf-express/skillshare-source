@@ -1,0 +1,5 @@
+PreToolUse:Write hook error: [elf-guard] 已擋下寫入：src/notifications/digest.ts
+  分支 feat/e-512-daily-digest 的狀態檔 docs/superpowers/state/E-511.yaml 指向 Plan E-512，
+  但找不到 E-512 的計畫核准憑證（或憑證已失效）。
+  核准前只能寫 docs/superpowers/ 底下的檔案。
+  處理方式：實作者用核准憑證建立器跑 verify；不是通過就停下，在 Plan 留言請審計員處理。

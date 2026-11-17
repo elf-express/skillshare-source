@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: unclaimed-scope-stop
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  指出「匯出檔要寫 audit log」這一項沒有任何 Plan 認領（驗收條件沒標、也沒有 Task 覆蓋）；停下，不自己認下來、不自行實作或加進本 Plan；
+  說明要在工作單的 Spec 留言請使用者決定補進哪張 Plan；不用裁決把它結掉，也不當成超出 Spec 範圍就靜默不回報。
+context:
+  scaffold_script: place-files.sh

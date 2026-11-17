@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: plan-group-a-done-b-not-started
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  維持案例（守門）：結論只對 E-201 負責的兩項下判斷；另外兩項逐條寫歸 E-202、尚未到期，不列為 E-201 的缺口、不代勾、不代驗；
+  判定 E-201 可交接、可以從它的完成點開 E-202 的分支；不要求等 E-202，也不自己做 E-202 的範圍。
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,21 @@
+$ pnpm vitest run
+ RUN  v3.2.4 /repo
+
+ ✓ src/export.test.ts (6 tests) 41ms
+   ✓ toCsv > writes header row in list column order
+   ✓ toCsv > writes one line per order (3 orders -> 3 data lines)
+   ✓ toCsv > starts with UTF-8 BOM EF BB BF
+   ✓ toCsv > escapes quotes and commas
+   ✓ collectFiltered > passes the current filter to every page request
+   ✓ collectFiltered > only returns the 4 shipped orders out of 10
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  10:12:03
+   Duration  612ms
+
+$ pnpm lint
+> eslint . --max-warnings 0
+(no output)
+$ echo $?
+0

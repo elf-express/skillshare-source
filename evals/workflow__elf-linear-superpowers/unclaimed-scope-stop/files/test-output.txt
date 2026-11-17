@@ -1,0 +1,16 @@
+$ pnpm vitest run
+ RUN  v3.2.4 /repo
+
+ ✓ src/members/exportMembers.test.ts (3 tests) 18ms
+   ✓ exportMembers > exports one row per member (5 members -> 5 rows)
+   ✓ exportMembers > exports only id, name, joinedAt
+   ✓ MemberList > hides export button for non-admin roles
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Duration  455ms
+
+$ pnpm lint
+(no output)
+$ echo $?
+0

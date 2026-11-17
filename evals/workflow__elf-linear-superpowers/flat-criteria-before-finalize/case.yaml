@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: flat-criteria-before-finalize
+skills:
+  - workflow/elf-linear-superpowers
+expected_outcome: |
+  不寫出定案留言，或明說現在還不能定案；把三項需求各歸到對的組（TOTP 新增、session 逾時修改且寫出舊值 30 分鐘、「記住我」移除且有原因與遷移方式或標明要問使用者）；
+  每條驗收條件至少一個「前提 → 動作 → 結果」情境；要求核准者看過補完三組之後的版本才定案。
+context:
+  scaffold_script: place-files.sh
