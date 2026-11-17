@@ -38,7 +38,7 @@ docs/                              screenshots and docs/superpowers/ (Guard doc,
 ```
 
 A folder is a skill only if it contains `SKILL.md`; that is why `docs/`, `scripts/` and `agents/`
-need no entry in `.skillignore` (it holds only `skillshare` and `/tools/code-review-skill`).
+need no entry in `.skillignore` (it only holds `skillshare`).
 
 ### Nested paths auto-flatten on sync
 
@@ -114,9 +114,8 @@ as the whole `Yeachan-Heo/oh-my-claudecode` repo from the start; the 2026-10-01 
 with 1,925 files and 43 unrelated skills (E-249).
 
 `tools/code-review-skill` has no subdirectory to install from, because upstream's repo root is the skill. Unlike
-the two `_` checkouts it is committed here, all 50 of its files included — among them the unrelated `.hive/`,
-`index*.html` and `README.md`. Do not delete them: the next update restores them. `.skillignore` excludes
-`/tools/code-review-skill`, so none of it syncs to any target (E-99): read it from this repo instead. Its audit reports 2
+the two `_` checkouts it is committed here, and all 50 of its files sync to every target, including the unrelated
+`.hive/`, `index*.html` and `README.md`. Do not delete them: the next update restores them. Its audit reports 2
 HIGH and 2 MEDIUM, none blocking (E-99): a sample password in a security guide and three statistical `tier-*`
 findings. Review through the existing steps; this skill is only a per-language reference, read directly from
 `reference/<language>.md` without loading the skill (`workflow/elf-linear-superpowers`). Two things in the folder
@@ -203,10 +202,9 @@ Three caveats before you treat a red result as your own doing:
   repo (Kilo Code's `.kilo/worktrees/` used to do this) is validated too. With no such copy present and
   `_superpowers/` and `_openspec/` checked out it reports 79 folders. That is validate's count (both included,
   with the 4 `_openspec/.agents/skills/` folders that never sync),
-  not the number that syncs: with `/tools/code-review-skill` excluded in `.skillignore` (E-99) and the
-  `.skillignore.local` exclusions in effect on the maintainer's machine (E-303, 2026-10-17:
-  `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 72 actually sync.
-  CI does not read `.skillignore.local`, so only the `.skillignore` exclusions apply there.
+  not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
+  (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 73 actually sync.
+  CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,
   run it as `XDG_CONFIG_HOME=<worktree config> bash scripts/validate.sh` (see Gotchas).
