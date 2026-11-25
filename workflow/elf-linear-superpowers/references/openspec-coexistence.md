@@ -34,4 +34,6 @@
 
 ## 待確認
 
-1. Plan 核准**之後**，可不可以用 `openspec-propose`、`openspec-new-change` 等 skill 把已核准的內容落成 `openspec/changes/`，以及落地後與工作單怎麼對應。規則 6 只擋核准前與取代工作單的用法；目前沒有 repo 導入 `openspec/`，第一個 repo 導入前要補。
+1. **Plan 核准之後用 change 落地（已決議 2026-11-26，Eddie：現在不開放，細則另開單）**：Plan 核准後，也不用 `openspec-propose`、`openspec-new-change` 等 skill 把核准內容寫成 `openspec/changes/`。這不是待實測的項目：目前沒有 repo 導入 `openspec/`，規則 5 已擋住，細則由第一個導入 `openspec/` 的單一起決定，不先寫。
+   為什麼：核准憑證只對工作單上的 Plan 描述算雜湊，`tasks.md` 只會是第二份要手動同步的計畫，而且不一致時本來就以工作單為準（規則 4）；沒有導入的 repo 可以實測，現在寫細則只能猜。
+   那張單至少要決定三件事：change 是否只能照抄已核准的 Plan、不得加新決定；改 Plan 是否一律先走「計畫已修改 vN」再同步 change；改 `tasks.md` 是否不算改 Plan、不觸發 `revoke`。
