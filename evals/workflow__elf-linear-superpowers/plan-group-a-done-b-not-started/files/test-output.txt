@@ -1,3 +1,10 @@
+$ git rev-parse --abbrev-ref HEAD
+feat/e-201-notification-list
+$ git rev-parse HEAD
+4c1e9a07d2b8f6e15a3c9d0b7e4f2a6c8d1b3e5f
+$ git status --short
+$ echo $?
+0
 $ pnpm vitest run
  RUN  v3.2.4 /repo
 
@@ -10,7 +17,18 @@ $ pnpm vitest run
       Tests  3 passed (3)
    Duration  501ms
 
+$ echo $?
+0
 $ pnpm lint
 (no output)
+$ echo $?
+0
+$ pnpm build
+vite v8.3.5 building for production...
+✓ 214 modules transformed.
+dist/index.html                   0.46 kB
+dist/assets/index-3f9c1a2b.css   12.80 kB
+dist/assets/index-8d2e7c41.js   182.33 kB
+✓ built in 2.41s
 $ echo $?
 0

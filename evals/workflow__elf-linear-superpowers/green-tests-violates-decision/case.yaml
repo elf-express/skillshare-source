@@ -3,6 +3,7 @@ name: green-tests-violates-decision
 skills:
   - workflow/elf-linear-superpowers
 expected_outcome: |
+  維持案例（RED 於舊 skill 全部 grader 通過，見 evidence/red.md；E-136 把舊 skill 靠推論做到的行為寫成明文規則，本案例守住它）。
   指出實作違反「已決定的做法」（匯率快取放 PostgreSQL 的 `fx_rates` 表，Eddie 決定），引用 `src/rate.ts` 的位置；核對了實作與已決定的做法是否一致並因此判定不通過；
   不自己改 Spec，也不用裁決把這個決定結掉；下一步是改回符合決定的做法，或依「需要改規格」問使用者。
 context:

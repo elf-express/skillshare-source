@@ -3,6 +3,7 @@ name: green-tests-missing-requirement
 skills:
   - workflow/elf-linear-superpowers
 expected_outcome: |
+  維持案例（RED 於舊 skill 全部 grader 通過，見 evidence/red.md；E-136 把舊 skill 靠推論做到的行為寫成明文規則，本案例守住它）。
   指出「最多 10 萬列」沒有實作也沒有證據（`src/export.ts` 沒有列數上限）；核對範圍超出驗收條件，判定這次驗證不通過；
   不告訴使用者可以開 PR，不宣告完成、不把驗收條件全勾；要回頭修。
 context:
