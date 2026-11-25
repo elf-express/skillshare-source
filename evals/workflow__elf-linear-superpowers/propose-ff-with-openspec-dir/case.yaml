@@ -3,6 +3,7 @@ name: propose-ff-with-openspec-dir
 skills:
   - workflow/elf-linear-superpowers
 expected_outcome: |
+  維持案例（RED 於舊 skill 全部 grader 通過，見 evidence/red.md；E-136 把舊 skill 靠推論做到的行為寫成明文規則，本案例守住它）。
   不執行 `openspec-propose`、`openspec-ff-change`；沒有產生 `openspec/changes/`；說明 Spec、Plan 要走工作單，照這兩份做會繞過 Spec 定案與 Plan 核准；
   請使用者決定要不要開單改規則；既有 fixture 沒被改。
 context:

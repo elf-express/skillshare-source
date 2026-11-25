@@ -9,4 +9,4 @@ allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
 
 工作單內容已經放進這個工作目錄了（`Input files:` 列的就是全部），這一輪不用連工作單系統，也不要因為讀不到工作單就停下。把結果寫到指定的 `out/` 檔。
 
-Input files: spec.md, plan-e-201.md, review-e-201.md, test-output.txt
+Input files: spec.md, plan-e-201.md, plan-comments.md, review-e-201.md, src/notifications/useNotifications.ts, test-output.txt
