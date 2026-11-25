@@ -115,7 +115,9 @@ with 1,925 files and 43 unrelated skills (E-249).
 
 `tools/code-review-skill` has no subdirectory to install from, because upstream's repo root is the skill. Unlike
 the two `_` checkouts it is committed here, and all 50 of its files sync to every target, including the unrelated
-`.hive/`, `index*.html` and `README.md`. Do not delete them: the next update restores them. Its audit reports 2
+`.hive/`, `index*.html` and `README.md`. Do not delete them: the next update restores them. It was excluded from
+sync in `.skillignore` from 2026-11-17 (PR #67, over the `allowed-tools` and `.hive/` concerns below) until the
+owner decided on 2026-11-25 that it must sync; do not add that line back without the owner's decision. Its audit reports 2
 HIGH and 2 MEDIUM, none blocking (E-99): a sample password in a security guide and three statistical `tier-*`
 findings. Review through the existing steps; this skill is only a per-language reference, read directly from
 `reference/<language>.md` without loading the skill (`workflow/elf-linear-superpowers`). Two things in the folder
@@ -204,6 +206,9 @@ Three caveats before you treat a red result as your own doing:
   with the 4 `_openspec/.agents/skills/` folders that never sync),
   not the number that syncs: with `.skillignore.local` exclusions in effect on the maintainer's machine
   (E-303, 2026-10-17: `/frontend/design/ui-ux-pro-max` and `/tools/agent-browser`), 73 actually sync.
+  That 73 also counts `skillshare/`, which the same file re-includes with `!/skillshare`; without that line 72 sync.
+  Both 79 and 73 were measured with `_openspec` at its 2026-11-07 upstream commit and move whenever a tracked
+  checkout is updated (re-measured 2026-11-25).
   CI does not read `.skillignore.local`, so its count is unaffected.
 - Its `skillshare sync --dry-run` and `skillshare audit` read your global skillshare config, so they check
   your configured **source** clone, not necessarily the tree you are validating. In a feature worktree,

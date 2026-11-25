@@ -190,7 +190,7 @@ skillshare-source/
 
 | 檔案 | 用途 | 進 git？ |
 |---|---|---|
-| `.skillignore` | 團隊共用：哪些資料夾不是 skill（`docs/`、`scripts/`、`agents/`…） | 是 |
+| `.skillignore` | 團隊共用：哪些 skill 資料夾不同步（目前只有 `skillshare`；`docs/`、`scripts/`、`agents/` 沒有 `SKILL.md`，不用列） | 是 |
 | `.skillignore.local` | 本機覆寫（例：`!/skillshare`、`.kilo/`，或排除吃常駐預算的大型第三方包） | 否 |
 
 > VS Code 的 Kilo Code 擴充會在 repo 裡建 `.kilo/worktrees/`，已被忽略；不用 Kilo 可直接解除安裝。
