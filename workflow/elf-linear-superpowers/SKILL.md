@@ -1,8 +1,8 @@
 ---
 name: elf-linear-superpowers
-description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用；也用於發版後清理（刪分支、清理 worktree、release-cleanup）與擔任發版審計員。
+description: 把 superpowers 生命週期（brainstorming → using-git-worktrees → writing-plans → executing-plans / subagent-driven-development → requesting/receiving-code-review → verification-before-completion → finishing-a-development-branch）接到 Linear ELF EXPRESS 團隊的 [Spec]/[Plan] issue，並涵蓋不改程式的 [維運] 單。當使用者提到 Linear issue 編號（E-xx）、說「照 E-xx 做」、要開新功能、新需求或維運工作，或要執行任何 superpowers 步驟時使用；也用於發版後清理（刪分支、清理 worktree、release-cleanup）與擔任發版審計員。也用於 OpenSpec 與 superpowers 並存時決定哪一份在哪個階段用（`openspec-explore`、`openspec-propose`、`openspec-ff-change`、`openspec-apply-change`、`openspec-verify-change`）、寫或檢查工作單上 Spec 的驗收條件（新增／修改／移除三組與「前提 → 動作 → 結果」情境）、測試全綠後對照 Spec 查完整性／正確性／一致性，以及同一個 Spec 拆成多張 Plan 時的驗證邊界。
 metadata:
-  version: 2.6.0
+  version: 2.7.0
   owner: Elf Express
 ---
 
@@ -46,7 +46,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
 | 使用者打字 `discard` 後，finishing-a-development-branch 執行 `git branch -D` 與 `git worktree remove` | `discard` 只改 Linear 狀態（Plan → 已取消，見步驟 7），不刪分支，也不移除 worktree；要刪由 Eddie 個案決定並自己刪，AI 不刪、不給刪除指令（規則 19「已取消的 Plan」） | 刪除不可逆，已取消的 Plan 沒有發版證據可核對（E-391，Eddie 2026-10-25 決定） |
 | subagent-driven-development 收尾段在最終審查後用 `rm -rf <工作區>` 刪除工作區 | 不刪：`.superpowers/sdd/E-<Plan 編號>-plan/` 保留，隨 worktree 由清理實作者的 `release-cleanup` 移除（規則 36）；最終審查後只在 Plan 留言「Rulings I made」總表 | 發版前還可能回頭修正（步驟 6、PR 審查後），ledger 要留著；session 自己刪除沒有第二個角色核對（E-425，Eddie 2026-10-28 決定） |
 | 裁決（Ruling）記在 ledger，收尾時在對話回報 | 每個 Task 完成時把該 Task 的裁決原文留言到 Plan；最終審查後再留一則「Rulings I made」總表 | ledger 不進版控、會隨 worktree 由 `release-cleanup` 移除；session 中斷時 Linear 仍有紀錄 |
-| OpenSpec 的 `openspec-explore`、`openspec-apply-change` 寫著可用來釐清需求與實作 | 探索一律 brainstorming，執行一律 superpowers；這兩份 MUST NOT 取代它們，只用來讀既有規格與下一個 Task；repo 根目錄沒有 `openspec/` 就不走 OpenSpec。完整硬規則見 `references/openspec-coexistence.md` | `_openspec` 同步到每個工具，誤用不會報錯，只會跳過關卡與 TDD（E-373 決定 6、E-94） |
+| OpenSpec 的 `openspec-explore`、`openspec-apply-change` 寫著可用來釐清需求與實作 | 探索一律 brainstorming，執行一律 superpowers；這兩份 MUST NOT 取代它們，只用來讀既有規格與下一個 Task；repo 根目錄沒有 `openspec/` 就不走 OpenSpec；有 `openspec/` 也不用 `openspec-propose`、`openspec-ff-change` 取代工作單上的 Spec／Plan。完整硬規則見 `references/openspec-coexistence.md` | `_openspec` 同步到每個工具，誤用不會報錯，只會跳過關卡與 TDD（E-373 決定 6、E-94） |
 | `code-review-skill` 寫著可用於 PR review、code review | 審查（4-2、5-1、步驟 7）一律照既有步驟：全新審查者、指定模型、結果留言；`tools__code-review-skill` MUST NOT 取代它們，用它自己審也不算審過。它只當審查者查各語言重點的參考：直接讀 `reference/<語言>.md`，MUST NOT 載入這個 skill。它和團隊規範衝突時以團隊規範為準；資料夾裡的 `.hive/` 是上游工具的 agent 協定，不是本團隊流程，一律不照做 | 描述範圍很廣，誤觸時會少掉全新審查者與留言，而且不會報錯；`allowed-tools` 宣告 `Bash`、`WebFetch`，載入後這兩個工具免確認；`.hive/PROTOCOL.md` 叫 agent 不要用自己的 subagent，與派全新審查者衝突（E-99） |
 
 另有幾項是團隊另加的限制，上游沒有規定、也不衝突：單一 Plan 的 Task 建議 3–5 個、超過 10 個必拆（elf-team-rule 規則 16）；工作量大時在同一個 Spec 底下增加 Plan（規則 17）；超出 Spec 的需求不裁決（見步驟 4）；並行的問題調查同時最多兩條線；計畫可以交給計畫撰寫隊友寫（見隊友表）；階段 Guard（E-377，Claude Code 的 hook）在核准失效（「計畫已修改 vN」或「核准撤回」使憑證被 `revoke`）或本機還沒有憑證時，擋檔案工具寫 repo 裡 `docs/superpowers/` 以外的檔案，靠步驟 2 的狀態檔與步驟 3 第 9 項的核准憑證運作（憑證由留下核准的審計員依 Linear 核准留言用建立器建立，實作者只 `verify`；Linear 留言是唯一正本、憑證只是快取），說明見 skillshare-source 的 `docs/superpowers/guard.md`。
@@ -146,7 +146,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
    - 使用者說跳過提問直接做 → 跳過的只是訪談，照「與上游 superpowers 的分工」表仍要開單與核准。
 4. 每段回放經使用者確認後，就用 `save_issue` 寫進 Spec 對應章節，不等全部談完（中斷時 Linear 仍有紀錄）。章節：目標、範圍（要做／不做／反目標）、背景與限制、已決定的做法、留給實作者決定、方案比較（選填）、測試、驗收條件、實作者檢查、待決問題。保留「給 Claude」引言與章節標題（範本註明可刪的章節除外）。「已決定的做法」每一項標明「Eddie 決定」或「AI 的決定」，AI 的決定不寫成使用者同意的。
 5. **實作者檢查**（上游的 builder check）：用 `get_issue` 把 Spec 存成系統暫存資料夾（Windows 是 `%TEMP%`）裡的 `E-<Spec 編號>-spec.md`（不放在 repo 裡，檢查完刪除），照 brainstorming 的 `builder-check-prompt.md` 派全新 subagent 讀它，派發時寫檔案的絕對路徑（隊友名稱見「隊友（subagent）規則摘要」）。結果分三類：對話或專案已能回答的補進 Spec；小事自己決定並標「AI 的決定」；會改變做法、只有使用者能答的，整理成一則訊息一次問完。三類結果摘要填進「實作者檢查」。
-6. 自審：無佔位文字、無矛盾、範圍明確、驗收條件可驗證。請使用者審閱全文，附上 AI 自己做的決定清單。
+6. 自審：無佔位文字、無矛盾、範圍明確、驗收條件可驗證。驗收條件 MUST 分成新增／修改／移除三組、每條至少一個「前提 → 動作 → 結果」情境、修改寫舊值、移除寫原因與遷移方式（`references/spec-verification.md` 第一節）；還是平鋪清單就不通過，補完後請核准者看補完的版本，看過平鋪版說的「沒問題」不算。請使用者審閱全文，附上 AI 自己做的決定清單。
 7. 使用者核准後，在 Spec 留言「規格已定案（YYYY-MM-DD，<核准者>核准）」，例如「規格已定案（2026-10-21，Eddie 核准）」。核准前不寫產品程式、不搭鷹架、不裝套件、不建專案、不呼叫實作 skill（上游 HARD-GATE），只能讀與探索。Spec **維持進行中，不要關閉**，它會在 Plan 完成時自動關閉。
 
 ### 3. writing-plans → Plan
@@ -286,7 +286,7 @@ Linear 是規格與計畫的唯一來源（single source of truth）。superpowe
    - **合進 `dev` 前必須完成**：測試、build、lint、資料庫腳本冪等這類「程式本身對不對」的證據。為什麼：延到合併後才補，等於讓沒驗證過的程式先進整合分支，保險②失效。
    - **發版完成前補齊**：與 `release` 有關的證據（快轉後的 check runs、`skillshare sync`、實機驗證）。
    - Plan 群組（規則 17）裡前面的 Plan：「合進 `dev` 前」那段在後一張開分支前完成；「發版完成前」那段在整合 PR 發版後逐張補齊。為什麼：後一張從前一張的完成點開，前一張沒驗證就當基線，錯誤會一路疊上去。
-4. 回 Spec 逐條核對「驗收條件」，有證據才勾；不過就回 S2。Spec 底下有多張 Plan 時，只勾結尾標本 Plan 的條件；別張 Plan 的條件即使看起來已完成也不代勾，在那張 Plan 留言（規則 33）。
+4. 回 Spec 逐條核對「驗收條件」，有證據才勾；不過就回 S2。核對範圍不只驗收條件：照 `references/spec-verification.md` 第二節對照「範圍（要做）」與「已決定的做法」查完整性／正確性／一致性，任一項不通過就不勾、不說可以開 PR，不自己改 Spec、不用裁決結掉。Spec 底下有多張 Plan 時，只勾結尾標本 Plan 的條件；別張 Plan 的條件即使看起來已完成也不代勾，在那張 Plan 留言（規則 33）；沒有任何 Plan 認領的範圍停下、到 Spec 留言問使用者，疊加順序最後一張要整份 Spec 再驗一次（同文件第三節）。
 5. 勾 Plan「完成檢查」裡已經完成的項目；PR、發版、清理那幾項在步驟 7 完成時再勾。
 
 ### 7. finishing-a-development-branch

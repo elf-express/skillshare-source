@@ -25,10 +25,13 @@
 5. **repo 根目錄沒有 `openspec/` 就不走 OpenSpec。** 這 12 份 skill 都不用，使用者口頭說「用 OpenSpec」也一樣，MUST NOT 為此自行 `openspec init`。要導入就另開單，走該單自己的核准（E-373 決定 9）。
    為什麼：skill 到處都看得到，不代表每個 repo 都導入了；憑空產生 `openspec/` 會留下沒人維護的規格。
 
+6. **Spec 與 Plan 走工作單，不由 OpenSpec 的 change 產生。** repo 有 `openspec/` 也一樣：`openspec-propose`、`openspec-ff-change`、`openspec-new-change`、`openspec-continue-change` MUST NOT 用來產出或取代工作單上的 Spec 與 Plan，Plan 核准前 MUST NOT 寫 `openspec/changes/`（E-373 決定 2）。Spec 照 brainstorming 談到「規格已定案」，Plan 照 writing-plans 寫到「計畫已核准」。使用者說「不用走工作單，省時間」也一樣。
+   為什麼：這幾份會一次產出 proposal、design、tasks，照做就跳過 Spec 定案與 Plan 核准兩道關卡；核准憑證也只對工作單上的 Plan 描述算雜湊（規則 4）。
+
 ## 使用者要求違反上面的規則時
 
 說明違反哪一條，改走規則指定的做法，並請使用者決定要不要在工作單上另開單改規則。對話裡的催促不算改規則。
 
 ## 待確認
 
-1. `openspec-propose`、`openspec-new-change` 等會寫 `openspec/changes/` 的 skill，何時可以用。E-373 決定 2 要求 Plan 核准後才落地，本文件還沒寫。目前沒有 repo 導入 `openspec/`，規則 5 已擋住；第一個 repo 導入前要補。
+1. Plan 核准**之後**，可不可以用 `openspec-propose`、`openspec-new-change` 等 skill 把已核准的內容落成 `openspec/changes/`，以及落地後與工作單怎麼對應。規則 6 只擋核准前與取代工作單的用法；目前沒有 repo 導入 `openspec/`，第一個 repo 導入前要補。
